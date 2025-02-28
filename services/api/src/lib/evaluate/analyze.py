@@ -1,0 +1,55 @@
+# TODO: To Analyze the user entered data and return a generated requirements list using simple LLM chain
+
+import logging
+
+from src.models.requirement import UserRequirement, GeneratedRequirement, Budget, DateRange
+from src.interfaces.llm import o3_mini
+
+from langchain_openai import AzureChatOpenAI
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputToolsParser
+from langchain_openai import ChatOpenAI
+from datetime import datetime
+
+class AnalyzeUserRequirement:
+    
+    def __init__(self):
+        self.llm = o3_mini()
+        self.today_date = datetime.now().strftime("%Y-%m-%d")
+        
+    def analyze_user_requirement(self, user_requirement: UserRequirement) -> GeneratedRequirement:
+        logging.info(f"Analyzing user requirement: {user_requirement}")
+        prompt = PromptTemplate.from_template(
+            """Analyze the user requirement and return a generated requirement list. The user requirement is: {user_requirement}
+            
+            Helpers to generate the requirements:
+            - Today's date is {today_date}
+            """
+        )
+        
+        chain = prompt | self.llm.bind_tools([GeneratedRequirement], tool_choice="any") | JsonOutputToolsParser(return_id=True) 
+        
+        response = chain.invoke(
+            {
+                "user_requirement": user_requirement,
+                "today_date": self.today_date
+            }
+        )
+        
+        logging.info(f"Analyzed user requirement and generated requirements")
+        
+        return response[0]["args"]
+    
+if __name__ == "__main__":
+    user_requirement = UserRequirement(
+        query="I want to find a property in New York",
+        date="from tomorrow to until the end of next week",
+        budget=Budget(min=100, max=200),
+        guest_count=2,
+        number_of_rooms=1,
+        preferences="I want a property with a pool, quiet location, a good view, proximity to co-working space"
+    )
+    analyze = AnalyzeUserRequirement()
+    response = analyze.analyze_user_requirement(user_requirement)
+    print(response)
+    print(GeneratedRequirement(**response))

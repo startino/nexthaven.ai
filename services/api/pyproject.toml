@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "src"
+version = "0.0.1"
+description = "API for rentino"
+authors = ["TBD"]
+repository = "https://github.com/startino/rentino"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+fastapi = { extras = ["standard"], version = "*" }
+pydantic = "*"
+httpx = "*"
+sse-starlette = "*"
+uvicorn = "*"
+python-dotenv = "*"
+diskcache = "*"
+watchfiles = "*"
+langchain-community = "^0.3.14"
+langchain-openai = "^0.3.1"
+langchain-experimental = "^0.3.4"
+supabase = "^2.11.0"
+beautifulsoup4 = "^4.13.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "*"
+isort = "*"
+mypy = "*"
+flake8 = "*"
+pytest = "*"
+pytest-cov = "*"
+pre-commit = "*"
+autoflake = "*"
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+line_length = 80
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
