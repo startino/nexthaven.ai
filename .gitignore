@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+eggs/
+*.egg-info/
+.env
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Virtual Environment
+venv/
+.venv/
+
+# Docker
+.docker/
+
+# Databases
+*.db
+*.sqlite3
+.vercel
