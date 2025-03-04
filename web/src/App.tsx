@@ -43,24 +43,20 @@ function App() {
       const parsedQuery = JSON.parse(query);
       console.log('Parsed query:', parsedQuery);
       
-      await propertyService.evaluateProperties(
-        {
-          query: parsedQuery.query || '',
-          date: parsedQuery.date || '',
-          budget: parsedQuery.budget || { min: 0, max: 10000 },
-          adults: parsedQuery.adults || 2,
-          children: parsedQuery.children || 0,
-          number_of_rooms: parsedQuery.number_of_rooms || 1,
-          property_type: parsedQuery.property_type || 'Hotels',
-          preferences: parsedQuery.preferences || '',
-          max_results: 5
-        },
-        (property) => {
-          console.log('Received property:', property);
-          setTopProperties(prev => [...prev, transformResponse(property)]);
-        }
-      );
+      const properties = await propertyService.evaluateProperties({
+        query: parsedQuery.query || '',
+        date: parsedQuery.date || '',
+        budget: parsedQuery.budget || { min: 0, max: 10000 },
+        adults: parsedQuery.adults || 2,
+        children: parsedQuery.children || 0,
+        number_of_rooms: parsedQuery.number_of_rooms || 1,
+        property_type: parsedQuery.property_type || 'Hotels',
+        preferences: parsedQuery.preferences || '',
+        max_results: 5
+      });
       
+      console.log('Received properties:', properties);
+      setTopProperties(properties);
       setScreen('compare');
     } catch (error) {
       console.error('Error during property evaluation:', error);

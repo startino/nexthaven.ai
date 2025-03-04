@@ -23,7 +23,7 @@ from typing import Literal
 
 class ApifyRequest(BaseModel):
     search: str = Field(description="The search query")
-    maxItems: int = Field(default=2, description="The maximum number of items to return")
+    maxItems: int = Field(default=5, description="The maximum number of items to return")
     propertyType: Literal["Apartments", "Hotels", "Hostels", "Guest houses", 
                           "Homestays", "Bed and breakfasts", "Holiday homes", 
                           "Boats","Villas", "Motels", "Resorts", "Holiday parks", 
