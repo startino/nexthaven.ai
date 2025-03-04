@@ -6,15 +6,30 @@ import HomeScreen from './components/HomeScreen';
 import HistoryScreen from './components/HistoryScreen';
 import LoadingScreen from './components/LoadingScreen';
 import BookingScreen from './components/BookingScreen';
-import { propertyService } from './services/api';
-
+import { propertyService, PropertyResult } from './services/api';
 type Screen = 'home' | 'search' | 'loading' | 'compare' | 'history' | 'booking';
+
+const transformResponse = (property: PropertyResult): PropertyResult => {
+  return {
+    id: property.id,
+    url: property.url,
+    name: property.name,
+    price: property.price,
+    location: property.location,
+    rooms: property.rooms,
+    baths: property.baths,
+    amenities: property.amenities,
+    score: property.score,
+    image: property.image,
+    gallery: property.gallery,
+  };
+};
 
 function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState<any>(null);
-  const [topProperties, setTopProperties] = useState<any[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyResult | null>(null);
+  const [topProperties, setTopProperties] = useState<PropertyResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const handleSearch = async (query: string) => {
@@ -42,7 +57,7 @@ function App() {
         },
         (property) => {
           console.log('Received property:', property);
-          setTopProperties(prev => [...prev, property]);
+          setTopProperties(prev => [...prev, transformResponse(property)]);
         }
       );
       

@@ -16,7 +16,8 @@ interface PropertyEvaluationRequest {
   max_results: number;
 }
 
-interface PropertyResult {
+export interface PropertyResult {
+  id: number;
   url: string;
   name: string;
   price: number;
@@ -56,20 +57,9 @@ const transformRequest = (payload: PropertyEvaluationRequest) => {
   };
 };
 
-// class Result(BaseModel):
-//     url: str
-//     name: str
-//     price: float
-//     location: str
-//     rooms: int
-//     baths: int
-//     amenities: list[str]
-//     score: str
-//     image: str
-//     gallery: list[str] = Field(default_factory=list, description="List of image URLs extracted from the property listing")
-
 const transformResponse = (property: PropertyResult): PropertyResult => {
   return {
+    id: Math.random(),
     url: property.url,
     name: property.name,
     price: property.price,

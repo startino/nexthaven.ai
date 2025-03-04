@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, ArrowLeft, Sparkles } from 'lucide-react';
+import { PropertyResult } from '../services/api';
 
 interface PropertyImages {
   living: string[];
@@ -24,7 +25,7 @@ interface Property {
 }
 
 interface ComparisonScreenProps {
-  properties: Property[];
+  properties: PropertyResult[];
   onWinnerSelected: (property: Property) => void;
   onBack: () => void;
 }
@@ -82,10 +83,6 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
           <div className="text-center">
             <div className="font-semibold">{property.baths}</div>
             <div className="text-sm text-gray-500">Baths</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold">{property.rooms * 400}</div>
-            <div className="text-sm text-gray-500">sqft</div>
           </div>
         </div>
 
@@ -244,9 +241,6 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                     </div>
                     <div className="px-4 py-2 rounded-full bg-white/10">
                       <span className="text-white/90">{selectedProperty.baths} Baths</span>
-                    </div>
-                    <div className="px-4 py-2 rounded-full bg-white/10">
-                      <span className="text-white/90">{selectedProperty.rooms * 400} sqft</span>
                     </div>
                   </div>
 
