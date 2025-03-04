@@ -66,7 +66,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         
         # Evaluate properties
         evaluate_agent = EvaluateAgent()
-        results = evaluate_agent.evaluate(generated_req_obj, properties, max_workers=5)
+        results = await evaluate_agent.evaluate(generated_req_obj, properties)
         
         # Limit to requested number of results
         top_results = results[:request.max_results]
