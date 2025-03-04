@@ -1,0 +1,626 @@
+{
+  "https://www.booking.com/hotel/gb/thistletower.html": {
+    "name": "The Tower Hotel, London",
+    "location": "Tower Hamlets, London",
+    "score": "7.8",
+    "review_count": "21,263 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/514765560.webp?k=faa525d91d747513765916ded7f9cc0be926cbc28b0ff0371252b8835174dc49&o="
+  },
+  "https://www.booking.com/hotel/gb/cannon-street-serviced-apartments-greater-london.html": {
+    "name": "Cannon Street Serviced Apartments by LovelyStay",
+    "location": "City of London, London",
+    "score": "9.2",
+    "review_count": "36 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/624236091.webp?k=1d25fd2416e75d2d0ed06fc533dc114a04e26cb82a7f898e8c435540948cce25&o="
+  },
+  "https://www.booking.com/hotel/gb/cavendishstjames.html": {
+    "name": "The Cavendish London",
+    "location": "Westminster Borough, London",
+    "score": "8.2",
+    "review_count": "3,640 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/246928169.webp?k=9e14282494c412efd9bdbd1add27af16ef9994db77dbe23a03ea9460ae08c7af&o="
+  },
+  "https://www.booking.com/hotel/gb/cumberlandhotellondon.html": {
+    "name": "The Cumberland, London",
+    "location": "Westminster Borough, London",
+    "score": "8.0",
+    "review_count": "8,385 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/499495248.webp?k=7c6b043cbdf52da7430b7377f67767c50461c5a1a36d8b3b86a722a69543f3ae&o="
+  },
+  "https://www.booking.com/hotel/gb/buckingham-palace-residences-by-q-apartments.html": {
+    "name": "Buckingham Palace Residences by Aeria Apartments",
+    "location": "Westminster Borough, London",
+    "score": "8.6",
+    "review_count": "906 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/395338968.webp?k=2d97b23236ace2e5de38c6f755bfec42096c87e9a4a04a268322d5bb53b8d4b6&o="
+  },
+  "https://www.booking.com/hotel/gb/ibis-london-blackfriars.html": {
+    "name": "ibis London Blackfriars",
+    "location": "Southwark, London",
+    "score": "8.0",
+    "review_count": "6,654 reviews",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/311378837.webp?k=ae28a1f464498c8ce78dfb0d7dc8fb9a60a2fcaed0f39251947bc3e6024528a0&o="
+  },
+  "https://www.booking.com/hotel/gb/farringdon-serviced-apartments-greater-london.html": {
+    "name": "Barbican Serviced Apartments by LovelyStay",
+    "location": "City of London, London",
+    "score": "9.4",
+    "review_count": "181 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/649284382.webp?k=f49953e0b0456d6475af2a624849b4fd720eb19674de1096af3413f00a2ae2ef&o="
+  },
+  "https://www.booking.com/hotel/gb/monument-apartments-greater-london1.html": {
+    "name": "Monument Serviced Apartments by LovelyStay",
+    "location": "City of London, London",
+    "score": "9.1",
+    "review_count": "228 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/621802520.webp?k=4422501af722042f7473c6c4051e49288b0defd06b893d83dea582f584fd273b&o="
+  },
+  "https://www.booking.com/hotel/gb/strandpalace.html": {
+    "name": "Strand Palace",
+    "location": "Westminster Borough, London",
+    "score": "8.4",
+    "review_count": "15,090 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/260560238.webp?k=33c832ff2e05fafebad2671e0eea997fce4f778195beb6f16973803548a6f938&o="
+  },
+  "https://www.booking.com/hotel/gb/stamford-bridge-hotel-london.html": {
+    "name": "Stamford Bridge Hotel London",
+    "location": "Hammersmith and Fulham, London",
+    "score": "7.8",
+    "review_count": "5,523 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/248337798.webp?k=67b4790619c3051a40176ed079c31ad705b695e2d25ffa9a6f2e5c9439190210&o="
+  },
+  "https://www.booking.com/hotel/gb/parkinternational.html": {
+    "name": "Park International Hotel",
+    "location": "Kensington and Chelsea, London",
+    "score": "7.7",
+    "review_count": "6,449 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/176866835.webp?k=cfab64f473601fe5d6bc74f66e60fe15518a56d6d8fc9ca335cc3654c0305f13&o="
+  },
+  "https://www.booking.com/hotel/gb/westpointhotel.html": {
+    "name": "Westpoint Hotel",
+    "location": "Westminster Borough, London",
+    "score": "6.9",
+    "review_count": "71 reviews",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/298289341.webp?k=efffcda797a9638949737c6fae504be917b4bd26a21079b932a71400beb6f562&o="
+  },
+  "https://www.booking.com/hotel/gb/bow-lane-by-q-apartments.html": {
+    "name": "Bow Lane by Aeria Apartments",
+    "location": "City of London, London",
+    "score": "8.8",
+    "review_count": "166 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/494833309.webp?k=4ec9c3d5e9c4ce4cafc209776021075a385817261446b32210378bc9ae634097&o="
+  },
+  "https://www.booking.com/hotel/gb/park-plaza-county-hall.html": {
+    "name": "Park Plaza County Hall London",
+    "location": "Lambeth, London",
+    "score": "8.6",
+    "review_count": "11,671 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/511738782.webp?k=d628bd74dbfea7f53739f721456dd9fac7f60824e3cb73f8cd406bdf358b5f3a&o="
+  },
+  "https://www.booking.com/hotel/gb/new-chelsea-cloisters.html": {
+    "name": "Chelsea Cloisters",
+    "location": "Kensington and Chelsea, London",
+    "score": "7.8",
+    "review_count": "3,938 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/580222089.webp?k=beb7a4b953d84a52de695ec27834e7e49bed6e108df6046d696ba7af3ae2dcc5&o="
+  },
+  "https://www.booking.com/hotel/gb/ellen-kensington.html": {
+    "name": "Ellen Kensington",
+    "location": "Kensington and Chelsea, London",
+    "score": "8.0",
+    "review_count": "434 reviews",
+    "stars": 5,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/594002747.webp?k=bddf7c3aae23c322842e2dd3a145635780f56c36095664959c7a0d13fa7f0dba&o="
+  },
+  "https://www.booking.com/hotel/gb/arlington-house-apartments.html": {
+    "name": "Arlington House Apartments",
+    "location": "Westminster Borough, London",
+    "score": "8.5",
+    "review_count": "1,102 reviews",
+    "stars": 5,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/270665592.webp?k=72870820a7d085751af2bf8a9c9a975f5c00b7d8bb92131caf2e4f189ecc1911&o="
+  },
+  "https://www.booking.com/hotel/gb/farringdon-serviced-apartments-greater-london2.html": {
+    "name": "Farringdon Serviced Apartments by LovelyStay",
+    "location": "Camden, London",
+    "score": "9.4",
+    "review_count": "113 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/534510741.webp?k=00fc97881421b69868a4d6172d6df028b92e0ba1d2260a55e6872891151edd52&o="
+  },
+  "https://www.booking.com/hotel/gb/the-other-house-south-kensington.html": {
+    "name": "The Other House South Kensington",
+    "location": "Kensington and Chelsea, London",
+    "score": "8.8",
+    "review_count": "5,228 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/493994856.webp?k=194e645afb1ff8146a0f7a86f6306fb92024645613c8ad538dedaca47d6b90af&o="
+  },
+  "https://www.booking.com/hotel/gb/radissonblugrafton.html": {
+    "name": "Radisson Blu Hotel, London Euston Square - formerly Grafton",
+    "location": "Camden, London",
+    "score": "7.9",
+    "review_count": "9,932 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/348549787.webp?k=e55d4e748eeca9eba6497029e10c8445addcded963aefd46edd6528614b70b9e&o="
+  },
+  "https://www.booking.com/hotel/gb/mercure-london-earls-court.html": {
+    "name": "Mercure London Earls Court",
+    "location": "Hammersmith and Fulham, London",
+    "score": "8.3",
+    "review_count": "352 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/570051758.webp?k=65826e133525f57d8520296827c7b5650e27ecd2fceba56c289085f6ba7be03d&o="
+  },
+  "https://www.booking.com/hotel/gb/monument-apartments-greater-london.html": {
+    "name": "StayInn Monument",
+    "location": "City of London, London",
+    "score": "7.2",
+    "review_count": "994 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/287430654.webp?k=f5e47c824dc56b1ba36ddf1dd52c8fa4f068852ed2691917c13e72fbcac08af6&o="
+  },
+  "https://www.booking.com/hotel/gb/park-grand-paddington-court.html": {
+    "name": "Park Grand Paddington Court",
+    "location": "Westminster Borough, London",
+    "score": "7.2",
+    "review_count": "8,825 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/48277296.webp?k=8e0d3467c30ab3d41dc333907c40c19674979d483828d3d6120f6061d39484fa&o="
+  },
+  "https://www.booking.com/hotel/gb/royalcourtapartments.html": {
+    "name": "The Westbourne Hyde Park",
+    "location": "Westminster Borough, London",
+    "score": "8.5",
+    "review_count": "4,895 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/84109278.webp?k=c7ca47c62e44763d730ce08a84b59257096d5044af40e2601dd83d90d79d5405&o="
+  },
+  "https://www.booking.com/hotel/gb/inglewood-hub.html": {
+    "name": "Inglewood Hub",
+    "location": "Tower Hamlets, London",
+    "score": "6.7",
+    "review_count": "377 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/356485028.webp?k=52df507597956c19ee66346df2c65215e9615e009690b1e22e12180e4bb0ce8a&o="
+  },
+  "https://www.booking.com/hotel/gb/the-lalit-london.html": {
+    "name": "The LaLit London",
+    "location": "Southwark, London",
+    "score": "8.8",
+    "review_count": "2,844 reviews",
+    "stars": 5,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/87979259.webp?k=a3400ad907abd3e7b70b7c4167f977e6725a1fe9fd7240d897b701e2b2a8cbc7&o="
+  },
+  "https://www.booking.com/hotel/gb/cromwell-serviced-apartment.html": {
+    "name": "StayPrime Kensington Serviced Apartments",
+    "location": "Kensington and Chelsea, London",
+    "score": "8.5",
+    "review_count": "2,488 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/294710377.webp?k=e6ea6aaf383b5f1ddd893f9b68ce5a76752043690d02d5bb06cdf68b5d6dd1a6&o="
+  },
+  "https://www.booking.com/hotel/gb/good-london.html": {
+    "name": "Good Hotel London",
+    "location": "Newham, London",
+    "score": "8.2",
+    "review_count": "3,300 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/245650871.webp?k=2e2ed30748458f8d703f80d4b2cda3f8fdb06c4bc1ac432e32fc40c219f189a0&o="
+  },
+  "https://www.booking.com/hotel/gb/ace.html": {
+    "name": "The W14 Kensington",
+    "location": "Hammersmith and Fulham, London",
+    "score": "8.0",
+    "review_count": "179 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/646856839.webp?k=1948dfde8cf64da825f1ccdfd83e88adcc16168cc7a968fce0c45afb423d4676&o="
+  },
+  "https://www.booking.com/hotel/gb/home-grown-club.html": {
+    "name": "Home Grown - Private Member's Club",
+    "location": "Westminster Borough, London",
+    "score": "8.5",
+    "review_count": "490 reviews",
+    "stars": 5,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/279664358.webp?k=e6957ab9016c6cb8b28598c1491a6ec6d74379bf799ccf322fbc74e2a2c19c76&o="
+  },
+  "https://www.booking.com/hotel/gb/clover-court-london.html": {
+    "name": "Clover Court by Aeria Apartments",
+    "location": "Tower Hamlets, London",
+    "score": "8.5",
+    "review_count": "1,615 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/156543645.webp?k=fab226ef3702f4786d1b17df248edea1e56e73b6e9919070eeadf5983b76cafd&o="
+  },
+  "https://www.booking.com/hotel/gb/merchant-square-paddington-greater-london1.html": {
+    "name": "Merchant Square Apartments",
+    "location": "Westminster Borough, London",
+    "score": "8.6",
+    "review_count": "11 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/645385442.webp?k=3e8241b5136ca096a96e675ab49baacc18ce8b77f5030bc2d8e41582dcec58fc&o="
+  },
+  "https://www.booking.com/hotel/gb/174g-a-london-spacious-family-apartment.html": {
+    "name": "Clerkenwell Apartments by DC London Rooms",
+    "location": "Islington, London",
+    "score": "4.7",
+    "review_count": "62 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/257182789.webp?k=2933320f5de38930ad5bebe0341ef0a11078c523526afca99380a3b055ddc1a6&o="
+  },
+  "https://www.booking.com/hotel/gb/clubquartersgracechurchlondon.html": {
+    "name": "Club Quarters Hotel London City, London",
+    "location": "City of London, London",
+    "score": "8.3",
+    "review_count": "1,065 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/583560081.webp?k=14a1dec8f9ddcd469488210f2cb7afadb1b3b411070f6c3a85fb015f90117cc4&o="
+  },
+  "https://www.booking.com/hotel/gb/park-plaza-westminster-bridge.html": {
+    "name": "Park Plaza London Westminster Bridge",
+    "location": "Lambeth, London",
+    "score": "8.4",
+    "review_count": "24,702 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/493258218.webp?k=ce1110316ca5c0c87c51304853e9d703330daa108bde49e6e426a4e14baf65de&o="
+  },
+  "https://www.booking.com/hotel/gb/wells-court-by-q-apartments.html": {
+    "name": "Wells Court by Aeria Apartments",
+    "location": "Camden, London",
+    "score": "8.7",
+    "review_count": "162 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/554773156.webp?k=b398ff0e947dd2e3479ee676b35934fa2fd0904d2fe2031641b2dcec0f39a17f&o="
+  },
+  "https://www.booking.com/hotel/gb/art-otel-london-battersea-power-station.html": {
+    "name": "art'otel London Battersea Power Station, Powered by Radisson Hotels",
+    "location": "Wandsworth, London",
+    "score": "8.8",
+    "review_count": "3,230 reviews",
+    "stars": 5,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/426701951.webp?k=dfb7f7c8ffb358c937736aaa0a14c55190d14678c3b7e7b370e19175de733388&o="
+  },
+  "https://www.booking.com/hotel/gb/radissonbluvanderbilt.html": {
+    "name": "Radisson Blu Hotel, London South Kensington - formerly Vanderbilt",
+    "location": "Kensington and Chelsea, London",
+    "score": "7.2",
+    "review_count": "5,395 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/646622773.webp?k=24d90ec957a1495b2744814b29aba63af4c31f57c31514b946af235833187121&o="
+  },
+  "https://www.booking.com/hotel/gb/serene-double-room-in-a-quiet-flat.html": {
+    "name": "Serene Double Room",
+    "location": "Tower Hamlets, London",
+    "score": "1.0",
+    "review_count": "1 review",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/529560872.webp?k=997d2eeb67410cf41a6da0ba75ca55888774622cbef7ade2abee0f6ecb09b2bc&o="
+  },
+  "https://www.booking.com/hotel/gb/bob-w-hyde-park.html": {
+    "name": "Bob W Hyde Park",
+    "location": "Westminster Borough, London",
+    "score": "8.3",
+    "review_count": "986 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/423932795.webp?k=0cc3e16da1be8be52de4d81afa3e10d40cdbaf98e5bcde73617e80860078cc7b&o="
+  },
+  "https://www.booking.com/hotel/gb/windmill-guest-house.html": {
+    "name": "The Windmill Hotel",
+    "location": "Camden, London",
+    "score": "8.2",
+    "review_count": "1,411 reviews",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/14704511.webp?k=2b9644ea3eb9f2dc655258656ded976b7bf08c37c11ab30ea147567f829978c5&o="
+  },
+  "https://www.booking.com/hotel/gb/arte-stays-serviced-apartments.html": {
+    "name": "Arte Stays Serviced Apartments Premium Studios, Finsbury Park",
+    "location": "Islington, London",
+    "score": "8.7",
+    "review_count": "106 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/552118949.webp?k=6ff84a791434e26b710925fcdca3f67345c7cf18c25b263f83f3c54d96f9cd4b&o="
+  },
+  "https://www.booking.com/hotel/gb/new-luxurious-stunning-block-apartments-in-central-london.html": {
+    "name": "NEW Luxurious Stunning Block Apartments in Central London",
+    "location": "Wandsworth, London",
+    "score": "8.5",
+    "review_count": "37 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/612340669.webp?k=f01f1a585329be871fc04f049acf3ba978aec4f75e1a6816474161cfa72215e0&o="
+  },
+  "https://www.booking.com/hotel/gb/middle-eight.html": {
+    "name": "Middle Eight - Covent Garden - Preferred Hotels and Resorts",
+    "location": "Camden, London",
+    "score": "8.8",
+    "review_count": "4,985 reviews",
+    "stars": 5,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/276433490.webp?k=8275328023f48b26ea4f0ef1e37e92ac03c14a6ebecd5c2b2cb051338c5f24ce&o="
+  },
+  "https://www.booking.com/hotel/gb/montcalm-chilworth-townhouse.html": {
+    "name": "Montcalm Chilworth Townhouse, Paddington",
+    "location": "Westminster Borough, London",
+    "score": "7.8",
+    "review_count": "8,808 reviews",
+    "stars": 5,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/147562016.webp?k=3f0bdc4803ee613616e5bcbd2f897169d9795a0a9c2b0d893a4d1021e294150a&o="
+  },
+  "https://www.booking.com/hotel/gb/oyo-golden-star.html": {
+    "name": "Golden Star Hotel",
+    "location": "Westminster Borough, London",
+    "score": "",
+    "review_count": "",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/644627524.webp?k=512b43bc131ecdb1eb9a29b38b06996cc03951d48f1b6a0fe257f16aad6b4a53&o="
+  },
+  "https://www.booking.com/hotel/gb/haven.html": {
+    "name": "Haven Hotel",
+    "location": "Westminster Borough, London",
+    "score": "7.1",
+    "review_count": "3,616 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/49745204.webp?k=c00d3e781a641f540b529a83e7b33609ff6185155f0e9cdedd47860b68d18690&o="
+  },
+  "https://www.booking.com/hotel/gb/central-london-studio-london.html": {
+    "name": "Central London Studio",
+    "location": "Wandsworth, London",
+    "score": "7.8",
+    "review_count": "34 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/631311716.webp?k=106add664673899f689c238098cd9ea9e913969df768b83a313e81b5e23ad2f7&o="
+  },
+  "https://www.booking.com/hotel/gb/cosy-studio-greater-london4.html": {
+    "name": "Cosy studio",
+    "location": "Islington, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/646464739.webp?k=bb817c20eca9b08f11da7e2d7c1c402e0b9aa77eacef7822dba1343aee368cb8&o="
+  },
+  "https://www.booking.com/hotel/gb/luxury-mezzanine-apartment-in-mezzanine-garden-square.html": {
+    "name": "Luxury mezzanine apartment in Kensington / Earls Court Garden Square",
+    "location": "Kensington and Chelsea, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/646279298.webp?k=d9a025dc2e7ebd570ec114e90ca212f0d43adaa4d7fbfc6c00060d2bff8170de&o="
+  },
+  "https://www.booking.com/hotel/gb/dockside.html": {
+    "name": "Dockside Hotel",
+    "location": "Tower Hamlets, London",
+    "score": "6.0",
+    "review_count": "1,540 reviews",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/23560012.webp?k=e2bcc7e0e622ebf9f39e019aed9c0e970f973abad1687eefc9a1f79d7fdcb1b6&o="
+  },
+  "https://www.booking.com/hotel/gb/central-cosy-flat-greater-london.html": {
+    "name": "Central Cosy Flat, Long Term Welcome",
+    "location": "Kensington and Chelsea, London",
+    "score": "8.6",
+    "review_count": "17 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/570432616.webp?k=fd65d2a5c28eb5a36c1bdecde5051f448e9848c85950f5c08faa5a594500dc9e&o="
+  },
+  "https://www.booking.com/hotel/gb/lha-paddington.html": {
+    "name": "LHA Paddington Hostel",
+    "location": "Westminster Borough, London",
+    "score": "7.5",
+    "review_count": "188 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/592921641.webp?k=f4165a7e387eed1eb920be0b7b76528b0d4ccdbfb2d228becb40c08f56f6a0f2&o="
+  },
+  "https://www.booking.com/hotel/gb/cosy-one-bedroom-flat-greater-london3.html": {
+    "name": "Cosy one bedroom flat",
+    "location": "Islington, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/648566915.webp?k=89b0a7748e1429c71c8489305f171b77abe36305f0b48cc0892f86ef0bc8f28f&o="
+  },
+  "https://www.booking.com/hotel/gb/anson-modern-and-spacious-loft-suite.html": {
+    "name": "Anson Hotel Modern And Spacious Loft Suite",
+    "location": "Islington, London",
+    "score": "7.8",
+    "review_count": "85 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/439815534.webp?k=bc9ebecd9eb51b45b80a2692743ef0577a4d9f7855629ebaf04b3b8668482937&o="
+  },
+  "https://www.booking.com/hotel/gb/doubletree-by-hilton-london-excel.html": {
+    "name": "DoubleTree By Hilton London Excel",
+    "location": "Newham, London",
+    "score": "8.2",
+    "review_count": "5,302 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/484048797.webp?k=4002778e21ec18313e93e281998dd218e8452135b13960b9af733d9b7203119f&o="
+  },
+  "https://www.booking.com/hotel/gb/courtyard-by-marriott-london-city-airport.html": {
+    "name": "Courtyard by Marriott London City Airport",
+    "location": "Newham, London",
+    "score": "8.6",
+    "review_count": "3,959 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/627169564.webp?k=a48d04719c839f3710f8e8783a90b0cda1f733d61ed1da8b774bfdabb1c94477&o="
+  },
+  "https://www.booking.com/hotel/gb/hampton-by-hilton-london-docklands.html": {
+    "name": "Hampton By Hilton London Docklands",
+    "location": "Newham, London",
+    "score": "8.3",
+    "review_count": "6,052 reviews",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/484047964.webp?k=f0a5d7dc1da6285610725fa97ef97af2761599d01f5f967cfa43799cdcda7827&o="
+  },
+  "https://www.booking.com/hotel/gb/luxury-2-bedrooms-apartment-in-south-kensington-greater-london.html": {
+    "name": "Luxury 2 Bedrooms Apartment in South Kensington",
+    "location": "Kensington and Chelsea, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/651349852.webp?k=cb565e67b33dfc75f04ef4c0ba5de462ffc992b119a4183ce0ceb072e978e933&o="
+  },
+  "https://www.booking.com/hotel/gb/london-skylineviews-2bed-2-bath-flat-near-canary-wharf.html": {
+    "name": "London Skylineviews 2 bed 2 bath flat near Canary Wharf, o2 & Excel",
+    "location": "Tower Hamlets, London",
+    "score": "9.1",
+    "review_count": "103 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/420633647.webp?k=38d39778e617e4100295942ee12c520a648b0d37cc494afc895c66286e790709&o="
+  },
+  "https://www.booking.com/hotel/gb/hilton-london-metropole.html": {
+    "name": "Hilton London Metropole",
+    "location": "Westminster Borough, London",
+    "score": "7.7",
+    "review_count": "6,582 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/545934968.webp?k=5422a3b8938e36080465e6692fe9eeae75ece586c983f7bd903fd4971f222f2e&o="
+  },
+  "https://www.booking.com/hotel/gb/charming-sohos-house-greater-london.html": {
+    "name": "Charming Soho's House",
+    "location": "Westminster Borough, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/649236074.webp?k=f91657cab204800c0a909cdd89768c47d40203b706dc7480b338f62cd92bfe53&o="
+  },
+  "https://www.booking.com/hotel/gb/studio-in-central-near-cathedral.html": {
+    "name": "Studio in Central near Cathedral",
+    "location": "Islington, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/649309223.webp?k=72cdd4d19c7badda6304bd41ed131a7e7c7710ced8017aa81d66df80e59a17e1&o="
+  },
+  "https://www.booking.com/hotel/gb/moxy-london-stratford.html": {
+    "name": "Moxy London Stratford",
+    "location": "Newham, London",
+    "score": "8.3",
+    "review_count": "5,020 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/630149274.webp?k=bf2f0121ae6732673168f10c0cd7b58869784b51365e2325017e42a36fb5c3f9&o="
+  },
+  "https://www.booking.com/hotel/gb/single-room-near-bayswater-close-to-tube-amp-bus.html": {
+    "name": "Single room near Bayswater close to tube & Bus",
+    "location": "Brent, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/649829762.webp?k=cdf405af04de07f17fdea1f4ebd9d65c84adde487d0aa795ab23558d90a87f28&o="
+  },
+  "https://www.booking.com/hotel/gb/the-egerton-luxury-apartments.html": {
+    "name": "The Egerton - Luxury Apartments",
+    "location": "Kensington and Chelsea, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/650258118.webp?k=f3dffd174bcd500882a2ec461c215ab8dbcf1982f5e1dc538c471693eb4e3442&o="
+  },
+  "https://www.booking.com/hotel/gb/sheraton-express-london-euston.html": {
+    "name": "Four Points Flex by Sheraton London Euston",
+    "location": "Camden, London",
+    "score": "7.3",
+    "review_count": "523 reviews",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/596006708.webp?k=55def041b7c536f5f02febe318ae3acc7dc2066860e83719282c30e2dfdb445e&o="
+  },
+  "https://www.booking.com/hotel/gb/royalcambridgehotel.html": {
+    "name": "Royal Cambridge Hotel",
+    "location": "Westminster Borough, London",
+    "score": "6.5",
+    "review_count": "1,247 reviews",
+    "stars": 3,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/81104503.webp?k=f44eca66312a8f571f0167b59963f6fbdf61a8c85e6f1512a51fc2493631c734&o="
+  },
+  "https://www.booking.com/hotel/gb/blueground-chelsea-wd-nr-museums-park-lon-634.html": {
+    "name": "Blueground Chelsea wd nr museums park LON-634",
+    "location": "Westminster Borough, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/646571988.webp?k=f2b94423b2324cd8a2144d6a79ac68258a45ed64386ef8c0b3c3f5faf4fbf575&o="
+  },
+  "https://www.booking.com/hotel/gb/close-to-central-london-4-bedroom-house-free-car-parking-7-beds-sleeps-16-people.html": {
+    "name": "Close To Central London 4 Bedroom House Free Car Parking 7 beds Sleeps 16 people 2 Bathrooms",
+    "location": "Lewisham, London",
+    "score": "6.5",
+    "review_count": "2 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/505106863.webp?k=263acbd3b2cc05f7c4c2ba00dee8f752201c741df2b5b7557d2a59a006d21ff7&o="
+  },
+  "https://www.booking.com/hotel/gb/blueground-limehouse-near-shopping-dining-lon-535.html": {
+    "name": "Blueground Limehouse near shopping dining LON-535",
+    "location": "Tower Hamlets, London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/646571754.webp?k=c7ff5345e6c0487ccb8f2bb6d7d6038da1e9130bababb4bbadb32cdb913f55b4&o="
+  },
+  "https://www.booking.com/hotel/gb/radisson-red-london-greenwich-the-o2.html": {
+    "name": "Radisson RED London Greenwich The O2",
+    "location": "Greenwich, London",
+    "score": "7.2",
+    "review_count": "1,137 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/316587760.webp?k=bfc3b1132b39bf40574fe1d1b52edd4c13ee75791c6a7cd417c50b19cefbc06b&o="
+  },
+  "https://www.booking.com/hotel/gb/dorsett-canary-wharf.html": {
+    "name": "Dorsett Hotel Canary Wharf",
+    "location": "City of London, London",
+    "score": "",
+    "review_count": "",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/644906406.webp?k=b70f0cf1d74d4602b11c06ca3c93a3f5730209581682dc5d7786e390c29dcbe2&o="
+  },
+  "https://www.booking.com/hotel/gb/city-view.html": {
+    "name": "City View Hotel Roman Road",
+    "location": "Tower Hamlets, London",
+    "score": "4.2",
+    "review_count": "674 reviews",
+    "stars": 2,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/265038662.webp?k=1db5fce2ac56817a223c40f41965ff4deaca08e57ba465539ce286f81570e1ec&o="
+  },
+  "https://www.booking.com/hotel/gb/thistlemarblearch.html": {
+    "name": "Thistle London Marble Arch",
+    "location": "Westminster Borough, London",
+    "score": "7.4",
+    "review_count": "8,832 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/545226957.webp?k=2eb98472455388b2f8a981df396297cb0fcfc0a6406e2d470b0771275e08e396&o="
+  },
+  "https://www.booking.com/hotel/gb/london-marriott-maida-vale.html": {
+    "name": "London Marriott Maida Vale",
+    "location": "Camden, London",
+    "score": "8.4",
+    "review_count": "2,785 reviews",
+    "stars": 4,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/442696092.webp?k=223fa8e1545c1f3c25067bdec5f9fc43ec3b7c1f84b56a4c927aed3a37ca4fcc&o="
+  },
+  "https://www.booking.com/hotel/gb/dover-castle-hostel.html": {
+    "name": "Dover Castle Hostel",
+    "location": "Southwark, London",
+    "score": "7.5",
+    "review_count": "4,978 reviews",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/62103606.webp?k=db75e7d388a62f30d5490201034d50bd0278659f20f4fc0b03043b1a479e0ac3&o="
+  },
+  "https://www.booking.com/hotel/gb/twenty-apartment.html": {
+    "name": "Twenty Apartment",
+    "location": "London",
+    "score": "",
+    "review_count": "",
+    "stars": 0,
+    "image": "https://cf.bstatic.com/xdata/images/hotel/square240/651319066.webp?k=9194ce435a35edcb3feac9d29d4803cc4e4a0d236b9fd1fcfad2ddb512e6390e&o="
+  }
+}
