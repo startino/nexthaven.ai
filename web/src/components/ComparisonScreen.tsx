@@ -210,24 +210,22 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
               </div>
 
               <div className="p-6 space-y-8">
-                {selectedProperty.gallery.map((image: string, index: number) => (
-                  <div key={index} className="space-y-3">
-                    <h3 className="text-xl font-semibold text-white/90 capitalize">{index}</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {selectedProperty.gallery.map((image: string, index: number) => (
-                        <motion.div
-                          key={`${index}`}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="relative aspect-video rounded-xl overflow-hidden"
-                        >
-                          <img src={image} alt={`${index} view ${index + 1}`} className="w-full h-full object-cover" />
-                        </motion.div>
-                      ))}
-                    </div>
+                <div className="space-y-3">
+                  <h3 className="text-xl font-semibold text-white/90 capitalize">Gallery</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedProperty.gallery.map((image: string, index: number) => (
+                      <motion.div
+                        key={`${index}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="relative aspect-video rounded-xl overflow-hidden"
+                      >
+                        <img src={image} alt={`${index} view ${index + 1}`} className="w-full h-full object-cover" />
+                      </motion.div>
+                    ))}
                   </div>
-                ))}
+                </div>
 
                 <div className="space-y-6">
                   <div>
