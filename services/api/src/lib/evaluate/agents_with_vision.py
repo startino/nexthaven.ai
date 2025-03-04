@@ -21,7 +21,7 @@ from src.lib.evaluate.analyze import AnalyzeUserRequirement
 
 class EvaluateAgent:
     def __init__(self):
-        self.llm = o3_mini()
+        self.llm = gpt_4o()
         self.vision_llm = gpt_4o()
 
     def evaluate(self, user_request: GeneratedRequirement, properties: list[ApifyResponse], max_workers: int = 5, include_images: bool = True):
@@ -87,7 +87,7 @@ class EvaluateAgent:
         # Return top 5 results
         return sorted_results[:5]
     
-    async def _analyze_images(self, image_urls: List[str], max_images: int = 3) -> str:
+    async def _analyze_images(self, image_urls: List[str], max_images: int = 5) -> str:
         """Analyze property images using vision model"""
         if not image_urls:
             return "No images available for analysis."
@@ -95,56 +95,30 @@ class EvaluateAgent:
         # Limit the number of images to analyze
         image_urls = image_urls[:max_images]
         
-        try:
-            # Download images in parallel
-            async with httpx.AsyncClient() as client:
-                image_responses = await asyncio.gather(
-                    *[client.get(url, timeout=10.0) for url in image_urls],
-                    return_exceptions=True
-                )
-            
-            # Process successful image downloads
-            valid_images = []
-            for i, response in enumerate(image_responses):
-                if isinstance(response, Exception):
-                    logging.warning(f"Failed to download image {i}: {str(response)}")
-                    continue
-                    
-                if response.status_code == 200:
-                    # Convert image to base64
-                    image_data = base64.b64encode(response.content).decode('utf-8')
-                    valid_images.append(
+        # Create prompt for vision model
+        messages = [
+            HumanMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": "Analyze these property images and describe the style, vibe, and aesthetic of the property. Focus on decor, design elements, ambiance, and overall feel. Is it modern, traditional, minimalist, luxurious, cozy, etc.?"
+                    },
+                    *[
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_data}"
+                                "url": url
                             }
-                        }
-                    )
-            
-            if not valid_images:
-                return "Failed to download any property images for analysis."
-            
-            # Create prompt for vision model
-            messages = [
-                HumanMessage(
-                    content=[
-                        {
-                            "type": "text",
-                            "text": "Analyze these property images and describe the style, vibe, and aesthetic of the property. Focus on decor, design elements, ambiance, and overall feel. Is it modern, traditional, minimalist, luxurious, cozy, etc.?"
-                        },
-                        *valid_images
+                        } for url in image_urls
                     ]
-                )
-            ]
+                ]
+            )
+        ]
+        
+        # Get analysis from vision model
+        response = await self.vision_llm.ainvoke(messages)
+        return f"Image Analysis: {response.content}"
             
-            # Get analysis from vision model
-            response = await self.vision_llm.ainvoke(messages)
-            return f"Image Analysis: {response.content}"
-            
-        except Exception as e:
-            logging.error(f"Error analyzing images: {str(e)}")
-            return "Error analyzing property images."
     
     def _evaluate_single_property(self, prompt, user_request, property_data, include_images=True):
         """Evaluate a single property using the LLM"""
@@ -215,7 +189,7 @@ class EvaluateAgent:
 # Async version for even better performance
 class AsyncEvaluateAgent:
     def __init__(self):
-        self.llm = o3_mini()
+        self.llm = gpt_4o()
         
     async def evaluate(self, user_request: GeneratedRequirement, properties: list[ApifyResponse], max_concurrent: int = 5, include_images: bool = True):
         """

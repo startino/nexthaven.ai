@@ -11,14 +11,14 @@ from langchain_openai import ChatOpenAI
 
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
 from src.models.apify import ApifyRequest, ApifyResponse
-from src.interfaces.llm import o3_mini
+from src.interfaces.llm import o3_mini, gpt_4o
 from src.lib.scraper.apify import ApifyAgent
 from src.models.result import Result
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
 
 class EvaluateAgent:
     def __init__(self):
-        self.llm = o3_mini()
+        self.llm = gpt_4o()
         
     def evaluate(self, user_request: GeneratedRequirement, properties: list[ApifyResponse], max_workers: int = 5):
         """
@@ -136,7 +136,7 @@ class EvaluateAgent:
 # Async version for even better performance
 class AsyncEvaluateAgent:
     def __init__(self):
-        self.llm = o3_mini()
+        self.llm = gpt_4o()
         
     async def evaluate(self, user_request: GeneratedRequirement, properties: list[ApifyResponse], max_concurrent: int = 5):
         """
