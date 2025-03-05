@@ -3,7 +3,7 @@
 import logging
 
 from src.models.requirement import UserRequirement, GeneratedRequirement, Budget, DateRange
-from src.interfaces.llm import o3_mini
+from src.interfaces.llm import gpt_4o
 
 from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import PromptTemplate
@@ -14,7 +14,7 @@ from datetime import datetime
 class AnalyzeUserRequirement:
     
     def __init__(self):
-        self.llm = o3_mini()
+        self.llm = gpt_4o()
         self.today_date = datetime.now().strftime("%Y-%m-%d")
         
     def analyze_user_requirement(self, user_requirement: UserRequirement) -> GeneratedRequirement:

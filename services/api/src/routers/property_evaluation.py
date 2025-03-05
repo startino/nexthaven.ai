@@ -24,7 +24,6 @@ class PropertyEvaluationRequest(BaseModel):
     number_of_rooms: int = 1
     property_type: str = "Hotels"
     preferences: str
-    max_results: int = 5
 
 @router.post("/evaluate")
 async def evaluate_properties(request: PropertyEvaluationRequest):
@@ -66,10 +65,10 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         
         # Evaluate properties
         evaluate_agent = EvaluateAgent()
-        results = evaluate_agent.evaluate(generated_req_obj, properties, max_workers=5)
+        results = await evaluate_agent.evaluate(generated_req_obj, properties)
         
         # Limit to requested number of results
-        top_results = results[:request.max_results]
+        top_results = results[:5]
         
         # Convert to Result model
         formatted_results = []

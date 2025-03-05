@@ -1,18 +1,45 @@
 import React, { useState } from 'react';
-import { Search, Calendar, Users, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus } from 'lucide-react';
+import { Search, Calendar, Users, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus, Bed, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SearchScreenProps {
   onSearch: (query: string) => void;
   onBack?: () => void;
+  error?: string | null;
 }
 
+interface Budget {
+  min: number;
+  max: number;
+}
+
+const PROPERTY_TYPES = [
+  'Apartments', 
+  'Hotels', 
+  'Hostels', 
+  'Guest houses', 
+  'Homestays', 
+  'Bed and breakfasts', 
+  'Holiday homes', 
+  'Boats',
+  'Villas', 
+  'Motels', 
+  'Resorts', 
+  'Holiday parks', 
+  'Campsites', 
+  'Luxury tents'
+] as const;
+
+type PropertyType = typeof PROPERTY_TYPES[number];
+
 interface SearchForm {
-  location: string;
-  dates: string;
-  guests: number;
-  minBudget: string;
-  maxBudget: string;
+  query: string;
+  date: string;
+  budget: Budget;
+  adults: number;
+  children: number;
+  number_of_rooms: number;
+  property_type: PropertyType;
   preferences: string;
 }
 
@@ -32,15 +59,20 @@ const PREVIOUS_PREFERENCES = [
 
 type SearchStep = 'basics' | 'preferences';
 
-function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
+function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   const [currentStep, setCurrentStep] = useState<SearchStep>('basics');
   const [form, setForm] = useState<SearchForm>({
-    location: '',
-    dates: '',
-    guests: 1,
-    minBudget: '',
-    maxBudget: '',
-    preferences: ''
+    query: '',
+    date: '',
+    budget: {
+      min: 0,
+      max: 0
+    },
+    adults: 1,
+    children: 0,
+    number_of_rooms: 1,
+    property_type: 'Hotels',
+    preferences: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
@@ -48,9 +80,9 @@ function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
 
   const validateBasics = () => {
     const requiredFields = [];
-    if (!form.location) requiredFields.push('location');
-    if (!form.dates) requiredFields.push('dates');
-    if (!form.minBudget || !form.maxBudget) requiredFields.push('budget range');
+    if (!form.query) requiredFields.push('location');
+    if (!form.date) requiredFields.push('dates');
+    if (!form.budget.min || !form.budget.max) requiredFields.push('budget range');
 
     if (requiredFields.length > 0) {
       setAiMessage(`Please provide your ${requiredFields.join(', ')} to help me find the best matches for you.`);
@@ -75,8 +107,8 @@ function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
     const searchQuery = JSON.stringify({
       ...form,
       budget: {
-        min: form.minBudget,
-        max: form.maxBudget
+        min: form.budget.min,
+        max: form.budget.max
       }
     });
 
@@ -106,8 +138,8 @@ function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
           type="text"
           placeholder="Enter city or neighborhood"
           className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
-          value={form.location}
-          onChange={(e) => setForm({ ...form, location: e.target.value })}
+          value={form.query}
+          onChange={(e) => setForm({ ...form, query: e.target.value })}
         />
       </motion.div>
 
@@ -126,8 +158,8 @@ function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
             type="text"
             placeholder="e.g., March 15 - April 15"
             className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
-            value={form.dates}
-            onChange={(e) => setForm({ ...form, dates: e.target.value })}
+            value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
           />
         </motion.div>
 
@@ -140,13 +172,25 @@ function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
             <Users size={20} />
             <span className="font-medium">Guests</span>
           </div>
-          <input
+          <div className="flex items-center gap-2">
+            {/* THis is for adults. add a text for this */}
+            <span className="text-white/60">Adults</span>
+            <input
+              type="number"
+              min="1"
+              className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
+              value={form.adults}
+              onChange={(e) => setForm({ ...form, adults: parseInt(e.target.value) })}
+            />
+            <span className="text-white/60">Children</span>
+            <input
             type="number"
-            min="1"
-            className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
-            value={form.guests}
-            onChange={(e) => setForm({ ...form, guests: parseInt(e.target.value) })}
-          />
+              min="0"
+              className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
+              value={form.children}
+              onChange={(e) => setForm({ ...form, children: parseInt(e.target.value) })}
+            />
+          </div>
         </motion.div>
       </div>
 
@@ -165,17 +209,58 @@ function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
             type="number"
             placeholder="Min budget"
             className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
-            value={form.minBudget}
-            onChange={(e) => setForm({ ...form, minBudget: e.target.value })}
+            value={form.budget.min}
+            onChange={(e) => setForm({ ...form, budget: { ...form.budget, min: parseInt(e.target.value) } })}
           />
           <input
             type="number"
             placeholder="Max budget"
             className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
-            value={form.maxBudget}
-            onChange={(e) => setForm({ ...form, maxBudget: e.target.value })}
+            value={form.budget.max}
+            onChange={(e) => setForm({ ...form, budget: { ...form.budget, max: parseInt(e.target.value) } })}
           />
         </div>
+      </motion.div>
+
+      {/* Number of Rooms */}
+      <motion.div 
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10"
+      >
+        <div className="flex items-center gap-3 text-white/80 mb-2">
+          <Bed size={20} />
+          <span className="font-medium">Number of Rooms</span>
+        </div>
+        <input
+          type="number"
+          className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
+          value={form.number_of_rooms}
+          onChange={(e) => setForm({ ...form, number_of_rooms: parseInt(e.target.value) })}
+        />
+      </motion.div>
+
+      {/* Property Type - This should be a dropdown with limited options */}
+      <motion.div 
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10"
+      >
+        <div className="flex items-center gap-3 text-white/80 mb-2">
+          <Home size={20} />
+          <span className="font-medium">Property Type</span>
+        </div>
+        <select
+          value={form.property_type}
+          onChange={(e) => setForm({ ...form, property_type: e.target.value as PropertyType })}
+          className="w-full bg-white/5 text-white rounded-xl p-3 outline-none appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+        >
+          {PROPERTY_TYPES.map((type) => (
+            <option key={type} value={type} className="bg-gray-900">
+              {type}
+            </option>
+          ))}
+        </select>
       </motion.div>
 
       <motion.button
@@ -345,6 +430,13 @@ function SearchScreen({ onSearch, onBack }: SearchScreenProps) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-600/20 border border-red-600 text-red-100 p-4 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Step Content */}
         {currentStep === 'basics' && renderBasicsStep()}

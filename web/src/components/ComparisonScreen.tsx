@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, ArrowLeft, Sparkles } from 'lucide-react';
+import { PropertyResult } from '../services/api';
 
 interface PropertyImages {
   living: string[];
@@ -11,19 +12,20 @@ interface PropertyImages {
 
 interface Property {
   id: number;
-  summary_image: string;
-  images: PropertyImages;
-  price: string;
+  url: string;
+  name: string;
+  price: number;
   location: string;
-  beds: number;
+  rooms: number;
   baths: number;
-  sqft: number;
-  description: string;
   amenities: string[];
+  score: string;
+  image: string;
+  gallery: string[];
 }
 
 interface ComparisonScreenProps {
-  properties: Property[];
+  properties: PropertyResult[];
   onWinnerSelected: (property: Property) => void;
   onBack: () => void;
 }
@@ -52,7 +54,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
     >
       <div className="relative">
         <img
-          src={property.images.living[0]}
+          src={property.image}
           alt="Property"
           className="w-full h-48 object-cover"
         />
@@ -75,21 +77,17 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
       <div className="p-4 space-y-4">
         <div className="flex justify-between text-gray-300">
           <div className="text-center">
-            <div className="font-semibold">{property.beds}</div>
+            <div className="font-semibold">{property.rooms}</div>
             <div className="text-sm text-gray-500">Beds</div>
           </div>
           <div className="text-center">
             <div className="font-semibold">{property.baths}</div>
             <div className="text-sm text-gray-500">Baths</div>
           </div>
-          <div className="text-center">
-            <div className="font-semibold">{property.sqft}</div>
-            <div className="text-sm text-gray-500">sqft</div>
-          </div>
         </div>
 
         <div className="space-y-2">
-          <p className="text-gray-400 text-sm line-clamp-3">{property.description}</p>
+          <p className="text-gray-400 text-sm line-clamp-3">{property.name}</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -147,12 +145,12 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
           >
             <div className="bg-black rounded-2xl p-4">
               <img
-                src={winner?.images.living[0]}
+                src={winner?.image}
                 alt="Selected Property"
                 className="w-64 h-48 object-cover rounded-xl"
               />
               <div className="mt-4">
-                <div className="text-2xl font-bold text-white">{winner?.price}</div>
+                <div className="text-2xl font-bold text-white">{winner?.name}</div>
                 <div className="text-gray-400">{winner?.location}</div>
               </div>
             </div>
@@ -212,24 +210,22 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
               </div>
 
               <div className="p-6 space-y-8">
-                {Object.entries(selectedProperty.images).map(([category, images]) => (
-                  <div key={category} className="space-y-3">
-                    <h3 className="text-xl font-semibold text-white/90 capitalize">{category}</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {images.map((image, index) => (
-                        <motion.div
-                          key={`${category}-${index}`}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="relative aspect-video rounded-xl overflow-hidden"
-                        >
-                          <img src={image} alt={`${category} view ${index + 1}`} className="w-full h-full object-cover" />
-                        </motion.div>
-                      ))}
-                    </div>
+                <div className="space-y-3">
+                  <h3 className="text-xl font-semibold text-white/90 capitalize">Gallery</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedProperty.gallery.map((image: string, index: number) => (
+                      <motion.div
+                        key={`${index}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="relative aspect-video rounded-xl overflow-hidden"
+                      >
+                        <img src={image} alt={`${index} view ${index + 1}`} className="w-full h-full object-cover" />
+                      </motion.div>
+                    ))}
                   </div>
-                ))}
+                </div>
 
                 <div className="space-y-6">
                   <div>
@@ -239,19 +235,16 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
 
                   <div className="flex gap-4">
                     <div className="px-4 py-2 rounded-full bg-white/10">
-                      <span className="text-white/90">{selectedProperty.beds} Beds</span>
+                      <span className="text-white/90">{selectedProperty.rooms} Beds</span>
                     </div>
                     <div className="px-4 py-2 rounded-full bg-white/10">
                       <span className="text-white/90">{selectedProperty.baths} Baths</span>
-                    </div>
-                    <div className="px-4 py-2 rounded-full bg-white/10">
-                      <span className="text-white/90">{selectedProperty.sqft} sqft</span>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     <h3 className="text-xl font-semibold text-white/90">About this property</h3>
-                    <p className="text-gray-400 leading-relaxed">{selectedProperty.description}</p>
+                    <p className="text-gray-400 leading-relaxed">{selectedProperty.name}</p>
                   </div>
 
                   <div className="space-y-3">

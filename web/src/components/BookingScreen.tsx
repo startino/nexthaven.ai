@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, ArrowLeft } from 'lucide-react';
+import { PropertyResult } from '../services/api';
 
 interface Property {
   id: number;
@@ -13,7 +14,7 @@ interface Property {
 }
 
 interface BookingScreenProps {
-  property: Property;
+  property: PropertyResult;
   onBack: () => void;
 }
 
@@ -46,7 +47,7 @@ function BookingScreen({ property, onBack }: BookingScreenProps) {
           className="relative rounded-2xl overflow-hidden"
         >
           <img
-            src={property.summary_image}
+            src={property.image}
             alt="Property"
             className="w-full h-64 object-cover"
           />
@@ -83,16 +84,12 @@ function BookingScreen({ property, onBack }: BookingScreenProps) {
 
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white/5 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-white">{property.beds}</div>
+              <div className="text-2xl font-bold text-white">{property.rooms}</div>
               <div className="text-sm text-gray-400">Bedrooms</div>
             </div>
             <div className="bg-white/5 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-white">{property.baths}</div>
               <div className="text-sm text-gray-400">Bathrooms</div>
-            </div>
-            <div className="bg-white/5 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-white">{property.sqft}</div>
-              <div className="text-sm text-gray-400">Square Feet</div>
             </div>
           </div>
         </motion.div>
