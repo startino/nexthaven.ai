@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Calendar, Users, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus, Bed } from 'lucide-react';
+import { Search, Calendar, Users, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus, Bed, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SearchScreenProps {
@@ -8,11 +8,29 @@ interface SearchScreenProps {
   error?: string | null;
 }
 
-
 interface Budget {
   min: number;
   max: number;
 }
+
+const PROPERTY_TYPES = [
+  'Apartments', 
+  'Hotels', 
+  'Hostels', 
+  'Guest houses', 
+  'Homestays', 
+  'Bed and breakfasts', 
+  'Holiday homes', 
+  'Boats',
+  'Villas', 
+  'Motels', 
+  'Resorts', 
+  'Holiday parks', 
+  'Campsites', 
+  'Luxury tents'
+] as const;
+
+type PropertyType = typeof PROPERTY_TYPES[number];
 
 interface SearchForm {
   query: string;
@@ -21,9 +39,8 @@ interface SearchForm {
   adults: number;
   children: number;
   number_of_rooms: number;
-  property_type: string;
+  property_type: PropertyType;
   preferences: string;
-  max_results: number;
 }
 
 // Mock previous preferences - in production, this would come from a database
@@ -56,7 +73,6 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
     number_of_rooms: 1,
     property_type: 'Hotels',
     preferences: '',
-    max_results: 5
   });
   const [isLoading, setIsLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
@@ -156,13 +172,25 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
             <Users size={20} />
             <span className="font-medium">Guests</span>
           </div>
-          <input
+          <div className="flex items-center gap-2">
+            {/* THis is for adults. add a text for this */}
+            <span className="text-white/60">Adults</span>
+            <input
+              type="number"
+              min="1"
+              className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
+              value={form.adults}
+              onChange={(e) => setForm({ ...form, adults: parseInt(e.target.value) })}
+            />
+            <span className="text-white/60">Children</span>
+            <input
             type="number"
-            min="1"
-            className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
-            value={form.adults}
-            onChange={(e) => setForm({ ...form, adults: parseInt(e.target.value) })}
-          />
+              min="0"
+              className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
+              value={form.children}
+              onChange={(e) => setForm({ ...form, children: parseInt(e.target.value) })}
+            />
+          </div>
         </motion.div>
       </div>
 
@@ -210,6 +238,29 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           value={form.number_of_rooms}
           onChange={(e) => setForm({ ...form, number_of_rooms: parseInt(e.target.value) })}
         />
+      </motion.div>
+
+      {/* Property Type - This should be a dropdown with limited options */}
+      <motion.div 
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10"
+      >
+        <div className="flex items-center gap-3 text-white/80 mb-2">
+          <Home size={20} />
+          <span className="font-medium">Property Type</span>
+        </div>
+        <select
+          value={form.property_type}
+          onChange={(e) => setForm({ ...form, property_type: e.target.value as PropertyType })}
+          className="w-full bg-white/5 text-white rounded-xl p-3 outline-none appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+        >
+          {PROPERTY_TYPES.map((type) => (
+            <option key={type} value={type} className="bg-gray-900">
+              {type}
+            </option>
+          ))}
+        </select>
       </motion.div>
 
       <motion.button
