@@ -20,7 +20,7 @@ interface BookingScreenProps {
 
 function BookingScreen({ property, onBack }: BookingScreenProps) {
   // Mock booking.com URL - in production this would be a real affiliate link
-  const bookingUrl = `https://booking.com/hotels/${property.location.toLowerCase().replace(/\s+/g, '-')}`;
+  const bookingUrl = property.url;
 
   return (
     <motion.div 
