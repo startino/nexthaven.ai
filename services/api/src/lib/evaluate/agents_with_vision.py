@@ -7,8 +7,8 @@ from io import BytesIO
 from typing import List, Dict, Any
 
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import JsonOutputToolsParser
-from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableParallel
 from langchain_openai import ChatOpenAI
 
@@ -59,42 +59,44 @@ class EvaluateAgent:
                     result_index += 1
                 else:
                     image_analyses[f"property_{i}"] = "No images available for analysis."
-
-        # Create the evaluation prompt template
-        prompt = PromptTemplate.from_template(
-            """You are an expert in evaluating properties. Evaluate this property against the user's requirements and return a match score and analysis.
             
-            Analyze the property based on the following criteria:
-            - Price: Does it match the user's budget?
-            - Location: Is it in the desired location?
-            - Rooms: Does it have the required number of rooms?
-            - Amenities: Does it have the requested amenities?
-            - Reviews: Are the reviews positive?
-            - Style and Vibe: Does the property match the user's style preferences?
-            
-            User's requirement: {user_request}
-            Property: {property}
-            {image_analysis}
-            
-            Return a property match with a score between 0-100 where 100 is a perfect match.
-            """
-        )
-
-        # Create a chain for property evaluation
-        chain = (
-            prompt 
-            | self.llm.bind_tools([Result], tool_choice="any") 
-            | JsonOutputToolsParser(return_id=True)
-        )
-
-        # Create evaluation chains for each property
         property_chains = {}
         for i, prop in enumerate(properties):
-            # Convert property to simplified format
-            # simplified_property = self._simplify_property(prop)
-            # image_analysis = image_analyses.get(f"property_{i}", "")
+            property = self._simplify_property(prop)
+            image_analysis = image_analyses.get(f"property_{i}", "")
+    
+        # Create the evaluation prompt template
+            prompt = ChatPromptTemplate(
+                [
+                    SystemMessage(
+                        content=f"""You are an expert in evaluating properties. Evaluate this property against the user's requirements and return a match score and analysis.
+                
+                Analyze the property based on the following criteria:
+                - Price: Does it match the user's budget?
+                - Location: Is it in the desired location?
+                - Rooms: Does it have the required number of rooms?
+                - Amenities: Does it have the requested amenities?
+                - Reviews: Are the reviews positive?
+                - Style and Vibe: Does the property match the user's style preferences?
+                
+                Property: {property}
+                Image Analysis: {image_analysis}
+                
+                Return a property match with a score between 0-100 where 100 is a perfect match.
+                """
+                    ),
+                    HumanMessage(
+                        content=f"""Requirements: {str(user_request)}"""
+                    )
+                ]
+            )
             
-            # Create a chain for this property
+            chain = (
+                prompt 
+                | self.llm.bind_tools([Result], tool_choice="any") 
+                | JsonOutputToolsParser(return_id=True)
+            )
+            
             property_chains[f"property_{i}"] = chain.with_config(
                 {"run_name": f"evaluate_property_{i}"}
             )
@@ -103,17 +105,8 @@ class EvaluateAgent:
         parallel_chain = RunnableParallel(**property_chains)
 
         try:
-            # Prepare inputs for all properties
-            inputs = {}
-            for i, prop in enumerate(properties):
-                inputs[f"property_{i}"] = {
-                    "user_request": str(user_request),
-                    "property": self._simplify_property(prop),
-                    "image_analysis": image_analyses.get(f"property_{i}", "")
-                }
-
             # Run all evaluations in parallel
-            results = await parallel_chain.ainvoke(inputs)
+            results = await parallel_chain.ainvoke({})
 
             # Process results
             processed_results = []
