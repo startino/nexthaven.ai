@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  chroma:
+    image: chromadb/chroma
+    container_name: chroma
+    networks:
+      - mynetwork
+    ports:
+      - "8000:8000"
+
+  api:
+    build: .
+    container_name: fastapi
+    networks:
+      - mynetwork
+    ports:
+      - "8001:8000"
+    environment:
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - PUBLIC_SUPABASE_URL
+      - SUPABASE_ANON_KEY
+      - SUPABASE_DB_PASSWORD
+      - AZURE_OPENAI_API_KEY
+      - REDDIT_CLIENT_ID
+      - REDDIT_CLIENT_SECRET
+      - AZURE_OPENAI_API_ENDPOINT
+      - REDDIT_USER_AGENT
+    depends_on:
+      - chroma
+
+networks:
+  mynetwork:
+    driver: bridge

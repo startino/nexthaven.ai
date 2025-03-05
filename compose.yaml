@@ -1,0 +1,39 @@
+services:
+  api:
+    restart: always
+    depends_on:
+      - chroma
+    build:
+      context: ./services/api
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./services/api:/app
+    networks:
+      - backend
+    environment:
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+    env_file: ./services/api/.env
+    command: poetry run fastapi dev src --host 0.0.0.0 --port 8080 --reload
+
+  chroma:
+    restart: always
+    image: chromadb/chroma:latest
+    networks:
+      - backend
+    ports:
+      - "8000:8000"
+    environment:
+      CHROMA_PERSIST: "true"
+      CHROMA_SERVER_AUTH_PROVIDER: "none"
+    volumes:
+      - chroma_data:/chroma/db
+
+volumes:
+  chroma_data:
+
+networks:
+  backend:
+    driver: bridge
