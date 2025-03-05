@@ -32,6 +32,44 @@ interface SwipeScreenProps {
 function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeScreenProps) {
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const currentProperty = properties[currentIndex];
+  const [imageAspectRatios, setImageAspectRatios] = React.useState<Record<string, number>>({});
+
+  // Function to determine aspect ratio of an image
+  const getImageAspectRatio = (imageUrl: string, imageKey: string) => {
+    const img = new Image();
+    img.onload = () => {
+      const aspectRatio = img.width / img.height;
+      setImageAspectRatios(prev => ({
+        ...prev,
+        [imageKey]: aspectRatio
+      }));
+    };
+    img.src = imageUrl;
+  };
+
+  // Load aspect ratios for all images when property changes
+  React.useEffect(() => {
+    if (!currentProperty) return;
+    
+    // Reset aspect ratios when property changes
+    setImageAspectRatios({});
+    
+    // Process all images to get their aspect ratios
+    Object.entries(currentProperty.images).forEach(([category, images]: [string, string[]]) => {
+      images.forEach((image: string, index: number) => {
+        getImageAspectRatio(image, `${category}-${index}`);
+      });
+    });
+  }, [currentProperty]);
+
+  // Determine col-span based on aspect ratio
+  const getColSpan = (imageKey: string): number => {
+    const aspectRatio = imageAspectRatios[imageKey];
+    if (!aspectRatio) return 1; // Default to 1 if aspect ratio is not yet determined
+    
+    // Wide images (landscape orientation) get a col-span of 2
+    return aspectRatio >= 1.5 ? 2 : 1;
+  };
 
   const handleSwipe = (liked: boolean) => {
     if (liked) {
@@ -137,17 +175,27 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
               <div key={category} className="space-y-3">
                 <h3 className="text-xl font-semibold text-white/90 capitalize">{category}</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {images.map((image, index) => (
-                    <motion.div
-                      key={`${category}-${index}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="relative aspect-video rounded-xl overflow-hidden"
-                    >
-                      <img src={image} alt={`${category} view ${index + 1}`} className="w-full h-full object-cover" />
-                    </motion.div>
-                  ))}
+                  {images.map((image: string, index: number) => {
+                    const imageKey = `${category}-${index}`;
+                    return (
+                      <motion.div
+                        key={imageKey}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`relative aspect-video rounded-xl overflow-hidden ${
+                          getColSpan(imageKey) > 1 ? 'col-span-2' : 'col-span-1'
+                        }`}
+                      >
+                        <img 
+                          src={image} 
+                          alt={`${category} view ${index + 1}`} 
+                          className="w-full h-full object-cover"
+                          onLoad={() => getImageAspectRatio(image, imageKey)}
+                        />
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             ))}

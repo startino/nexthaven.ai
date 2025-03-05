@@ -109,6 +109,7 @@ function App() {
           properties={topProperties}
           onWinnerSelected={handleWinnerSelected}
           onBack={() => setScreen('search')}
+          searchQuery={searchQuery}
         />
       )}
 
