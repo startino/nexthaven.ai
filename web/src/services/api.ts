@@ -13,7 +13,6 @@ interface PropertyEvaluationRequest {
   number_of_rooms: number;
   property_type: string;
   preferences: string;
-  max_results: number;
 }
 
 export interface PropertyResult {
@@ -53,7 +52,6 @@ const transformRequest = (payload: PropertyEvaluationRequest) => {
     number_of_rooms: payload.number_of_rooms,
     property_type: payload.property_type,
     preferences: payload.preferences,
-    max_results: payload.max_results,
   };
 };
 

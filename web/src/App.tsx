@@ -52,7 +52,6 @@ function App() {
         number_of_rooms: parsedQuery.number_of_rooms || 1,
         property_type: parsedQuery.property_type || 'Hotels',
         preferences: parsedQuery.preferences || '',
-        max_results: 5
       });
       
       console.log('Received properties:', properties);
