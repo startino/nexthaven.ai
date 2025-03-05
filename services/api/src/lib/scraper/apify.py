@@ -18,6 +18,10 @@ class ApifyAgent:
         
     def generate_request(self, user_request: GeneratedRequirement):
         logging.info(f"Generating Apify request for user request: {user_request}")
+        
+        # Default to Hotels if property_type is not specified or invalid
+        property_type = "Hotels"
+        
         return ApifyRequest(
             search=user_request.query,
             rooms=user_request.number_of_rooms,
@@ -25,8 +29,8 @@ class ApifyAgent:
             children=user_request.children,
             checkIn=user_request.date_range.start_date,
             checkOut=user_request.date_range.end_date,
-            minMaxPrice=f"{user_request.budget.min}-{user_request.budget.max}",
-            propertyType=user_request.property_type,
+            minMaxPrice=f"{user_request.nightly_budget.min}-{user_request.nightly_budget.max}",
+            propertyType=property_type,
         )
 
     def get_properties(self, request: ApifyRequest) -> list:
@@ -40,50 +44,53 @@ class ApifyAgent:
         result = self.client.actor("oeiQgfg5fsmIJB7Cn").call(run_input=run_input)
         
         properties = []
-        for item in self.client.dataset(result["defaultDatasetId"]).iterate_items():
-            parsed_item = ApifyResponse(
-                url=item["url"],
-                name=item["name"],
-                type=item["type"],
-                description=item["description"],
-                price=item["price"],
-                checkIn=item["checkIn"],
-                checkOut=item["checkOut"],
-                location=Location(
-                    lat=item["location"]["lat"],
-                    lng=item["location"]["lng"],
-                ),
-                address=Address(
-                    full=item["address"]["full"],
-                    postalCode=item["address"]["postalCode"],
-                    street=item["address"]["street"],
-                    country=item["address"]["country"],
-                    region=item["address"]["region"],
-                ),
-                image=item["image"],
-                gallery=item["images"],
-                rooms=[Room(
-                    available=room["available"],
-                    url=room["url"],
-                    roomType=room["roomType"],
-                    persons=room["persons"],
-                    bedTypes=[Details(
-                        name=bedType["room"],
-                        additionalInfo=bedType["beds"],
-                    ) for bedType in room["bedTypes"]],
-                    facilities=room["facilities"],
-                ) for room in item["rooms"]],
-                categoryReviews=[CategoryReview(
-                    title=review["title"],
-                    score=review["score"],
-                ) for review in item["categoryReviews"]],
-                facilities=[Facilities(
-                    name=facility["name"],
-                    overview=facility["overview"],
-                    facilities=facility["facilities"],
-                ) for facility in item["facilities"]],
-            )
-            properties.append(parsed_item)
+        if result and "defaultDatasetId" in result:
+            for item in self.client.dataset(result["defaultDatasetId"]).iterate_items():
+                parsed_item = ApifyResponse(
+                    url=item["url"],
+                    name=item["name"],
+                    type=item["type"],
+                    description=item["description"],
+                    price=item["price"],
+                    checkIn=item["checkIn"],
+                    checkOut=item["checkOut"],
+                    location=Location(
+                        lat=item["location"]["lat"],
+                        lng=item["location"]["lng"],
+                    ),
+                    address=Address(
+                        full=item["address"]["full"],
+                        postalCode=item["address"]["postalCode"],
+                        street=item["address"]["street"],
+                        country=item["address"]["country"],
+                        region=item["address"]["region"],
+                    ),
+                    image=item["image"],
+                    gallery=item["images"],
+                    rooms=[Room(
+                        available=room["available"],
+                        url=room["url"],
+                        roomType=room["roomType"],
+                        persons=room["persons"],
+                        bedTypes=[Details(
+                            name=bedType["room"],
+                            additionalInfo=bedType["beds"],
+                        ) for bedType in room["bedTypes"]],
+                        facilities=room["facilities"],
+                    ) for room in item["rooms"]],
+                    categoryReviews=[CategoryReview(
+                        title=review["title"],
+                        score=review["score"],
+                    ) for review in item["categoryReviews"]],
+                    facilities=[Facilities(
+                        name=facility["name"],
+                        overview=facility["overview"],
+                        facilities=facility["facilities"],
+                    ) for facility in item["facilities"]],
+                )
+                properties.append(parsed_item)
+        else:
+            logging.error("No dataset ID returned from Apify")
             
         return properties
 

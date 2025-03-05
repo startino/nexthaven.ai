@@ -138,6 +138,12 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateDetailsStep()) return;
+    
+    // If preferences is empty, reset to template
+    if (!form.preferences.trim()) {
+      setForm({ ...form, preferences: PREFERENCE_TEMPLATE });
+    }
+    
     setCurrentStep('preferences');
     setAiMessage('Finally, tell me more about your specific preferences for your ideal home.');
   };
@@ -181,6 +187,11 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   const handleSelectPreviousPreference = (preference: string) => {
     setForm({ ...form, preferences: preference });
     setShowPreviousPreferences(false);
+  };
+
+  // Reset preferences to template
+  const resetToTemplate = () => {
+    setForm({ ...form, preferences: PREFERENCE_TEMPLATE });
   };
 
   // Format price to be pretty
@@ -285,7 +296,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       >
         <div className="flex items-center gap-3 text-white/80 mb-2">
           <DollarSign size={20} />
-          <span className="font-medium">Budget Range (per month)</span>
+          <span className="font-medium">Total Budget for Stay</span>
         </div>
         <div className="space-y-6 pt-4">
           <div className="flex justify-between text-white/60 text-sm">
@@ -538,11 +549,26 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           rows={12}
           value={form.preferences}
           onChange={(e) => setForm({ ...form, preferences: e.target.value })}
+          onBlur={(e) => {
+            // If the textarea is empty or just whitespace, reset to template
+            if (!e.target.value.trim()) {
+              resetToTemplate();
+            }
+          }}
           style={{ lineHeight: '1.6' }}
         />
-        <p className="text-xs text-white/50 italic">
-          Fill out the template above with your preferences or write your own description.
-        </p>
+        <div className="flex justify-between items-center">
+          <p className="text-xs text-white/50 italic">
+            Fill out the template above with your preferences or write your own description.
+          </p>
+          <button
+            type="button"
+            onClick={resetToTemplate}
+            className="text-xs text-pink-400 hover:text-pink-300 transition-colors"
+          >
+            Reset to Template
+          </button>
+        </div>
       </motion.div>
 
       <div className="flex gap-4">

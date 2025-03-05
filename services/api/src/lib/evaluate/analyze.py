@@ -24,6 +24,15 @@ class AnalyzeUserRequirement:
             
             Helpers to generate the requirements:
             - Today's date is {today_date}
+            
+            IMPORTANT: The budget provided by the user is the TOTAL budget for the entire stay.
+            You need to:
+            1. Parse the date range from the user's input
+            2. Calculate the number of nights in the stay
+            3. Calculate the nightly budget by dividing the total budget by the number of nights
+            4. Set both the original total budget and the calculated nightly budget in your response
+            
+            For example, if the user's total budget is $1000-$2000 for a 5-night stay, the nightly budget would be $200-$400 per night.
             """
         )
         
@@ -45,11 +54,10 @@ if __name__ == "__main__":
         query="I want to find a property in New York",
         date="from tomorrow to until the end of next week",
         budget=Budget(min=100, max=200),
-        guest_count=2,
+        adults=2,
         number_of_rooms=1,
         preferences="I want a property with a pool, quiet location, a good view, proximity to co-working space"
     )
     analyze = AnalyzeUserRequirement()
     response = analyze.analyze_user_requirement(user_requirement)
     print(response)
-    print(GeneratedRequirement(**response))

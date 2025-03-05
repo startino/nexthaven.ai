@@ -21,7 +21,8 @@ class UserRequirement(BaseModel):
 class GeneratedRequirement(BaseModel):
     query: str = Field(default="", description="Query for the property")
     date_range: DateRange = Field(default=DateRange(), description="Date range for the property")
-    budget: Budget = Field(default=Budget(), description="Budget for the property")
+    budget: Budget = Field(default=Budget(), description="Total budget for the entire stay")
+    nightly_budget: Budget = Field(default=Budget(), description="Budget per night, calculated by dividing total budget by number of nights")
     adults: int = Field(default=0, description="Adults count for the property")
     children: int = Field(default=0, description="Children count for the property")
     number_of_rooms: int = Field(default=0, description="Number of rooms for the property")
