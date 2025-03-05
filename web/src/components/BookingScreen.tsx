@@ -53,7 +53,7 @@ function BookingScreen({ property, onBack }: BookingScreenProps) {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60" />
           <div className="absolute bottom-0 left-0 right-0 p-6">
-            <h2 className="text-3xl font-bold text-white">{property.price}</h2>
+            <h2 className="text-3xl font-bold text-white">${property.price}</h2>
             <p className="text-xl text-white/90">{property.location}</p>
           </div>
         </motion.div>
@@ -82,14 +82,10 @@ function BookingScreen({ property, onBack }: BookingScreenProps) {
             </motion.a>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="bg-white/5 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-white">{property.rooms}</div>
               <div className="text-sm text-gray-400">Bedrooms</div>
-            </div>
-            <div className="bg-white/5 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-white">{property.baths}</div>
-              <div className="text-sm text-gray-400">Bathrooms</div>
             </div>
           </div>
         </motion.div>

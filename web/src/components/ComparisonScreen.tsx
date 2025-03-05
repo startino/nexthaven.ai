@@ -28,10 +28,9 @@ interface ComparisonScreenProps {
   properties: PropertyResult[];
   onWinnerSelected: (property: Property) => void;
   onBack: () => void;
-  searchQuery?: string;
 }
 
-function ComparisonScreen({ properties, onWinnerSelected, onBack, searchQuery }: ComparisonScreenProps) {
+function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonScreenProps) {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [winner, setWinner] = useState<Property | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -70,7 +69,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack, searchQuery }:
           </motion.div>
         )}
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="text-2xl font-bold text-white">${property.price}</div>
+          <div className="text-2xl font-bold text-white">{property.price}</div>
           <div className="text-gray-300">{property.location}</div>
         </div>
       </div>
@@ -153,7 +152,6 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack, searchQuery }:
               <div className="mt-4">
                 <div className="text-2xl font-bold text-white">{winner?.name}</div>
                 <div className="text-gray-400">{winner?.location}</div>
-                <div className="text-xl font-bold text-purple-400 mt-2">${winner?.price}</div>
               </div>
             </div>
           </motion.div>
@@ -174,43 +172,6 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack, searchQuery }:
         </button>
         <h1 className="text-3xl font-serif italic text-white">Your Perfect Matches</h1>
       </div>
-      
-      {searchQuery && (
-        <div className="mb-6 p-4 bg-white/5 backdrop-blur-sm rounded-xl">
-          <h2 className="text-xl font-semibold text-white mb-2">Your Search</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {(() => {
-              try {
-                const parsedQuery = JSON.parse(searchQuery);
-                return (
-                  <>
-                    <div className="text-gray-300">
-                      <span className="text-purple-400">Location:</span> {parsedQuery.query || 'Any'}
-                    </div>
-                    <div className="text-gray-300">
-                      <span className="text-purple-400">Dates:</span> {parsedQuery.date || 'Flexible'}
-                    </div>
-                    <div className="text-gray-300">
-                      <span className="text-purple-400">Budget:</span> ${parsedQuery.budget?.min || 0} - ${parsedQuery.budget?.max || 'Any'}
-                    </div>
-                    <div className="text-gray-300">
-                      <span className="text-purple-400">Guests:</span> {parsedQuery.adults || 1} adults, {parsedQuery.children || 0} children
-                    </div>
-                    <div className="text-gray-300">
-                      <span className="text-purple-400">Rooms:</span> {parsedQuery.number_of_rooms || 1}
-                    </div>
-                    <div className="text-gray-300">
-                      <span className="text-purple-400">Property Type:</span> {parsedQuery.property_type || 'Any'}
-                    </div>
-                  </>
-                );
-              } catch (e) {
-                return <div className="text-gray-300">{searchQuery}</div>;
-              }
-            })()}
-          </div>
-        </div>
-      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {properties.map((property) => renderPropertyCard(property))}
@@ -268,7 +229,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack, searchQuery }:
 
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-3xl font-bold text-white">${selectedProperty.price}</h2>
+                    <h2 className="text-3xl font-bold text-white">{selectedProperty.price}</h2>
                     <p className="text-xl text-gray-300">{selectedProperty.location}</p>
                   </div>
 
