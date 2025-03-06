@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, Users, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus, Bed, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Range, getTrackBackground } from 'react-range';
 
 interface SearchScreenProps {
   onSearch: (query: string) => void;
@@ -218,7 +217,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
         </div>
         <input
           type="text"
-          placeholder="City, neighborhood, or specific address"
+          placeholder="e.g. Chiang Mai, Thailand"
           className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
           value={form.query}
           onChange={(e) => setForm({ ...form, query: e.target.value })}
@@ -237,7 +236,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
         </div>
         <input
           type="text"
-          placeholder="e.g., March 15 - April 15"
+          placeholder="e.g. March 15 - April 15"
           className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -299,83 +298,8 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           <span className="font-medium">Total Budget for Stay</span>
         </div>
         <div className="space-y-6 pt-4">
-          <div className="flex justify-between text-white/60 text-sm">
-            <span>{formatPrice(form.budget.min)}</span>
-            <span>{formatPrice(form.budget.max)}</span>
-          </div>
-          
-          {/* React Range slider */}
-          <div className="py-8">
-            <Range
-              step={100}
-              min={0}
-              max={5000}
-              values={[form.budget.min, form.budget.max]}
-              onChange={(values) => {
-                // Ensure minimum gap of 100
-                if (values[1] - values[0] >= 100) {
-                  setForm({
-                    ...form,
-                    budget: {
-                      min: values[0],
-                      max: values[1]
-                    }
-                  });
-                }
-              }}
-              renderTrack={({ props, children }) => (
-                <div
-                  onMouseDown={props.onMouseDown}
-                  onTouchStart={props.onTouchStart}
-                  style={{
-                    ...props.style,
-                    height: '36px',
-                    display: 'flex',
-                    width: '100%'
-                  }}
-                >
-                  <div
-                    ref={props.ref}
-                    className="w-full h-3 rounded-full self-center"
-                    style={{
-                      background: getTrackBackground({
-                        values: [form.budget.min, form.budget.max],
-                        colors: ['rgba(255, 255, 255, 0.2)', 'rgba(236, 72, 153, 0.8)', 'rgba(255, 255, 255, 0.2)'],
-                        min: 0,
-                        max: 5000
-                      }),
-                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.6)'
-                    }}
-                  >
-                    {children}
-                  </div>
-                </div>
-              )}
-              renderThumb={({ props, index, isDragged }) => (
-                <div
-                  {...props}
-                  className="focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2"
-                  style={{
-                    ...props.style,
-                    height: 24,
-                    width: 24,
-                    borderRadius: '50%',
-                    backgroundColor: isDragged ? '#ec4899' : '#a855f7',
-                    background: 'linear-gradient(to right, #a855f7, #ec4899)',
-                    border: '2px solid white',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-                  }}
-                >
-                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs font-medium text-white whitespace-nowrap bg-gray-800/70 px-2 py-1 rounded-md">
-                    {formatPrice(index === 0 ? form.budget.min : form.budget.max)}
-                  </div>
-                </div>
-              )}
-            />
-          </div>
-          
-          {/* Budget input fields for direct entry */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          {/* Budget input fields */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-white/60 text-sm block mb-1">Min Budget</label>
               <input
@@ -422,6 +346,10 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
                 className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
               />
             </div>
+          </div>
+          <div className="flex justify-between text-white/60 text-sm">
+            <span>{formatPrice(form.budget.min)}</span>
+            <span>{formatPrice(form.budget.max)}</span>
           </div>
         </div>
       </motion.div>
@@ -608,8 +536,8 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           animate={{ y: 0 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-5xl font-serif text-white">RentLuxe</h1>
-          <p className="text-xl text-gray-400 font-light">Find your perfect temporary sanctuary</p>
+          <h1 className="text-5xl font-serif text-white">nexthaven.ai</h1>
+          <p className="text-xl text-gray-400 font-light">Find your next short-term hotel / apartment / hostel.</p>
         </motion.div>
 
         {/* Progress Indicator - Updated for 3 steps */}

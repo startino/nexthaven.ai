@@ -14,7 +14,7 @@ function LoadingScreen() {
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="w-full max-w-md p-8 space-y-12">
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-serif text-white">RentLuxe</h1>
+          <h1 className="text-4xl font-serif text-white">nexthaven.ai</h1>
           <p className="text-lg text-gray-400">Our AI agents are working their magic</p>
         </div>
 

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "src"
 version = "0.0.1"
-description = "API for rentino"
+description = "API for nexthaven.ai"
 authors = ["TBD"]
 repository = "https://github.com/startino/rentino"
 

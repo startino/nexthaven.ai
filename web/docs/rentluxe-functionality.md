@@ -1,7 +1,7 @@
-# RentLuxe Application Documentation
+# nexthaven.ai Application Documentation
 
 ## Overview
-RentLuxe is a sophisticated property rental search platform that leverages AI to provide personalized luxury accommodation recommendations. The application focuses on high-end rentals and provides an intuitive, visually appealing interface for users to find their ideal temporary residence.
+nexthaven.ai is a sophisticated property rental search platform that leverages AI to provide personalized luxury accommodation recommendations. The application focuses on high-end rentals and provides an intuitive, visually appealing interface for users to find their ideal temporary residence.
 
 ## Core Features
 
