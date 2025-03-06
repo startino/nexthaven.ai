@@ -7,6 +7,7 @@ from apify_client import ApifyClient
 from src.models.apify import ApifyRequest, ApifyResponse, Room, Location, Address, Facilities, CategoryReview, Details
 from src.models.requirement import GeneratedRequirement
 
+# Load environment variables
 load_dotenv()
 
 class ApifyAgent:
@@ -99,7 +100,6 @@ if __name__ == "__main__":
     request = ApifyRequest(
         search="New York",
         maxItems=2,
-        propertyType="Apartments",
         sortBy="review_score_and_price",
         starsCountFilter="any",
         currency="USD",
