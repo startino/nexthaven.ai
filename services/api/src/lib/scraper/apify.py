@@ -19,8 +19,8 @@ class ApifyAgent:
     def generate_request(self, user_request: GeneratedRequirement):
         logging.info(f"Generating Apify request for user request: {user_request}")
         
-        # Default to Hotels if property_type is not specified or invalid
-        property_type = "Hotels"
+        # # Default to Hotels if property_type is not specified or invalid
+        # property_type = "Hotels"
         
         return ApifyRequest(
             search=user_request.query,
@@ -30,7 +30,7 @@ class ApifyAgent:
             checkIn=user_request.date_range.start_date,
             checkOut=user_request.date_range.end_date,
             minMaxPrice=f"{user_request.nightly_budget.min}-{user_request.nightly_budget.max}",
-            propertyType=property_type,
+            # propertyType=property_type,
         )
 
     def get_properties(self, request: ApifyRequest) -> list:

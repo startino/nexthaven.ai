@@ -15,7 +15,7 @@ class UserRequirement(BaseModel):
     adults: int = Field(default=0, description="Adults count for the property")
     children: int = Field(default=0, description="Children count for the property")
     number_of_rooms: int = Field(default=0, description="Number of rooms for the property")
-    property_type: str = Field(default="", description="Property type for the property")
+    # property_type: str = Field(default="", description="Property type for the property")
     preferences: str = Field(default="", description="Specific preferences for the property in textual form")
     
 class GeneratedRequirement(BaseModel):
@@ -26,7 +26,7 @@ class GeneratedRequirement(BaseModel):
     adults: int = Field(default=0, description="Adults count for the property")
     children: int = Field(default=0, description="Children count for the property")
     number_of_rooms: int = Field(default=0, description="Number of rooms for the property")
-    property_type: str = Field(default="", description="Property type for the property")
+    # property_type: str = Field(default="", description="Property type for the property")
     preferences: list[str] = Field(default=[], description="List of preferences for the property")
         
         

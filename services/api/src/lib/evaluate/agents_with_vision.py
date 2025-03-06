@@ -79,6 +79,8 @@ class EvaluateAgent:
                 - Reviews: Are the reviews positive?
                 - Style and Vibe: Does the property match the user's style preferences?
                 
+                Output
+                
                 Property: {property}
                 Image Analysis: {image_analysis}
                 
@@ -123,7 +125,7 @@ class EvaluateAgent:
             # Sort results by score
             sorted_results = sorted(
                 processed_results, 
-                key=lambda x: float(x.get('score', '0').split('/')[0]), 
+                key=lambda x: float(x.get('score')), 
                 reverse=True
             )
 

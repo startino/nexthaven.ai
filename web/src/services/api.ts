@@ -11,7 +11,7 @@ interface PropertyEvaluationRequest {
   adults: number;
   children: number;
   number_of_rooms: number;
-  property_type: string;
+  // property_type: string;
   preferences: string;
 }
 
@@ -50,7 +50,7 @@ const transformRequest = (payload: PropertyEvaluationRequest) => {
     adults: payload.adults,
     children: payload.children,
     number_of_rooms: payload.number_of_rooms,
-    property_type: payload.property_type,
+    // property_type: payload.property_type,
     preferences: payload.preferences,
   };
 };

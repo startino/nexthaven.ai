@@ -24,10 +24,10 @@ from typing import Literal
 class ApifyRequest(BaseModel):
     search: str = Field(description="The search query")
     maxItems: int = Field(default=10, description="The maximum number of items to return")
-    propertyType: Literal["Apartments", "Hotels", "Hostels", "Guest houses", 
-                          "Homestays", "Bed and breakfasts", "Holiday homes", 
-                          "Boats","Villas", "Motels", "Resorts", "Holiday parks", 
-                          "Campsites", "Luxury tents"] = Field(description="The type of property to search for")
+    # propertyType: Literal["Apartments", "Hotels", "Hostels", "Guest houses", 
+                          # "Homestays", "Bed and breakfasts", "Holiday homes", 
+                          # "Boats","Villas", "Motels", "Resorts", "Holiday parks", 
+                          # "Campsites", "Luxury tents"] = Field(description="The type of property to search for")
     sortBy: str = Field(default="review_score_and_price", description="The sort order")
     starsCountFilter: str = Field(default="any", description="The stars count filter")
     currency: str = Field(default="USD", description="The currency to use for the search")

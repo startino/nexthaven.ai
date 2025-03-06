@@ -22,7 +22,7 @@ class PropertySearchRequest(BaseModel):
     adults: int = 2
     children: int = 0
     number_of_rooms: int = 1
-    property_type: str = "Hotels"
+    # property_type: str = "Hotels"
     preferences: str = ""
     max_results: int = 5
 
@@ -141,7 +141,7 @@ async def search_properties(request: PropertySearchRequest):
             adults=request.adults,
             children=request.children,
             number_of_rooms=request.number_of_rooms,
-            property_type=request.property_type,
+            # property_type=request.property_type,
             preferences=request.preferences
         )
         

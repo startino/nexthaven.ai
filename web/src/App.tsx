@@ -50,7 +50,7 @@ function App() {
         adults: parsedQuery.adults || 2,
         children: parsedQuery.children || 0,
         number_of_rooms: parsedQuery.number_of_rooms || 1,
-        property_type: parsedQuery.property_type || 'Hotels',
+        // property_type: parsedQuery.property_type || 'Hotels',
         preferences: parsedQuery.preferences || '',
       });
       

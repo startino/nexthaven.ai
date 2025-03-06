@@ -22,7 +22,7 @@ class PropertyEvaluationRequest(BaseModel):
     adults: int = 2
     children: int = 0
     number_of_rooms: int = 1
-    property_type: str = "Hotels"
+    # property_type: str = "Hotels"
     preferences: str
 
 @router.post("/evaluate")
@@ -44,7 +44,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
             adults=request.adults,
             children=request.children,
             number_of_rooms=request.number_of_rooms,
-            property_type=request.property_type,
+            # property_type=request.property_type,
             preferences=request.preferences
         )
         
@@ -75,7 +75,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         for prop in top_results:
             try:
                 # Extract score from the format "85/100"
-                score_value = float(prop.get("score", "0").split("/")[0])
+                score_value = float(prop.get("score"))
                 
                 # Fix the gallery field - ensure it's a flat list of strings
                 gallery = prop.get("gallery", [])
