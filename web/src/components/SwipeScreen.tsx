@@ -161,9 +161,6 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
                 <span className="text-white/90">{currentProperty.beds} Beds</span>
               </div>
               <div className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
-                <span className="text-white/90">{currentProperty.baths} Baths</span>
-              </div>
-              <div className="px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
                 <span className="text-white/90">{currentProperty.sqft} sqft</span>
               </div>
             </div>
