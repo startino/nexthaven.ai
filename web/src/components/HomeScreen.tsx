@@ -11,7 +11,7 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
     <div className="min-h-screen bg-black p-6 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-5xl font-serif italic text-white">RentLuxe</h1>
+          <h1 className="text-5xl font-serif text-white">RentLuxe</h1>
           <p className="text-xl text-gray-400 font-light">Find your perfect temporary sanctuary</p>
         </div>
 
@@ -30,7 +30,7 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
           </button>
 
-          <button
+          {/* <button
             onClick={onViewHistory}
             className="w-full flex items-center justify-between bg-white/5 backdrop-blur-sm text-white p-6 rounded-2xl group hover:bg-white/10 transition-all"
           >
@@ -42,7 +42,7 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
               </div>
             </div>
             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

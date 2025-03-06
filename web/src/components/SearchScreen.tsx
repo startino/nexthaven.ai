@@ -608,7 +608,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           animate={{ y: 0 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-5xl font-serif italic text-white">RentLuxe</h1>
+          <h1 className="text-5xl font-serif text-white">RentLuxe</h1>
           <p className="text-xl text-gray-400 font-light">Find your perfect temporary sanctuary</p>
         </motion.div>
 

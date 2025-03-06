@@ -128,7 +128,7 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
         className="sticky top-0 z-10 bg-black/80 backdrop-blur-sm"
       >
         <div className="p-4 flex items-center justify-between">
-          <div className="text-2xl font-serif italic text-white">RentLuxe</div>
+          <div className="text-2xl font-serif text-white">RentLuxe</div>
           <div className="flex items-center gap-4">
             <div className="px-4 py-1 rounded-full bg-purple-100/10">
               <span className="text-purple-200 text-sm font-medium">
