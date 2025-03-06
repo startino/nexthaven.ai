@@ -94,6 +94,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                     baths=prop.get("baths", 0),
                     amenities=prop.get("amenities", []),
                     score=str(score_value),
+                    reasoning=prop.get("reasoning", ""),
                     image=prop.get("image", ""),
                     gallery=gallery
                 )

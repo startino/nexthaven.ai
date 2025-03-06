@@ -22,6 +22,7 @@ interface Property {
   baths: number;
   amenities: string[];
   score: string;
+  reasoning: string;
   image: string;
   gallery: string[];
 }
@@ -130,6 +131,11 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                   </span>
                 )}
               </div>
+            )}
+            {property.reasoning && (
+              <p className="text-xs text-gray-300 italic line-clamp-2 mt-2">
+                Match: {property.reasoning.split('.')[0]}.
+              </p>
             )}
           </div>
           <ScoreCircle score={property.score} />
@@ -293,6 +299,13 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                       <p className="text-gray-400">AI-powered evaluation based on your preferences</p>
                     </div>
                   </div>
+                  
+                  {selectedProperty.reasoning && (
+                    <div className="space-y-3 p-4 bg-white/5 rounded-xl">
+                      <h3 className="text-xl font-semibold text-white/90">Match Analysis</h3>
+                      <p className="text-gray-300 leading-relaxed whitespace-pre-line">{selectedProperty.reasoning}</p>
+                    </div>
+                  )}
 
                   <div className="space-y-3">
                     <h3 className="text-xl font-semibold text-white/90">About this property</h3>

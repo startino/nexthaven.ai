@@ -25,6 +25,7 @@ export interface PropertyResult {
   baths: number;
   amenities: string[];
   score: string;
+  reasoning: string;
   image: string;
   gallery: string[];
 }
@@ -66,6 +67,7 @@ const transformResponse = (property: any): PropertyResult => {
     baths: property.baths || 0,
     amenities: property.amenities || [],
     score: property.score || '0',
+    reasoning: property.reasoning || '',
     image: property.image || '',
     gallery: property.gallery || [],
   };

@@ -86,7 +86,12 @@ class EvaluateAgent:
                 
                 Return a property match with a score between 0-100 where 100 is a perfect match.
                 Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
+                Your score output should be just the number, no other text.
                 Keep the URL in the result same as the one provided in the property model.
+                
+                IMPORTANT: You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences. This reasoning will be shown to the user to help them understand why this property received its score. Be specific about which preferences were met and which weren't.
+                
+                You MUST include a "reasoning" field in your output that contains your detailed analysis of why the property received its score. Format this as a concise but detailed paragraph.
                 """
                     ),
                     HumanMessage(
