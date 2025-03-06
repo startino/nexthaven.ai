@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, ArrowLeft, Sparkles } from 'lucide-react';
 import { PropertyResult } from '../services/api';
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 
 interface PropertyImages {
   living: string[];
@@ -29,6 +31,44 @@ interface ComparisonScreenProps {
   onWinnerSelected: (property: Property) => void;
   onBack: () => void;
 }
+
+// Score Circle Component
+const ScoreCircle = ({ score }: { score: string }) => {
+  // Parse score to number, default to 0 if invalid
+  const numericScore = parseInt(score, 10) || 0;
+  
+  // Determine color based on score
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return '#4ade80'; // green for high scores
+    if (score >= 60) return '#facc15'; // yellow for medium scores
+    return '#ef4444'; // red for low scores
+  };
+  
+  const scoreColor = getScoreColor(numericScore);
+  
+  return (
+    <div className="w-20 h-20 flex flex-col items-center">
+      <div className="w-full h-full flex items-center justify-center">
+        <CircularProgressbar
+          value={numericScore}
+          maxValue={100}
+          text={`${numericScore}`}
+          styles={buildStyles({
+            rotation: 0,
+            strokeLinecap: 'round',
+            textSize: '32px',
+            pathTransitionDuration: 0.5,
+            pathColor: scoreColor,
+            textColor: 'white',
+            trailColor: '#1e293b',
+            backgroundColor: 'transparent',
+          })}
+        />
+      </div>
+      <div className="text-xs text-gray-400 mt-1">out of 100</div>
+    </div>
+  );
+};
 
 function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonScreenProps) {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -69,21 +109,24 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
           </motion.div>
         )}
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="text-2xl font-bold text-white">{property.price}</div>
+          <div className="text-2xl font-bold text-white">${property.price}</div>
           <div className="text-gray-300">{property.location}</div>
         </div>
       </div>
 
       <div className="p-4 space-y-4">
-        <div className="flex justify-between text-gray-300">
-          <div className="text-center">
-            <div className="font-semibold">{property.rooms}</div>
-            <div className="text-sm text-gray-500">Beds</div>
+        <div className="flex justify-between items-center">
+          <div className="flex space-x-4 text-gray-300">
+            <div className="text-center">
+              <div className="font-semibold">{property.rooms}</div>
+              <div className="text-sm text-gray-500">Beds</div>
+            </div>
+            <div className="text-center">
+              <div className="font-semibold">{property.baths}</div>
+              <div className="text-sm text-gray-500">Baths</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="font-semibold">{property.baths}</div>
-            <div className="text-sm text-gray-500">Baths</div>
-          </div>
+          <ScoreCircle score={property.score} />
         </div>
 
         <div className="space-y-2">
@@ -152,6 +195,9 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
               <div className="mt-4">
                 <div className="text-2xl font-bold text-white">{winner?.name}</div>
                 <div className="text-gray-400">{winner?.location}</div>
+              </div>
+              <div className="mt-4 flex justify-center">
+                <ScoreCircle score={winner?.score || '0'} />
               </div>
             </div>
           </motion.div>
@@ -239,6 +285,14 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                     </div>
                     <div className="px-4 py-2 rounded-full bg-white/10">
                       <span className="text-white/90">{selectedProperty.baths} Baths</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <ScoreCircle score={selectedProperty.score} />
+                    <div>
+                      <h3 className="text-xl font-semibold text-white/90">Property Score</h3>
+                      <p className="text-gray-400">AI-powered evaluation based on your preferences</p>
                     </div>
                   </div>
 

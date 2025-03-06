@@ -98,7 +98,7 @@ function HistoryScreen({ onBack, onViewCampaign }: HistoryScreenProps) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-2">
-                      <div className="text-sm font-semibold text-white">{property.price}</div>
+                      <div className="text-sm font-semibold text-white">${property.price}</div>
                       <div className="text-xs text-white/80">{property.location}</div>
                     </div>
                   </div>

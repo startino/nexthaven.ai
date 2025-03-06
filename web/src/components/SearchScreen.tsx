@@ -305,20 +305,17 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               <input
                 type="number"
                 min="0"
-                max={form.budget.max - 100}
                 step="100"
                 value={form.budget.min}
                 onChange={(e) => {
-                  const newMin = parseInt(e.target.value);
-                  if (newMin < form.budget.max - 100) {
-                    setForm({ 
-                      ...form, 
-                      budget: { 
-                        ...form.budget, 
-                        min: newMin
-                      } 
-                    });
-                  }
+                  const newMin = parseInt(e.target.value) || 0;
+                  setForm({ 
+                    ...form, 
+                    budget: { 
+                      ...form.budget, 
+                      min: newMin
+                    } 
+                  });
                 }}
                 className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
               />
@@ -327,21 +324,18 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               <label className="text-white/60 text-sm block mb-1">Max Budget</label>
               <input
                 type="number"
-                min={form.budget.min + 100}
-                max="5000"
+                min="0"
                 step="100"
                 value={form.budget.max}
                 onChange={(e) => {
-                  const newMax = parseInt(e.target.value);
-                  if (newMax > form.budget.min + 100) {
-                    setForm({ 
-                      ...form, 
-                      budget: { 
-                        ...form.budget, 
-                        max: newMax
-                      } 
-                    });
-                  }
+                  const newMax = parseInt(e.target.value) || 0;
+                  setForm({ 
+                    ...form, 
+                    budget: { 
+                      ...form.budget, 
+                      max: newMax
+                    } 
+                  });
                 }}
                 className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
               />
