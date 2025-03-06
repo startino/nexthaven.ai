@@ -84,7 +84,9 @@ class EvaluateAgent:
                 Property: {property}
                 Image Analysis: {image_analysis}
                 
-                Return a property match with a score between 0-100 where 100 is a perfect match. Keep the URL in the result same as the one provided in the property model.
+                Return a property match with a score between 0-100 where 100 is a perfect match.
+                Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
+                Keep the URL in the result same as the one provided in the property model.
                 """
                     ),
                     HumanMessage(
