@@ -208,7 +208,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
           <ArrowLeft size={24} />
           <span>Back to Search</span>
         </button>
-        <h1 className="text-3xl font-serif italic text-white">Your Perfect Matches</h1>
+        <h1 className="text-3xl font-serif italic text-white text-right sm:text-left">Your Perfect Matches</h1>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
