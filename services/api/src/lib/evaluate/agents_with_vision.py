@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
 from src.models.apify import ApifyRequest, ApifyResponse
-from src.interfaces.llm import o3_mini, gpt_4o, o1
+from src.interfaces.llm import gpt_4o_mini, o3_mini, gpt_4o, o1, gemini_flash_2
 from src.lib.scraper.apify import ApifyAgent
 from src.models.result import Result, Property
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
@@ -69,7 +69,8 @@ class EvaluateAgent:
             prompt = ChatPromptTemplate(
                 [
                     SystemMessage(
-                        content=f"""You are an expert in evaluating properties. Evaluate this property against the user's requirements and return a match score and analysis.
+                        content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
+                Evaluate this property against the my requirements and return a match score and analysis.
                 
                 Analyze the property based on the following criteria:
                 - Price: Does it match the user's budget?
@@ -79,18 +80,20 @@ class EvaluateAgent:
                 - Reviews: Are the reviews positive?
                 - Style and Vibe: Does the property match the user's style preferences?
                 
-                Output
-                
                 Property: {property}
                 Image Analysis: {image_analysis}
                 
                 Return a property match with a score between 0-100 where 100 is a perfect match.
                 Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
-                Keep the URL in the result same as the one provided in the property model.
+                Your score output should be just the number, no other text.
+                
+                You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
+                This reasoning will be shown to the user to help them understand why this property received its score.
+                Be specific about which preferences were met and which weren't. Format this as a list of sentences, with emojis for each item. Don't use "-" or "•" or "*" or any other bullet point.                
                 """
                     ),
                     HumanMessage(
-                        content=f"""Requirements: {str(user_request)}"""
+                        content=f"""Hey man! I'm excited to be here with you! I can't wait for you to help me find the perfect short-term rental for me! Here are my imaginary requirements: {str(user_request)}"""
                     )
                 ]
             )
@@ -119,6 +122,8 @@ class EvaluateAgent:
                     result = results[f"property_{i}"][0]["args"]
                     # Add gallery to results
                     result["gallery"] = prop.gallery
+                    result["image"] = prop.image
+                    result["url"] = prop.url
                     processed_results.append(result)
                     logging.info(f"Evaluated property: {result['name']} with score: {result.get('score', 'N/A')}")
                 except Exception as e:
@@ -131,14 +136,14 @@ class EvaluateAgent:
                 reverse=True
             )
 
-            # Return top 5 results
-            return sorted_results[:5]
+            # Return top 6 results
+            return sorted_results[:6]
 
         except Exception as e:
             logging.error(f"Error in parallel evaluation: {str(e)}")
             raise
     
-    async def _analyze_images(self, image_urls: List[str], max_images: int = 5) -> str:
+    async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
         """Analyze property images using vision model"""
         if not image_urls:
             return "No images available for analysis."
@@ -172,6 +177,9 @@ class EvaluateAgent:
     
     def _simplify_property(self, property_data: ApifyResponse) -> Dict[str, Any]:
         """Convert ApifyResponse to a simplified dictionary for the LLM"""
+        # Debug logging for image field
+        logging.info(f"ApifyResponse image field: {property_data.image}")
+        
         amenities = []
         for facility in property_data.facilities:
             if facility.facilities:
@@ -186,7 +194,7 @@ class EvaluateAgent:
             if scores:
                 avg_score = sum(scores) / len(scores)
         
-        return {
+        result = {
             "name": property_data.name,
             "url": property_data.url,
             "price": property_data.price,
@@ -196,10 +204,15 @@ class EvaluateAgent:
             "reviews": [{"title": review.title, "score": review.score} 
                        for review in property_data.categoryReviews[:5] if review.title],
             "score": f"{avg_score:.1f}/10" if avg_score else "No reviews",
-            "image_url": property_data.image,
+            "image": property_data.image,
             "description": property_data.description,
             "gallery": property_data.gallery
         }
+        
+        # Debug logging for simplified property
+        logging.info(f"Simplified property image field: {result['image']}")
+        
+        return result
 
 if __name__ == "__main__":
     user_request = UserRequirement(
@@ -209,7 +222,6 @@ if __name__ == "__main__":
         children=0,
         date="from tomorrow to 2 weeks",
         budget=Budget(min=0, max=1000),
-        property_type="Apartments",
         preferences="I want a property with a pool, quiet location, a good view, proximity to co-working space"
     )
     

@@ -55,8 +55,7 @@ const getPreviousPreferences = () => {
 };
 
 // Template text for preferences
-const PREFERENCE_TEMPLATE = `
-Ambience:
+const PREFERENCE_TEMPLATE = `Ambience:
 [Type out the vibe of the place you're looking for; modern / rustic / etc.]
 
 Amenities:
@@ -522,9 +521,9 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col items-center justify-center p-6 bg-black"
+      className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-black"
     >
-      <div className="w-full max-w-2xl space-y-8">
+      <div className="w-full max-w-2xl space-y-6 sm:space-y-8">
         <motion.div 
           initial={{ y: 20 }}
           animate={{ y: 0 }}
@@ -539,7 +538,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           {['location', 'details', 'preferences'].map((step, index) => (
             <React.Fragment key={step}>
               <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-base ${
                   currentStep === step
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                     : (currentStep === 'details' && step === 'location') || 
@@ -549,10 +548,10 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
                 }`}>
                   {index + 1}
                 </div>
-                <span className="ml-2 text-sm text-white/60 capitalize">{step}</span>
+                <span className="ml-2 text-sm text-white/60 capitalize hidden sm:inline">{step}</span>
               </div>
               {index < 2 && (
-                <div className={`flex-1 h-px mx-4 ${
+                <div className={`flex-1 h-px mx-2 sm:mx-4 ${
                   (currentStep === 'details' && index === 0) || 
                   (currentStep === 'preferences' && index < 2)
                     ? 'bg-purple-500'

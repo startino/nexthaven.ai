@@ -74,8 +74,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         formatted_results = []
         for prop in top_results:
             try:
-                # Extract score from the format "85/100"
-                score_value = float(prop.get("score"))
+                # Debug logging for property before formatting
+                logging.info(f"Property before formatting - image field: {prop.get('image')}")
                 
                 # Fix the gallery field - ensure it's a flat list of strings
                 gallery = prop.get("gallery", [])
@@ -88,19 +88,28 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                 result = Result(
                     url=prop.get("url", ""),
                     name=prop.get("name", ""),
-                    price=round(float(prop.get("price", 0))),
+                    price=round(float(prop.get("price", 0) or 0)),
                     location=prop.get("location", ""),
                     rooms=prop.get("rooms", 0),
                     baths=prop.get("baths", 0),
                     amenities=prop.get("amenities", []),
-                    score=str(score_value),
+                    score=prop.get("score", ""),
+                    reasoning=prop.get("reasoning", ""),
                     image=prop.get("image", ""),
                     gallery=gallery
                 )
+                
+                # Debug logging for result after formatting
+                logging.info(f"Result after formatting - image field: {result.image}")
+                
                 formatted_results.append(result.model_dump())
+                
+                # Debug logging for result after model_dump
+                logging.info(f"Result after model_dump - image field: {formatted_results[-1].get('image')}")
             except Exception as e:
                 logging.error(f"Error formatting result: {str(e)}")
                 logging.error(f"Gallery data: {prop.get('gallery')}")
+                logging.error(f"Property data: {prop}")
         
         end_time = time.time()
         

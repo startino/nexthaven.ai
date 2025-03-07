@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 class Budget(BaseModel):
-    min: int = Field(default=0, description="Minimum budget for the property")
-    max: int = Field(default=0, description="Maximum budget for the property")
+    min: int = Field(default=0, description="Minimum budget for the property. Must be an integer, a whole number.")
+    max: int = Field(default=0, description="Maximum budget for the property. Must be an integer, a whole number.")
 
 class DateRange(BaseModel):
     start_date: str = Field(default="", description="Start date for the property in YYYY-MM-DD format")
