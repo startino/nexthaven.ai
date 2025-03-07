@@ -250,7 +250,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
               <div className="p-6 space-y-8 relative z-0">
                 <div className="space-y-3">
                   <h3 className="text-xl font-semibold text-white/90 capitalize">Gallery</h3>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {selectedProperty.gallery.map((image: string, index: number) => (
                       <motion.div
                         key={`${index}`}
