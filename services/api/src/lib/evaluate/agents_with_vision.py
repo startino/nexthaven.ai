@@ -22,7 +22,7 @@ from src.lib.evaluate.analyze import AnalyzeUserRequirement
 class EvaluateAgent:
     def __init__(self):
         self.llm = o3_mini()
-        self.vision_llm = o1()
+        self.vision_llm = gpt_4o()
 
     async def evaluate(self, user_request: GeneratedRequirement, properties: list[ApifyResponse], include_images: bool = True):
         """
@@ -87,7 +87,7 @@ class EvaluateAgent:
                 Return a property match with a score between 0-100 where 100 is a perfect match.
                 Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
                 Your score output should be just the number, no other text.
-                Keep the URL in the result same as the one provided in the property model.
+                Keep the URL in the result same as the one provided in the property model as well as the image.
                 
                 IMPORTANT: You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences. This reasoning will be shown to the user to help them understand why this property received its score. Be specific about which preferences were met and which weren't.
                 
@@ -124,6 +124,8 @@ class EvaluateAgent:
                     result = results[f"property_{i}"][0]["args"]
                     # Add gallery to results
                     result["gallery"] = prop.gallery
+                    result["image"] = prop.image
+                    result["url"] = prop.url
                     processed_results.append(result)
                     logging.info(f"Evaluated property: {result['name']} with score: {result.get('score', 'N/A')}")
                 except Exception as e:
@@ -177,6 +179,9 @@ class EvaluateAgent:
     
     def _simplify_property(self, property_data: ApifyResponse) -> Dict[str, Any]:
         """Convert ApifyResponse to a simplified dictionary for the LLM"""
+        # Debug logging for image field
+        logging.info(f"ApifyResponse image field: {property_data.image}")
+        
         amenities = []
         for facility in property_data.facilities:
             if facility.facilities:
@@ -191,7 +196,7 @@ class EvaluateAgent:
             if scores:
                 avg_score = sum(scores) / len(scores)
         
-        return {
+        result = {
             "name": property_data.name,
             "url": property_data.url,
             "price": property_data.price,
@@ -201,10 +206,15 @@ class EvaluateAgent:
             "reviews": [{"title": review.title, "score": review.score} 
                        for review in property_data.categoryReviews[:5] if review.title],
             "score": f"{avg_score:.1f}/10" if avg_score else "No reviews",
-            "image_url": property_data.image,
+            "image": property_data.image,
             "description": property_data.description,
             "gallery": property_data.gallery
         }
+        
+        # Debug logging for simplified property
+        logging.info(f"Simplified property image field: {result['image']}")
+        
+        return result
 
 if __name__ == "__main__":
     user_request = UserRequirement(
@@ -214,7 +224,6 @@ if __name__ == "__main__":
         children=0,
         date="from tomorrow to 2 weeks",
         budget=Budget(min=0, max=1000),
-        property_type="Apartments",
         preferences="I want a property with a pool, quiet location, a good view, proximity to co-working space"
     )
     

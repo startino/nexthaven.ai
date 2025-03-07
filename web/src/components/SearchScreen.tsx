@@ -55,8 +55,7 @@ const getPreviousPreferences = () => {
 };
 
 // Template text for preferences
-const PREFERENCE_TEMPLATE = `
-Ambience:
+const PREFERENCE_TEMPLATE = `Ambience:
 [Type out the vibe of the place you're looking for; modern / rustic / etc.]
 
 Amenities:

@@ -57,7 +57,10 @@ const transformRequest = (payload: PropertyEvaluationRequest) => {
 };
 
 const transformResponse = (property: any): PropertyResult => {
-  return {
+  console.log('Property from API before transform:', property);
+  console.log('Image field from API:', property.image);
+  
+  const result = {
     id: Math.random(),
     url: property.url || '',
     name: property.name || '',
@@ -71,6 +74,10 @@ const transformResponse = (property: any): PropertyResult => {
     image: property.image || '',
     gallery: property.gallery || [],
   };
+  
+  console.log('Transformed property image field:', result.image);
+  
+  return result;
 };
 
 export const propertyService = {

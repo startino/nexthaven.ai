@@ -47,6 +47,9 @@ class ApifyAgent:
         properties = []
         if result and "defaultDatasetId" in result:
             for item in self.client.dataset(result["defaultDatasetId"]).iterate_items():
+                # Debug logging for raw Apify item
+                logging.info(f"Raw Apify item - image field: {item.get('image')}")
+                
                 parsed_item = ApifyResponse(
                     url=item["url"],
                     name=item["name"],
@@ -89,6 +92,10 @@ class ApifyAgent:
                         facilities=facility["facilities"],
                     ) for facility in item["facilities"]],
                 )
+                
+                # Debug logging for parsed Apify item
+                logging.info(f"Parsed Apify item - image field: {parsed_item.image}")
+                
                 properties.append(parsed_item)
         else:
             logging.error("No dataset ID returned from Apify")
