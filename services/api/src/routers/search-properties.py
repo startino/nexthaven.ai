@@ -24,11 +24,11 @@ class PropertySearchRequest(BaseModel):
     number_of_rooms: int = 1
     # property_type: str = "Hotels"
     preferences: str = ""
-    max_results: int = 5
+    max_results: int = 6
 
 async def property_evaluation_generator(
     user_request: UserRequirement,
-    max_results: int = 5
+    max_results: int = 6
 ) -> AsyncGenerator[bytes, None]:
     """
     Process property search and evaluation, yielding results as they become available

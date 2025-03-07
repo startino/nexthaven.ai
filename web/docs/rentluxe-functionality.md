@@ -20,7 +20,7 @@ nexthaven.ai is a sophisticated property rental search platform that leverages A
 - **Intelligent Processing**:
   - Analyzes user preferences and requirements
   - Considers both explicit criteria and implicit preferences
-  - Returns top 5 best-matched properties
+  - Returns top 6 best-matched properties
 - **Required Search Parameters**:
   - Location
   - Date range

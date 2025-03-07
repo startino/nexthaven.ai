@@ -137,14 +137,14 @@ class EvaluateAgent:
                 reverse=True
             )
 
-            # Return top 5 results
-            return sorted_results[:5]
+            # Return top 6 results
+            return sorted_results[:6]
 
         except Exception as e:
             logging.error(f"Error in parallel evaluation: {str(e)}")
             raise
     
-    async def _analyze_images(self, image_urls: List[str], max_images: int = 5) -> str:
+    async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
         """Analyze property images using vision model"""
         if not image_urls:
             return "No images available for analysis."
