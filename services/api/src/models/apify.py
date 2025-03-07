@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get the default max items from environment variable or use 10 as fallback
-DEFAULT_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
+APIFY_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
 
 # class ApifyInclude(BaseModel):
 #     include_description: bool = Field(default=True, description="Whether to include the description of the property")
@@ -31,7 +31,7 @@ DEFAULT_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
 
 class ApifyRequest(BaseModel):
     search: str = Field(description="The search query")
-    maxItems: int = Field(default=DEFAULT_MAX_ITEMS, description="The maximum number of items to return")
+    maxItems: int = Field(default=APIFY_MAX_ITEMS, description="The maximum number of items to return")
     # propertyType: Literal["Apartments", "Hotels", "Hostels", "Guest houses", 
                           # "Homestays", "Bed and breakfasts", "Holiday homes", 
                           # "Boats","Villas", "Motels", "Resorts", "Holiday parks", 
