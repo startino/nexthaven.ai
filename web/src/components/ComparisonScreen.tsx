@@ -134,7 +134,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
             )}
             {property.reasoning && (
               <p className="text-xs text-gray-300 italic line-clamp-2 mt-2">
-                Match: {property.reasoning.split('.')[0]}.
+               {property.reasoning.split('.')[0]}.
               </p>
             )}
           </div>
@@ -224,7 +224,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
             className="fixed inset-0 bg-black/95 overflow-y-auto z-50"
           >
             <div className="min-h-screen">
-              <div className="sticky top-0 z-10 bg-black/80 backdrop-blur-sm">
+              <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-sm">
                 <div className="flex items-center justify-between p-4">
                   <button
                     onClick={() => setSelectedProperty(null)}
@@ -247,7 +247,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                 </div>
               </div>
 
-              <div className="p-6 space-y-8">
+              <div className="p-6 space-y-8 relative z-0">
                 <div className="space-y-3">
                   <h3 className="text-xl font-semibold text-white/90 capitalize">Gallery</h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -262,18 +262,13 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                         <motion.div
                           initial={{ opacity: 1 }}
                           animate={{ opacity: 0 }}
-                          transition={{ delay: 0.5 }}
-                          className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 animate-pulse"
+                          transition={{ delay: 0.5, duration: 0.3 }}
+                          className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 z-1"
                         />
                         <img 
                           src={image} 
                           alt={`${index} view ${index + 1}`} 
                           className="w-full h-full object-cover" 
-                          onLoad={(e) => {
-                            // Hide the loading animation when image loads
-                            const target = e.target as HTMLImageElement;
-                            target.previousElementSibling?.classList.add('opacity-0');
-                          }}
                         />
                       </motion.div>
                     ))}
