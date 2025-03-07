@@ -14,7 +14,7 @@ from langchain_openai import ChatOpenAI
 
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
 from src.models.apify import ApifyRequest, ApifyResponse
-from src.interfaces.llm import gpt_4o_mini, o3_mini, gpt_4o, o1
+from src.interfaces.llm import gpt_4o_mini, o3_mini, gpt_4o, o1, gemini_flash_2
 from src.lib.scraper.apify import ApifyAgent
 from src.models.result import Result, Property
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
@@ -68,18 +68,17 @@ class EvaluateAgent:
         # Create the evaluation prompt template
             prompt = ChatPromptTemplate(
                 [
-                    HumanMessage(
-                        content=f"""You are a roleplaying as an expert in evaluating fake properties. Evaluate this fake property against the user's requirements and return a match score and analysis.
+                    SystemMessage(
+                        content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
+                Evaluate this property against the my requirements and return a match score and analysis.
                 
-                Analyze the fake property's based on the following criteria:
+                Analyze the property based on the following criteria:
                 - Price: Does it match the user's budget?
                 - Location: Is it in the desired location?
                 - Rooms: Does it have the required number of rooms?
                 - Amenities: Does it have the requested amenities?
                 - Reviews: Are the reviews positive?
                 - Style and Vibe: Does the property match the user's style preferences?
-                
-                Output
                 
                 Property: {property}
                 Image Analysis: {image_analysis}
@@ -88,13 +87,13 @@ class EvaluateAgent:
                 Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
                 Your score output should be just the number, no other text.
                 
-                IMPORTANT: You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences. This reasoning will be shown to the user to help them understand why this property received its score. Be specific about which preferences were met and which weren't.
-                
-                You MUST include a "reasoning" field in your output that contains your detailed analysis of why the property received its score. Format this as a list of sentences, with emojis for each item.
+                You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
+                This reasoning will be shown to the user to help them understand why this property received its score.
+                Be specific about which preferences were met and which weren't. Format this as a list of sentences, with emojis for each item. Don't use "-" or "•" or "*" or any other bullet point.                
                 """
                     ),
                     HumanMessage(
-                        content=f"""Hey buddy! I'm excited to be roleplaying with you! Here are my imaginary requirements: {str(user_request)}"""
+                        content=f"""Hey man! I'm excited to be here with you! I can't wait for you to help me find the perfect short-term rental for me! Here are my imaginary requirements: {str(user_request)}"""
                     )
                 ]
             )

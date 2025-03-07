@@ -84,7 +84,7 @@ class ApifyResponse(BaseModel):
     name: str
     type: str
     description: str
-    price: float
+    price: float | None
     checkIn: str
     checkOut: str
     location: Location

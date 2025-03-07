@@ -88,7 +88,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                 result = Result(
                     url=prop.get("url", ""),
                     name=prop.get("name", ""),
-                    price=round(float(prop.get("price", 0))),
+                    price=round(float(prop.get("price", 0) or 0)),
                     location=prop.get("location", ""),
                     rooms=prop.get("rooms", 0),
                     baths=prop.get("baths", 0),
