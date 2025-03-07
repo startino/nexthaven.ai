@@ -221,10 +221,10 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 overflow-y-auto z-50"
+            className="fixed inset-0 bg-black z-50 overflow-hidden"
           >
-            <div className="min-h-screen">
-              <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-sm">
+            <div className="min-h-screen max-h-screen overflow-y-auto">
+              <div className="sticky top-0 z-10 bg-black shadow-md">
                 <div className="flex items-center justify-between p-4">
                   <button
                     onClick={() => setSelectedProperty(null)}
@@ -247,7 +247,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                 </div>
               </div>
 
-              <div className="p-6 space-y-8 relative z-0">
+              <div className="p-6 space-y-8 bg-black">
                 <div className="space-y-3">
                   <h3 className="text-xl font-semibold text-white/90 capitalize">Gallery</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -257,14 +257,8 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="relative aspect-video rounded-xl overflow-hidden"
+                        className="relative aspect-video rounded-xl overflow-hidden bg-gray-900"
                       >
-                        <motion.div
-                          initial={{ opacity: 1 }}
-                          animate={{ opacity: 0 }}
-                          transition={{ delay: 0.5, duration: 0.3 }}
-                          className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 z-1"
-                        />
                         <img 
                           src={image} 
                           alt={`${index} view ${index + 1}`} 
@@ -277,7 +271,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
 
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-3xl font-bold text-white">{selectedProperty.price}</h2>
+                    <h2 className="text-3xl font-bold text-white">${selectedProperty.price}</h2>
                     <p className="text-xl text-gray-300">{selectedProperty.location}</p>
                   </div>
 

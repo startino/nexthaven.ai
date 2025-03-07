@@ -60,14 +60,14 @@ function LoadingScreen() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="w-full max-w-md p-8 space-y-12">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-serif text-white">nexthaven.ai</h1>
-          <p className="text-lg text-gray-400">Our AI agents are working their magic</p>
-          <p className="text-sm text-gray-500">This may take a few minutes</p>
+      <div className="w-full max-w-md px-4 py-6 space-y-8 sm:space-y-12">
+        <div className="text-center space-y-3 sm:space-y-4">
+          <h1 className="text-3xl sm:text-4xl font-serif text-white">nexthaven.ai</h1>
+          <p className="text-base sm:text-lg text-gray-400 font-light">Our AI agents are working their magic</p>
+          <p className="text-xs sm:text-sm text-gray-500">This may take a few minutes</p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {steps.map((step, index) => (
             <motion.div
               key={index}
@@ -76,7 +76,7 @@ function LoadingScreen() {
                 opacity: index === currentStep ? 1 : (index < currentStep ? 0.7 : 0.3),
                 x: index === currentStep ? 10 : 0
               }}
-              className="flex items-center gap-4"
+              className="flex items-center gap-3 sm:gap-4"
             >
               <motion.div
                 animate={{
@@ -87,16 +87,16 @@ function LoadingScreen() {
                   duration: 2,
                   repeat: index === currentStep ? Infinity : 0,
                 }}
-                className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                   index === currentStep 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500' 
+                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/20' 
                     : (index < currentStep ? 'bg-purple-500/50' : 'bg-white/10')
                 }`}
               >
-                <step.icon className="text-white" size={24} />
+                <step.icon className="text-white" size={index === currentStep ? 22 : 20} />
               </motion.div>
-              <span className={`${
-                index === currentStep ? 'text-white' : (index < currentStep ? 'text-white/70' : 'text-white/40')
+              <span className={`text-sm sm:text-base truncate ${
+                index === currentStep ? 'text-white font-medium' : (index < currentStep ? 'text-white/70' : 'text-white/40')
               }`}>
                 {step.text}
               </span>
@@ -104,16 +104,18 @@ function LoadingScreen() {
           ))}
         </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-gray-500">
+        <div className="space-y-2 mt-6 w-full">
+          <div className="flex justify-between text-xs sm:text-sm text-gray-500 w-full">
             <span>Progress: {Math.round(progress)}%</span>
             <span>Est. time remaining: {formatTime(timeRemaining)}</span>
           </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: "0%" }}
-              animate={{ width: `${progress}%` }}
+          <div className="w-full h-2 sm:h-3 bg-white/10 rounded-full overflow-hidden">
+            <div 
               className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+              style={{
+                width: `${Math.min(progress, 100)}%`,
+                boxShadow: "0 0 10px rgba(168, 85, 247, 0.5)"
+              }}
             />
           </div>
         </div>
