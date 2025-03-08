@@ -15,7 +15,7 @@ from langchain_openai import ChatOpenAI
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
 from src.models.apify import BookingApifyRequest, BookingApifyResponse
 from src.models.airbnb_apify import AirbnbApifyResponse
-from src.interfaces.llm import gpt_4o_mini, o3_mini, gpt_4o, o1, gemini_flash_2
+from src.interfaces.llm import gpt_4o_mini, o3_mini, gpt_4o, o1, gemini_flash_2, deepseek_r1_distill, ministral_8b
 from src.lib.scraper.booking_apify import BookingApifyAgent
 from src.lib.scraper.airbnb_apify import AirbnbApifyAgent
 from src.models.result import Result, Property
@@ -25,7 +25,7 @@ from src.models.unified_property import UnifiedProperty, PricingModel, CapacityM
 class EvaluateAgent:
     def __init__(self):
         self.llm = o3_mini()
-        self.vision_llm = o1()
+        self.vision_llm = gemini_flash_2()
 
     async def evaluate(self, user_request: GeneratedRequirement, properties: list[BookingApifyResponse | AirbnbApifyResponse], include_images: bool = True):
         """
@@ -153,7 +153,7 @@ class EvaluateAgent:
             )
 
             # Return top 6 results
-            return sorted_results[:6]
+            return sorted_results[:10]
 
         except Exception as e:
             logging.error(f"Error in parallel evaluation: {str(e)}")
@@ -302,8 +302,7 @@ class EvaluateAgent:
             location = property_data.address.full if property_data.address else ""
             
             # Extract pricing
-            per_night = property_data.price if property_data.price else 0.0
-            total = per_night * 7  # Estimate total for a week
+            total = property_data.price if property_data.price else 0.0
             
             # Extract capacity
             bedrooms = len(property_data.rooms) if property_data.rooms else 1

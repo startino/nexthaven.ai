@@ -32,7 +32,6 @@ class BookingApifyAgent:
             checkIn=user_request.date_range.start_date,
             checkOut=user_request.date_range.end_date,
             minMaxPrice=f"{user_request.nightly_budget.min}-{user_request.nightly_budget.max}",
-            # propertyType=property_type,
         )
 
     async def get_properties(self, request: BookingApifyRequest) -> list[BookingApifyResponse]:

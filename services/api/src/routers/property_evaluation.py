@@ -90,7 +90,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         results = await evaluate_agent.evaluate(generated_req_obj, all_properties)
         
         # Limit to requested number of results
-        top_results = results[:5]
+        top_results = results[:18]
         
         # Convert UnifiedProperty objects to dictionaries for JSON response
         formatted_results = []

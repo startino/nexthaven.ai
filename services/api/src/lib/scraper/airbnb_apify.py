@@ -54,6 +54,14 @@ class AirbnbApifyAgent:
     def generate_request(self, user_request: GeneratedRequirement):
         logging.info(f"Generating Airbnb Apify request for user request: {user_request}")
         
+        # Handle stays of 28+ days
+        if user_request.date_range.end_date and user_request.date_range.start_date:
+            stay_duration = (datetime.strptime(user_request.date_range.end_date, "%Y-%m-%d") - datetime.strptime(user_request.date_range.start_date, "%Y-%m-%d")).days
+            if stay_duration >= 28:
+                # Update Apify request's max and min prices to reflect monthly pricing
+                user_request.nightly_budget.min *= 28
+                user_request.nightly_budget.max *= 28
+
         # Use locationQueries instead of search
         return AirbnbApifyRequest(
             locationQueries=[user_request.query],  # Pass as a list of locations
@@ -61,6 +69,7 @@ class AirbnbApifyAgent:
             checkOut=user_request.date_range.end_date,
             adults=user_request.adults,
             children=user_request.children,
+            # Prices are nightly until >=28 days (Airbnb switches to monthly pricing)
             priceMin=user_request.nightly_budget.min,
             priceMax=user_request.nightly_budget.max,
             currency="USD",
@@ -113,6 +122,13 @@ class AirbnbApifyAgent:
     def _parse_airbnb_item(self, item: dict) -> AirbnbApifyResponse:
         """
         Parse an Airbnb item from the Apify API response into our model.
+        
+        Args:
+            item: The raw Airbnb item from Apify
+            stay_duration: The duration of the stay in days (optional)
+            
+        Returns:
+            The parsed AirbnbApifyResponse
         """
         try:
             # Extract coordinates
@@ -243,11 +259,11 @@ class AirbnbApifyAgent:
                             # Handle case where image is just a string URL
                             images.append(Image(imageUrl=image_data))
             
-            # Extract price information
+            # Extract price information and normalize if needed for long stays
             price = Price()
             if "price" in item and item["price"]:
                 price_data = item["price"]
-                
+
                 # Extract price breakdown
                 breakdown = None
                 if "breakDown" in price_data and price_data["breakDown"]:

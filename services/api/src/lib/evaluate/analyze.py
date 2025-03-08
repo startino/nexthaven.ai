@@ -3,18 +3,16 @@
 import logging
 
 from src.models.requirement import UserRequirement, GeneratedRequirement, Budget, DateRange
-from src.interfaces.llm import o3_mini
+from src.interfaces.llm import ministral_8b
 
-from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputToolsParser
-from langchain_openai import ChatOpenAI
 from datetime import datetime
 
 class AnalyzeUserRequirement:
     
     def __init__(self):
-        self.llm = o3_mini()
+        self.llm = ministral_8b()
         self.today_date = datetime.now().strftime("%Y-%m-%d")
         
     def analyze_user_requirement(self, user_requirement: UserRequirement) -> GeneratedRequirement:
@@ -33,6 +31,12 @@ class AnalyzeUserRequirement:
             4. Set both the original total budget and the calculated nightly budget in your response
             
             For example, if the user's total budget is $1000-$2000 for a 5-night stay, the nightly budget would be $200-$400 per night.
+            You should include your calculations in your reasoning. Absolutely every parameter should be included in your reasoning.
+
+            Output Schema:
+            {output_schema}
+
+            * Nightly budget should rounded to the nearest integer
             """
         )
         
@@ -41,7 +45,8 @@ class AnalyzeUserRequirement:
         response = chain.invoke(
             {
                 "user_requirement": user_requirement,
-                "today_date": self.today_date
+                "today_date": self.today_date,
+                "output_schema": GeneratedRequirement.model_json_schema()
             }
         )
         

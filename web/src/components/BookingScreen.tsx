@@ -58,13 +58,9 @@ function BookingScreen({ property, onBack }: BookingScreenProps) {
               <h3 className="text-lg sm:text-xl font-bold text-white">Property Details</h3>
               
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="bg-white/10 p-3 sm:p-4 rounded-lg">
-                  <p className="text-xs sm:text-sm text-gray-400">Price per night</p>
-                  <p className="text-lg sm:text-2xl font-bold text-white">${property.pricing.per_night}</p>
-                </div>
-                <div className="bg-white/10 p-3 sm:p-4 rounded-lg">
-                  <p className="text-xs sm:text-sm text-gray-400">Total price</p>
-                  <p className="text-lg sm:text-2xl font-bold text-white">${property.pricing.total}</p>
+                <div className="bg-purple-500/20 p-3 sm:p-4 rounded-lg border border-purple-500/30">
+                  <p className="text-xs sm:text-sm text-purple-300 font-medium">Total price</p>
+                  <p className="text-lg sm:text-2xl font-bold text-white">${Math.round(property.pricing.total)}</p>
                 </div>
               </div>
               

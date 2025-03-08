@@ -88,7 +88,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
           </motion.div>
         )}
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="text-xl sm:text-2xl font-bold text-white">${property.pricing.per_night}</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">${Math.round(property.pricing.total)}</div>
         </div>
       </div>
 
@@ -252,7 +252,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
 
                 <div className="space-y-5 sm:space-y-6">
                   <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white">${selectedProperty.pricing.per_night}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white">${Math.round(selectedProperty.pricing.total)}</h2>
                     <p className="text-lg text-gray-300">{selectedProperty.location}</p>
                   </div>
 

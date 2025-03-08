@@ -19,8 +19,7 @@ export function adaptBookingProperty(property: any): UnifiedProperty {
     description: property.description || '',
     location: property.location || '',
     pricing: {
-      per_night: Math.round(property.price) || 0,
-      total: Math.round(property.price) || 0, // Assuming total price is not available
+      total: Math.round(property.price) || 0,
     },
     capacity: {
       bedrooms: property.rooms || 0,
@@ -52,8 +51,7 @@ export function adaptAirbnbProperty(property: any): UnifiedProperty {
     description: property.description || '',
     location: property.location || '',
     pricing: {
-      per_night: Math.round(property.price) || 0,
-      total: Math.round(property.price) || 0, // Assuming total price is not available
+      total: Math.round(property.price) || 0,
     },
     capacity: {
       bedrooms: property.rooms || 0,
@@ -85,8 +83,7 @@ export function adaptPropertyResult(property: PropertyResult): UnifiedProperty {
     description: '', // PropertyResult doesn't have a description
     location: property.location || '',
     pricing: {
-      per_night: Math.round(property.price) || 0,
-      total: Math.round(property.price) || 0, // Assuming total price is not available
+      total: Math.round(property.price) || 0,
     },
     capacity: {
       bedrooms: property.rooms || 0,

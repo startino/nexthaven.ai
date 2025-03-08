@@ -39,6 +39,10 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
             </div>
             <ArrowRight className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
           </button>
+          <div className="flex flex-col items-center mt-8">
+            <p className="text-xs sm:text-sm">Interested in partnering with us? (Affiliate, Partner, etc.)</p>
+            <p className="text-xs sm:text-sm mt-1">Contact: <a href="mailto:jorge.lewis@starti.no" className="text-purple-400 hover:text-purple-300">jorge.lewis@starti.no</a></p>
+          </div>
 
           {/* <button
             onClick={onViewHistory}
@@ -57,8 +61,9 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
       </div>
       
       <div className="mt-10 sm:mt-12 text-center text-gray-400">
-        <p className="text-xs sm:text-sm">Made by the <a href="https://starti.no" className="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer">Startino Team</a></p>
-        <p className="text-xs sm:text-sm mt-1">Contact: <a href="mailto:jorge.lewis@starti.no" className="text-purple-400 hover:text-purple-300">jorge.lewis@starti.no</a></p>
+
+        <p className="text-xs sm:text-sm mt-4">Made by the <a href="https://starti.no" className="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer">Startino Team</a></p>
+
       </div>
     </div>
   );

@@ -72,12 +72,20 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
     const gallery = currentProperty.media.gallery || [];
     const totalImages = gallery.length;
     
+    // Split gallery into two halves for the new layout
+    const firstHalf = gallery.slice(0, Math.ceil(totalImages / 2));
+    const secondHalf = gallery.slice(Math.ceil(totalImages / 2));
+    
     // Create visual categories based on image position in the array
     const categories = {
-      living: gallery.slice(0, Math.ceil(totalImages * 0.4)),
-      bedroom: gallery.slice(Math.ceil(totalImages * 0.4), Math.ceil(totalImages * 0.6)),
-      bathroom: gallery.slice(Math.ceil(totalImages * 0.6), Math.ceil(totalImages * 0.8)),
-      kitchen: gallery.slice(Math.ceil(totalImages * 0.8))
+      firstHalf: {
+        living: firstHalf.slice(0, Math.ceil(firstHalf.length * 0.6)),
+        bedroom: firstHalf.slice(Math.ceil(firstHalf.length * 0.6))
+      },
+      secondHalf: {
+        bathroom: secondHalf.slice(0, Math.ceil(secondHalf.length * 0.5)),
+        kitchen: secondHalf.slice(Math.ceil(secondHalf.length * 0.5))
+      }
     };
     
     return categories;
@@ -120,6 +128,13 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60" />
+          
+          {/* Platform source badge */}
+          <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-sm">
+            <span className="text-white text-sm font-medium">
+              {currentProperty.source}
+            </span>
+          </div>
         </div>
         <div className="col-span-2 grid grid-rows-2 gap-2">
           {allImages.slice(1, 5).map((image, index) => (
@@ -226,6 +241,94 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
     );
   };
 
+  // Render first half of gallery
+  const renderFirstHalfGallery = () => {
+    return (
+      <div className="space-y-8">
+        {Object.entries(imageCategories.firstHalf).map(([category, images]) => (
+          images.length > 0 && (
+            <div key={category} className="space-y-3">
+              <h3 className="text-xl font-semibold text-white/90 capitalize">{category}</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {images.map((image: string, index: number) => {
+                  const imageKey = `${category}-${index}`;
+                  const galleryIndex = currentProperty.media.gallery.indexOf(image);
+                  return (
+                    <motion.div
+                      key={imageKey}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`relative aspect-video rounded-xl overflow-hidden cursor-pointer ${
+                        getColSpan(imageKey) > 1 ? 'col-span-2' : 'col-span-1'
+                      }`}
+                      onClick={() => {
+                        // Add 1 to account for main image at index 0
+                        setCurrentImageIndex(galleryIndex + 1);
+                        setShowFullGallery(true);
+                      }}
+                    >
+                      <img 
+                        src={image} 
+                        alt={`${category} view ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                        onLoad={() => getImageAspectRatio(image, imageKey)}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )
+        ))}
+      </div>
+    );
+  };
+
+  // Render second half of gallery
+  const renderSecondHalfGallery = () => {
+    return (
+      <div className="space-y-8">
+        {Object.entries(imageCategories.secondHalf).map(([category, images]) => (
+          images.length > 0 && (
+            <div key={category} className="space-y-3">
+              <h3 className="text-xl font-semibold text-white/90 capitalize">{category}</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {images.map((image: string, index: number) => {
+                  const imageKey = `${category}-${index}`;
+                  const galleryIndex = currentProperty.media.gallery.indexOf(image);
+                  return (
+                    <motion.div
+                      key={imageKey}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`relative aspect-video rounded-xl overflow-hidden cursor-pointer ${
+                        getColSpan(imageKey) > 1 ? 'col-span-2' : 'col-span-1'
+                      }`}
+                      onClick={() => {
+                        // Add 1 to account for main image at index 0
+                        setCurrentImageIndex(galleryIndex + 1);
+                        setShowFullGallery(true);
+                      }}
+                    >
+                      <img 
+                        src={image} 
+                        alt={`${category} view ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                        onLoad={() => getImageAspectRatio(image, imageKey)}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+          )
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-black pb-24">
       {/* Header */}
@@ -256,12 +359,22 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
         {renderImageCollage()}
         {renderFullGallery()}
 
+        {/* First Half of Gallery */}
+        <div className="px-6 py-8">
+          {renderFirstHalfGallery()}
+        </div>
+
         {/* Property Details */}
         <div className="px-6 py-8 space-y-8">
           <div className="space-y-4">
-            <div>
-              <h2 className="text-3xl font-bold text-white">${currentProperty.pricing.per_night.toFixed(0)}</h2>
-              <p className="text-lg text-gray-300">{currentProperty.location}</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-3xl font-bold text-white">${Math.round(currentProperty.pricing.total)}</h2>
+                <p className="text-lg text-gray-300">{currentProperty.location}</p>
+              </div>
+              <div className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/80 to-pink-500/80 backdrop-blur-sm">
+                <span className="text-white font-medium">{currentProperty.source}</span>
+              </div>
             </div>
 
             <div className="flex gap-4">
@@ -272,46 +385,6 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
                 <span className="text-white/90">{currentProperty.capacity.bedrooms} Bedrooms</span>
               </div>
             </div>
-          </div>
-
-          {/* Image Categories */}
-          <div className="space-y-8">
-            {Object.entries(imageCategories).map(([category, images]) => (
-              images.length > 0 && (
-                <div key={category} className="space-y-3">
-                  <h3 className="text-xl font-semibold text-white/90 capitalize">{category}</h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    {images.map((image: string, index: number) => {
-                      const imageKey = `${category}-${index}`;
-                      const galleryIndex = currentProperty.media.gallery.indexOf(image);
-                      return (
-                        <motion.div
-                          key={imageKey}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className={`relative aspect-video rounded-xl overflow-hidden cursor-pointer ${
-                            getColSpan(imageKey) > 1 ? 'col-span-2' : 'col-span-1'
-                          }`}
-                          onClick={() => {
-                            // Add 1 to account for main image at index 0
-                            setCurrentImageIndex(galleryIndex + 1);
-                            setShowFullGallery(true);
-                          }}
-                        >
-                          <img 
-                            src={image} 
-                            alt={`${category} view ${index + 1}`} 
-                            className="w-full h-full object-cover"
-                            onLoad={() => getImageAspectRatio(image, imageKey)}
-                          />
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )
-            ))}
           </div>
 
           {/* Description */}
@@ -337,6 +410,11 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Second Half of Gallery */}
+        <div className="px-6 py-8">
+          {renderSecondHalfGallery()}
         </div>
 
         {/* Action Buttons - Now fixed to bottom */}

@@ -40,4 +40,4 @@ export interface UnifiedProperty {
   
   // Raw Data (for debugging or advanced use)
   raw_data?: any;              // Changed from rawData to match backend
-} 
+}

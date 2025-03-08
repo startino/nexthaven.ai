@@ -6,6 +6,66 @@ from langchain_openai import AzureChatOpenAI, ChatOpenAI
 
 load_dotenv()
 
+# def gpt_4o_realtime_preview(temperature: float = 0.5) -> AzureChatOpenAI:
+#     """
+#     """
+#     AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+#     assert (
+#         AZURE_OPENAI_API_KEY is not None
+#     ), "Environment variable 'AZURE_OPENAI_API_KEY' is not set"
+    
+#     AZURE_OPENAI_API_ENDPOINT = os.getenv("AZURE_OPENAI_API_ENDPOINT")
+#     assert (
+#         AZURE_OPENAI_API_ENDPOINT is not None
+#     ), "Environment variable 'AZURE_OPENAI_API_ENDPOINT' is not set"
+
+#     return AzureChatOpenAI(
+#         azure_endpoint=AZURE_OPENAI_API_ENDPOINT,
+#         api_key=SecretStr(AZURE_OPENAI_API_KEY),
+#         azure_deployment="gpt-4o-realtime-preview",
+#         model="gpt-4o-realtime-preview",
+#         api_version="2024-10-01",
+#         temperature=temperature,
+#         max_retries=20,
+#     )
+
+
+
+def ministral_8b(temperature: float = 0.5) -> ChatOpenAI:
+    """
+    https://openrouter.ai/mistralai/ministral-8b
+    """
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    assert (
+        OPENROUTER_API_KEY is not None
+    ), "Environment variable 'OPENROUTER_API_KEY' is not set"
+
+    return ChatOpenAI(
+        api_key=SecretStr(OPENROUTER_API_KEY),
+        base_url="https://openrouter.ai/api/v1",
+        model="mistralai/ministral-8b",
+        temperature=temperature,
+        max_retries=20,
+        default_headers={"HTTP-Referer": "https://releti.no", "X-Title": "Reletino"},
+    )
+
+
+def deepseek_r1_distill(temperature: float = 0.5) -> ChatOpenAI:
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    assert (
+        OPENROUTER_API_KEY is not None
+    ), "Environment variable 'OPENROUTER_API_KEY' is not set"
+
+    return ChatOpenAI(
+        api_key=SecretStr(OPENROUTER_API_KEY),
+        base_url="https://openrouter.ai/api/v1",
+        model="deepseek/deepseek-r1-distill-qwen-14b",
+        temperature=temperature,
+        max_retries=20,
+        default_headers={"HTTP-Referer": "https://releti.no", "X-Title": "Reletino"},
+    )
+
+
 def gemini_flash_2(temperature: float = 0.5) -> ChatOpenAI:
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
     assert (

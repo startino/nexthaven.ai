@@ -2,7 +2,6 @@ from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel
 
 class PricingModel(BaseModel):
-    per_night: float
     total: float
 
 class CapacityModel(BaseModel):

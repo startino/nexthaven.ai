@@ -46,11 +46,6 @@ const getPreviousPreferences = () => {
       date: '2025-03-15',
       preferences: 'Modern apartment with a home office setup, high-speed internet, and a quiet neighborhood. Must have in-unit laundry and a balcony.',
     },
-    {
-      id: 2,
-      date: '2025-03-10',
-      preferences: 'Luxury condo in a walkable area, close to restaurants. Looking for high-end finishes, concierge service, and a fitness center.',
-    }
   ];
 };
 
@@ -66,7 +61,7 @@ const DEFAULT_LOCATIONS = [
 // Define recommended time options - split into when and period
 const WHEN_OPTIONS = [
   { label: 'Next Week', value: 'Next Week' },
-  { label: 'Two Weeks', value: 'Two Weeks' },
+  { label: 'Two Weeks', value: 'In Two Weeks' },
   { label: 'Next Month', value: 'Next Month' },
   { label: 'In 3 Months', value: 'In 3 Months' },
 ];
@@ -79,14 +74,17 @@ const PERIOD_OPTIONS = [
 ];
 
 // Template text for preferences
-const PREFERENCE_TEMPLATE = `Ambience:
-[Type out the vibe of the place you're looking for; modern / rustic / etc.]
+const PREFERENCE_TEMPLATE = `Type of property:
+[apartment / hostel / co-living / etc.]
+
+Ambience:
+[modern / rustic / cozy / minimalist / traditional / bohemian / elegant]
 
 Amenities:
-[Type out the amenities you're looking for; pool / gym / etc.]
+[pool / gym / parking / etc.]
 
 Location:
-[Type out the location you're looking for, such as nearby public transportation, close to a beach, etc.]
+[15min walk to the beach / 10min drive to the city center / etc.]
 
 Literally any other preferences:
 [Any other specific requirements or preferences you have]`;

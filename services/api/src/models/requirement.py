@@ -19,7 +19,8 @@ class UserRequirement(BaseModel):
     preferences: str = Field(default="", description="Specific preferences for the property in textual form")
     
 class GeneratedRequirement(BaseModel):
-    query: str = Field(default="", description="Query for the property")
+    reasoning: str = Field(description="Reasoning behind the each and every generated requirements")
+    query: str = Field(description="Query for the property")
     date_range: DateRange = Field(default=DateRange(), description="Date range for the property")
     budget: Budget = Field(default=Budget(), description="Total budget for the entire stay")
     nightly_budget: Budget = Field(default=Budget(), description="Budget per night, calculated by dividing total budget by number of nights")
