@@ -89,7 +89,9 @@ class EvaluateAgent:
                 
                 You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
                 This reasoning will be shown to the user to help them understand why this property received its score.
-                Be specific about which preferences were met and which weren't. Format this as a list of sentences, with emojis for each item. Don't use "-" or "•" or "*" or any other bullet point.                
+                Be specific about which preferences were met and which weren't.
+                Format this as a list of sentences, with emojis for each item. E.g. ✅, 🏆, 👌, 👎. Make the emojis relevant to the item, but don't overdo them.
+                Don't use "-" or "•" or "*" or any other bullet point. Use a colon ":" to separate the item and the score.
                 """
                     ),
                     HumanMessage(
