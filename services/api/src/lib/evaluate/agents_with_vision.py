@@ -14,8 +14,8 @@ from langchain_openai import ChatOpenAI
 
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
 from src.models.apify import BookingApifyRequest, BookingApifyResponse
-from src.models.airbnb_apify import AirbnbApifyResponse
-from src.interfaces.llm import gpt_4o_mini, o3_mini, gpt_4o, o1, gemini_flash_2, deepseek_r1_distill, ministral_8b
+from src.models.airbnb_apify import AirbnbApifyResponse, Price
+from src.interfaces.llm import gemini_pro_exp, gpt_4o_mini, o3_mini, gpt_4o, o1, gemini_flash_2, deepseek_r1_distill, ministral_8b
 from src.lib.scraper.booking_apify import BookingApifyAgent
 from src.lib.scraper.airbnb_apify import AirbnbApifyAgent
 from src.models.result import Result, Property
@@ -75,6 +75,11 @@ class EvaluateAgent:
         for i, prop in enumerate(properties):
             property = self._simplify_property(prop)
             image_analysis = image_analyses.get(f"property_{i}", "")
+
+            # Remove properties not needed by LLM (to save tokens)
+            property["gallery"] = []
+            property["image"] = ""
+            property["source"] = ""
     
         # Create the evaluation prompt template
             prompt = ChatPromptTemplate(
@@ -129,12 +134,18 @@ class EvaluateAgent:
 
         try:
             # Run all evaluations in parallel
-            results = await parallel_chain.ainvoke({})
+            # The RunnableParallel will now handle exceptions for individual properties
+            results = await parallel_chain.ainvoke({}, return_exceptions=True)
 
             # Process results
             processed_results: list[UnifiedProperty] = []
             for i, prop in enumerate(properties):
                 try:
+                    # Check if the result is an exception
+                    if isinstance(results.get(f"property_{i}"), Exception):
+                        logging.error(f"Error evaluating property {i}: {str(results[f'property_{i}'])}")
+                        continue
+                        
                     result = results[f"property_{i}"][0]["args"]
                     
                     # Create a UnifiedProperty object
@@ -146,18 +157,22 @@ class EvaluateAgent:
                     logging.error(f"Error processing property {i}: {str(e)}")
 
             # Sort results by score (now using numeric values directly)
-            sorted_results = sorted(
-                processed_results, 
-                key=lambda x: x.score, 
-                reverse=True
-            )
-
-            # Return top 6 results
-            return sorted_results[:10]
+            if processed_results:
+                sorted_results = sorted(
+                    processed_results, 
+                    key=lambda x: x.score, 
+                    reverse=True
+                )
+                
+                # Return top 10 results or all if less than 10
+                return sorted_results[:10]
+            else:
+                logging.warning("No properties were successfully processed")
+                return []
 
         except Exception as e:
             logging.error(f"Error in parallel evaluation: {str(e)}")
-            raise
+            return []
     
     async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
         """Analyze property images using vision model"""
@@ -327,17 +342,8 @@ class EvaluateAgent:
             url = property_data.url
             location = property_data.location if property_data.location else ""
             
-            # Extract pricing
-            per_night = 0.0
-            total = 0.0
-            if property_data.price and property_data.price.price:
-                try:
-                    price_str = property_data.price.price
-                    per_night = float(''.join(filter(lambda x: x.isdigit() or x == '.', price_str)))
-                    total = per_night * 7  # Estimate total for a week
-                except:
-                    pass
-            
+            total = property_data.price if property_data.price else 0.0
+
             # Extract capacity
             bedrooms = 1  # Default assumption
             beds = property_data.personCapacity if property_data.personCapacity else 1
@@ -363,8 +369,7 @@ class EvaluateAgent:
             description=description,
             location=location if location else "",  # Ensure location is never None
             pricing=PricingModel(
-                per_night=per_night,
-                total=total
+                total=float(total.price) if isinstance(total, Price) and total.price else (total if isinstance(total, (int, float)) else 0.0)
             ),
             capacity=CapacityModel(
                 bedrooms=bedrooms,
@@ -423,10 +428,11 @@ if __name__ == "__main__":
     
     # Get properties from both sources
     booking_request = booking_agent.generate_request(generate_requirement)
-    booking_properties = booking_agent.get_properties(booking_request)
-    
     airbnb_request = airbnb_agent.generate_request(generate_requirement)
-    airbnb_properties = airbnb_agent.get_properties(airbnb_request)
+    
+    # Get properties using asyncio.run
+    booking_properties = asyncio.run(booking_agent.get_properties(booking_request))
+    airbnb_properties = asyncio.run(airbnb_agent.get_properties(airbnb_request))
     
     # Combine properties from both sources
     all_properties = booking_properties + airbnb_properties
@@ -436,6 +442,11 @@ if __name__ == "__main__":
     evaluate_agent = EvaluateAgent()
     response = asyncio.run(evaluate_agent.evaluate(generate_requirement, all_properties))
     end_time = time.time()
-    print(f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds")
-    for prop in response:
-        print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
+    
+    # Check if response is None before calling len()
+    if response:
+        print(f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds")
+        for prop in response:
+            print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
+    else:
+        print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")

@@ -29,6 +29,24 @@ load_dotenv()
 #         max_retries=20,
 #     )
 
+def gemini_pro_exp(temperature: float = 0.5) -> ChatOpenAI:
+    """
+    https://openrouter.ai/google/gemini-2.0-pro-exp-02-05
+    """
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    assert (
+        OPENROUTER_API_KEY is not None
+    ), "Environment variable 'OPENROUTER_API_KEY' is not set"
+
+    return ChatOpenAI(
+        api_key=SecretStr(OPENROUTER_API_KEY),
+        base_url="https://openrouter.ai/api/v1",
+        model="google/gemini-2.0-pro-exp-02-05",
+        temperature=temperature,
+        max_retries=20,
+        default_headers={"HTTP-Referer": "https://releti.no", "X-Title": "Reletino"},
+    )
+
 
 
 def ministral_8b(temperature: float = 0.5) -> ChatOpenAI:
