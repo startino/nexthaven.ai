@@ -48,8 +48,8 @@ class ApifyRequest(BaseModel):
     checkOut: str = Field(description="The check-out date")
     
 class Location(BaseModel):
-    lat: str | None
-    lng: str | None
+    lat: str | float | int | None
+    lng: str | float | int | None
     
 class Address(BaseModel):
     full: str | None
