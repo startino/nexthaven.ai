@@ -8,30 +8,36 @@ interface HomeScreenProps {
 
 function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
   return (
-    <div className="min-h-screen bg-black p-4 sm:p-6 flex flex-col">
-              <div className="text-center space-y-4 mt-8 sm:mt-12">
-          <h2 className="text-xl sm:text-2xl font-serif text-white">nexthaven.ai</h2>
+    <div className="min-h-screen bg-black px-4 py-6 sm:p-6 flex flex-col">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-serif text-white">nexthaven.ai</h2>
+      </div>
+      
+      <div className="flex-1 flex flex-col items-center justify-center">
+        <div className="text-center space-y-4 mb-8 sm:mb-12 px-2">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-white leading-tight">
+            Find your next short-term<br className="" /> <span className="text-pink-400">hotel</span> / <span className="text-purple-400">apartment</span> / <span className="text-indigo-400">hostel</span>.
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl text-gray-400 font-light max-w-3xl mx-auto">
+            Hours of accommodation searching, condensed into seconds.
+          </p>
         </div>
-      <div className="flex-1 flex flex-col items-center justify-center space-y-6 sm:space-y-8">
-
-        <div className="text-center space-y-3 sm:space-y-4">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-white leading-tight">Find your next short-term hotel / apartment / hostel.</h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-400 font-light max-w-3xl mx-auto">Hours of accommodation searching, condensed into seconds.</p>
-        </div>
-        <div className="w-full max-w-xl space-y-4 mt-8 sm:mt-12">
+        
+        <div className="w-full max-w-xl px-2">
           <button
             onClick={onStartNewCampaign}
-            className="w-full flex items-center justify-between bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 sm:p-6 rounded-2xl group hover:from-purple-700 hover:to-pink-700 transition-all"
+            className="w-full flex items-center justify-between bg-gradient-to-r from-purple-700 to-pink-700 text-white p-5 sm:p-6 rounded-xl sm:rounded-2xl group hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
           >
             <div className="flex items-center gap-3 sm:gap-4">
-              <Search size={20} className="sm:w-6 sm:h-6" />
+              <Search size={22} className="sm:w-6 sm:h-6 flex-shrink-0" />
               <div className="text-left">
-                <div className="text-base sm:text-lg font-semibold">Start New Search</div>
-                <div className="text-xs sm:text-sm text-white/80 max-w-md">With a simple description in your own words, our AI scans major platforms to deliver just 5 stellar options, no scrolling required.
+                <div className="text-lg sm:text-xl font-semibold">Start New Search</div>
+                <div className="text-sm text-white/80 max-w-md">
+                  With a simple description in your own words, our AI scans major platforms to deliver the top 5 personalized options.
                 </div>
               </div>
             </div>
-            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
           </button>
 
           {/* <button
@@ -49,7 +55,8 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
           </button> */}
         </div>
       </div>
-      <div className="mt-6 sm:mt-8 text-center text-gray-400">
+      
+      <div className="mt-10 sm:mt-12 text-center text-gray-400">
         <p className="text-xs sm:text-sm">Made by the <a href="https://starti.no" className="text-purple-400 hover:text-purple-300 underline" target="_blank" rel="noopener noreferrer">Startino Team</a></p>
         <p className="text-xs sm:text-sm mt-1">Contact: <a href="mailto:jorge.lewis@starti.no" className="text-purple-400 hover:text-purple-300">jorge.lewis@starti.no</a></p>
       </div>
@@ -57,4 +64,4 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
   );
 }
 
-export default HomeScreen
+export default HomeScreen;

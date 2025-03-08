@@ -29,7 +29,7 @@ APIFY_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
 #     max_price: int = Field(description="The maximum price to search for")
 #     includes: ApifyInclude = Field(default=ApifyInclude(), description="The includes to search for")
 
-class ApifyRequest(BaseModel):
+class BookingApifyRequest(BaseModel):
     search: str = Field(description="The search query")
     maxItems: int = Field(default=APIFY_MAX_ITEMS, description="The maximum number of items to return")
     # propertyType: Literal["Apartments", "Hotels", "Hostels", "Guest houses", 
@@ -79,7 +79,7 @@ class CategoryReview(BaseModel):
     title: str | None
     score: float | None
     
-class ApifyResponse(BaseModel):
+class BookingApifyResponse(BaseModel):
     url: str
     name: str
     type: str

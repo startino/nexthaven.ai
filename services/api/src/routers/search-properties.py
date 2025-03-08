@@ -7,11 +7,14 @@ import logging
 import asyncio
 import time
 
-from src.models.apify import ApifyRequest, ApifyResponse
+from src.models.apify import BookingApifyRequest, BookingApifyResponse
+from src.models.airbnb_apify import AirbnbApifyResponse, AirbnbApifyRequest
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
-from src.lib.evaluate.agents import EvaluateAgent, AsyncEvaluateAgent
+from src.lib.evaluate.agents_with_vision import EvaluateAgent
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
-from src.lib.scraper.apify import ApifyAgent
+from src.lib.scraper.booking_apify import BookingApifyAgent
+from src.lib.scraper.airbnb_apify import AirbnbApifyAgent
+from src.models.unified_property import UnifiedProperty
 
 router = APIRouter(prefix="/properties")
 
@@ -35,56 +38,69 @@ async def property_evaluation_generator(
     """
     try:
         # Step 1: Analyze user requirements
-        # yield json.dumps({
-        #     "status": "processing",
-        #     "stage": "analyzing_requirements",
-        #     "message": "Analyzing your requirements..."
-        # }).encode("utf-8")
+        yield json.dumps({
+            "status": "processing",
+            "stage": "analyzing_requirements",
+            "message": "Analyzing your requirements..."
+        }).encode("utf-8")
         
         analyzer = AnalyzeUserRequirement()
         generated_requirements = analyzer.analyze_user_requirement(user_request)
         
-        # yield json.dumps({
-        #     "status": "processing",
-        #     "stage": "requirements_analyzed",
-        #     "message": "Requirements analyzed successfully",
-        #     "requirements": generated_requirements
-        # }).encode("utf-8")
+        # Ensure generated_requirements is a dictionary before unpacking
+        if isinstance(generated_requirements, dict):
+            generated_req_obj = GeneratedRequirement(**generated_requirements)
+        else:
+            # If it's already a GeneratedRequirement object, use it directly
+            generated_req_obj = generated_requirements
+        
+        yield json.dumps({
+            "status": "processing",
+            "stage": "requirements_analyzed",
+            "message": "Requirements analyzed successfully"
+        }).encode("utf-8")
         
         # Step 2: Search for properties
-        # yield json.dumps({
-        #     "status": "processing",
-        #     "stage": "searching_properties",
-        #     "message": "Searching for properties that match your criteria..."
-        # }).encode("utf-8")
+        yield json.dumps({
+            "status": "processing",
+            "stage": "searching_properties",
+            "message": "Searching for properties that match your criteria..."
+        }).encode("utf-8")
         
-        apify_agent = ApifyAgent()
-        apify_request = apify_agent.generate_request(GeneratedRequirement(**generated_requirements))
-        properties = apify_agent.get_properties(apify_request)
+        # Get properties from both Booking.com and Airbnb
+        booking_agent = BookingApifyAgent()
+        booking_request = booking_agent.generate_request(generated_req_obj)
+        booking_properties = booking_agent.get_properties(booking_request)
         
-        # yield json.dumps({
-        #     "status": "processing",
-        #     "stage": "properties_found",
-        #     "message": f"Found {len(properties)} properties matching your criteria",
-        #     "count": len(properties)
-        # }).encode("utf-8")
+        airbnb_agent = AirbnbApifyAgent()
+        airbnb_request = airbnb_agent.generate_request(generated_req_obj)
+        airbnb_properties = airbnb_agent.get_properties(airbnb_request)
+        
+        # Combine properties from both sources
+        all_properties = booking_properties + airbnb_properties
+        
+        yield json.dumps({
+            "status": "processing",
+            "stage": "properties_found",
+            "message": f"Found {len(all_properties)} properties matching your criteria",
+            "count": len(all_properties)
+        }).encode("utf-8")
         
         # Step 3: Evaluate properties
-        # yield json.dumps({
-        #     "status": "processing",
-        #     "stage": "evaluating_properties",
-        #     "message": "Evaluating properties based on your preferences..."
-        # }).encode("utf-8")
+        yield json.dumps({
+            "status": "processing",
+            "stage": "evaluating_properties",
+            "message": "Evaluating properties based on your preferences..."
+        }).encode("utf-8")
         
-        # Use async evaluation for streaming results
-        async_agent = AsyncEvaluateAgent()
+        # Use the EvaluateAgent with vision
+        evaluate_agent = EvaluateAgent()
         
         # Start evaluation
         evaluation_task = asyncio.create_task(
-            async_agent.evaluate(
-                GeneratedRequirement(**generated_requirements),
-                properties,
-                max_concurrent=3
+            evaluate_agent.evaluate(
+                generated_req_obj,
+                all_properties
             )
         )
         
@@ -115,7 +131,9 @@ async def property_evaluation_generator(
         
         # Stream each property result individually
         for prop in top_properties:
-            yield (json.dumps(prop) + "\n").encode("utf-8")
+            # Convert UnifiedProperty to dict, excluding raw_data
+            property_dict = prop.model_dump(exclude={"raw_data"})
+            yield (json.dumps(property_dict) + "\n").encode("utf-8")
             
     except Exception as e:
         logging.error(f"Error in property evaluation: {str(e)}")
@@ -158,104 +176,79 @@ async def search_properties(request: PropertySearchRequest):
         logging.error(f"Failed to initialize property search: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/evaluate")
-async def evaluate_properties(request: ApifyRequest):
-    """
-    Evaluate properties from Apify data
-    """
-    try:
-        # Get properties from Apify
-        apify_agent = ApifyAgent()
-        properties = apify_agent.get_properties(request)
-        
-        if not properties:
-            return JSONResponse(
-                status_code=404,
-                content={"message": "No properties found matching your criteria"}
-            )
-        
-        # Create a basic requirement from the request
-        requirement = GeneratedRequirement(
-            query=request.search,
-            date_range=DateRange(
-                start_date=request.checkIn,
-                end_date=request.checkOut
-            ),
-            budget=Budget(
-                min=int(request.minMaxPrice.split('-')[0]),
-                max=int(request.minMaxPrice.split('-')[1])
-            ),
-            adults=request.adults,
-            children=request.children,
-            number_of_rooms=request.rooms,
-            property_type=request.propertyType,
-            preferences=[]
-        )
-        
-        # Evaluate properties
-        evaluate_agent = EvaluateAgent()
-        results = evaluate_agent.evaluate(requirement, properties, max_workers=5)
-        
-        return JSONResponse(content={"results": results})
-    
-    except Exception as e:
-        logging.error(f"Error evaluating properties: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/evaluate-vision")
-async def evaluate_properties_vision(request: ApifyRequest):
+async def evaluate_properties_vision(request: PropertySearchRequest):
     """
-    Evaluate properties with vision analysis from Apify data
+    Evaluate properties with vision analysis
     """
     try:
-        # Get properties from Apify
-        apify_agent = ApifyAgent()
-        properties = apify_agent.get_properties(request)
+        # Create complete user requirement
+        user_requirement = UserRequirement(
+            query=request.query,
+            date=request.date,
+            budget=request.budget,
+            adults=request.adults,
+            children=request.children,
+            number_of_rooms=request.number_of_rooms,
+            preferences=request.preferences
+        )
         
-        if not properties:
+        # Analyze with preferences included
+        analyzer = AnalyzeUserRequirement()
+        generated_requirements = analyzer.analyze_user_requirement(user_requirement)
+        
+        # Ensure generated_requirements is a dictionary before unpacking
+        if isinstance(generated_requirements, dict):
+            generated_req_obj = GeneratedRequirement(**generated_requirements)
+        else:
+            # If it's already a GeneratedRequirement object, use it directly
+            generated_req_obj = generated_requirements
+        
+        # Get properties from both Booking.com and Airbnb
+        booking_agent = BookingApifyAgent()
+        booking_request = booking_agent.generate_request(generated_req_obj)
+        booking_properties = booking_agent.get_properties(booking_request)
+        
+        airbnb_agent = AirbnbApifyAgent()
+        airbnb_request = airbnb_agent.generate_request(generated_req_obj)
+        airbnb_properties = airbnb_agent.get_properties(airbnb_request)
+        
+        # Combine properties from both sources
+        all_properties = booking_properties + airbnb_properties
+        
+        if not all_properties:
             return JSONResponse(
                 status_code=404,
                 content={"message": "No properties found matching your criteria"}
             )
         
-        # Create a basic requirement from the request
-        requirement = GeneratedRequirement(
-            query=request.search,
-            date_range=DateRange(
-                start_date=request.checkIn,
-                end_date=request.checkOut
-            ),
-            budget=Budget(
-                min=int(request.minMaxPrice.split('-')[0]),
-                max=int(request.minMaxPrice.split('-')[1])
-            ),
-            adults=request.adults,
-            children=request.children,
-            number_of_rooms=request.rooms,
-            property_type=request.propertyType,
-            preferences=[]
-        )
+        # Evaluate properties with vision
+        evaluate_agent = EvaluateAgent()
+        try:
+            results = await evaluate_agent.evaluate(generated_req_obj, all_properties)
+        except Exception as e:
+            logging.error(f"Error during property evaluation: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error during property evaluation: {str(e)}")
         
-        # Background task to process vision analysis
-        background_tasks = BackgroundTasks()
+        # Limit to requested number of results
+        top_results = results[:request.max_results]
         
-        # Start a background task for processing
-        def process_vision_analysis():
+        # Convert UnifiedProperty objects to dictionaries for JSON response
+        formatted_results = []
+        for prop in top_results:
             try:
-                # This would be implemented to save results to a database or cache
-                # For now, we'll just log that it's running
-                logging.info("Background vision analysis started")
-                time.sleep(5)  # Simulate processing time
-                logging.info("Background vision analysis completed")
+                # The prop is already a UnifiedProperty object, so we can directly use model_dump()
+                formatted_results.append(prop.model_dump(exclude={"raw_data"}))
             except Exception as e:
-                logging.error(f"Error in background vision analysis: {str(e)}")
+                logging.error(f"Error formatting result: {str(e)}")
         
-        background_tasks.add_task(process_vision_analysis)
-        
-        # For now, return a message that processing has started
         return JSONResponse(
-            content={"message": "Vision analysis started in background"},
-            background=background_tasks
+            content={
+                "status": "success",
+                "message": "Property evaluation with vision completed",
+                "count": len(formatted_results),
+                "results": formatted_results
+            }
         )
     
     except Exception as e:

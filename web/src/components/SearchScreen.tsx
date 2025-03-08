@@ -54,6 +54,30 @@ const getPreviousPreferences = () => {
   ];
 };
 
+// Define default locations
+const DEFAULT_LOCATIONS = [
+  { name: 'Cebu', country: 'Philippines' },
+  { name: 'Bali', country: 'Indonesia' },
+  { name: 'Chiang Mai', country: 'Thailand' },
+  { name: 'Phuket', country: 'Thailand' },
+  { name: 'Da Nang', country: 'Vietnam' }
+];
+
+// Define recommended time options - split into when and period
+const WHEN_OPTIONS = [
+  { label: 'Next Week', value: 'Next Week' },
+  { label: 'Two Weeks', value: 'Two Weeks' },
+  { label: 'Next Month', value: 'Next Month' },
+  { label: 'In 3 Months', value: 'In 3 Months' },
+];
+
+const PERIOD_OPTIONS = [
+  { label: '1 Week', value: 'for 1 Week' },
+  { label: '2 Weeks', value: 'for 2 Weeks' },
+  { label: '1 Month', value: 'for 1 Month' },
+  { label: '3 Months', value: 'for 3 Months' },
+];
+
 // Template text for preferences
 const PREFERENCE_TEMPLATE = `Ambience:
 [Type out the vibe of the place you're looking for; modern / rustic / etc.]
@@ -83,8 +107,8 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
     query: '',
     date: '',
     budget: {
-      min: 500,
-      max: 2000
+      min: 200,
+      max: 600
     },
     adults: 1,
     // children removed
@@ -208,64 +232,154 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       <motion.div 
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
-        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10 space-y-4"
+        className="rounded-xl sm:rounded-2xl bg-white/5 backdrop-blur-sm p-4 sm:p-5 ring-1 ring-white/10 space-y-3 sm:space-y-4"
       >
-        <div className="flex items-center gap-3 text-white/80 mb-2">
+        <div className="flex items-center gap-3 text-white/80 mb-1 sm:mb-2">
           <MapPin size={20} />
           <span className="font-medium">Where would you like to stay?</span>
         </div>
         <input
           type="text"
           placeholder="e.g. Chiang Mai, Thailand"
-          className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
+          className="w-full bg-white/5 text-white placeholder-gray-500 rounded-lg p-3 sm:p-4 outline-none focus:ring-1 focus:ring-purple-500"
           value={form.query}
           onChange={(e) => setForm({ ...form, query: e.target.value })}
         />
+        
+        {/* Default Location Suggestions */}
+        <div className="pt-2">
+          <p className="text-sm text-white/60 mb-2">Popular destinations:</p>
+          <div className="flex flex-wrap gap-2">
+            {DEFAULT_LOCATIONS.map((location) => (
+              <button
+                key={location.name}
+                type="button"
+                onClick={() => setForm({ ...form, query: `${location.name}, ${location.country}` })}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-sm text-white/80 transition-colors"
+              >
+                {location.name}
+              </button>
+            ))}
+          </div>
+        </div>
       </motion.div>
 
       {/* Dates */}
       <motion.div 
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
-        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10"
+        className="rounded-xl sm:rounded-2xl bg-white/5 backdrop-blur-sm p-4 sm:p-5 ring-1 ring-white/10 space-y-3 sm:space-y-4"
       >
-        <div className="flex items-center gap-3 text-white/80 mb-2">
+        <div className="flex items-center gap-3 text-white/80 mb-1 sm:mb-2">
           <Calendar size={20} />
           <span className="font-medium">When?</span>
         </div>
         <input
           type="text"
           placeholder="e.g. March 15 - April 15"
-          className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-3 outline-none"
+          className="w-full bg-white/5 text-white placeholder-gray-500 rounded-lg p-3 sm:p-4 outline-none focus:ring-1 focus:ring-purple-500"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
         />
+        
+        {/* Recommended Time Periods */}
+        <div className="pt-2">
+          <p className="text-sm text-white/60 mb-3">
+            You can also type your own dates directly in the field above.
+          </p>
+          
+          <div className="mb-4">
+            <p className="text-sm text-white/60 mb-2">When:</p>
+            <div className="flex flex-wrap gap-2">
+              {WHEN_OPTIONS.map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  onClick={() => {
+                    // Extract any existing period part (after "for")
+                    const currentPeriod = form.date.includes(" for ") 
+                      ? form.date.split(" for ")[1] 
+                      : "";
+                    
+                    // Combine the new "when" with any existing period
+                    const newDate = currentPeriod 
+                      ? `${option.value} for ${currentPeriod}` 
+                      : option.value;
+                    
+                    setForm({ ...form, date: newDate });
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                    form.date.startsWith(option.value) 
+                      ? 'bg-purple-500/30 text-white' 
+                      : 'bg-white/10 hover:bg-white/20 text-white/80'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-sm text-white/60 mb-2">Period:</p>
+            <div className="flex flex-wrap gap-2">
+              {PERIOD_OPTIONS.map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  onClick={() => {
+                    // Extract any existing "when" part (before "for")
+                    const currentWhen = form.date.split(" for ")[0].trim();
+                    
+                    // Only use the currentWhen if it's not empty and not just the period
+                    const whenPart = currentWhen && !PERIOD_OPTIONS.some(p => p.value === `for ${currentWhen}`) 
+                      ? currentWhen 
+                      : "";
+                    
+                    // Combine any existing "when" with the new period
+                    const newDate = whenPart 
+                      ? `${whenPart} ${option.value}` 
+                      : option.value.startsWith("for ") ? option.value.substring(4) : option.value;
+                    
+                    setForm({ ...form, date: newDate });
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                    form.date.includes(option.value) 
+                      ? 'bg-purple-500/30 text-white' 
+                      : 'bg-white/10 hover:bg-white/20 text-white/80'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* Guests - Adults only */}
       <motion.div 
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
-        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10"
+        className="rounded-xl sm:rounded-2xl bg-white/5 backdrop-blur-sm p-4 sm:p-5 ring-1 ring-white/10 space-y-3 sm:space-y-4"
       >
-        <div className="flex items-center gap-3 text-white/80 mb-4">
+        <div className="flex items-center gap-3 text-white/80 mb-1 sm:mb-2">
           <Users size={20} />
-          <span className="font-medium">Guests</span>
+          <span className="font-medium">How many adults?</span>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {[1, 2, 3, 4, 5, '6+'].map((num) => (
+        <div className="flex gap-2 sm:gap-3">
+          {[1, 2, 3, 4].map((num) => (
             <button
               key={num}
               type="button"
-              onClick={() => setForm({ ...form, adults: typeof num === 'number' ? num : 6 })}
-              className={`flex-1 min-w-[80px] py-3 px-4 rounded-xl flex items-center justify-center transition-colors ${
-                (typeof num === 'number' && form.adults === num) || 
-                (num === '6+' && form.adults >= 6)
+              onClick={() => setForm({ ...form, adults: num })}
+              className={`flex-1 py-3 sm:py-4 rounded-lg text-center transition-colors ${
+                form.adults === num
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
                   : 'bg-white/10 text-white/60 hover:bg-white/20'
               }`}
             >
-              {num} {num === 1 ? 'Guest' : 'Guests'}
+              {num}
             </button>
           ))}
         </div>
@@ -275,10 +389,10 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         type="submit"
-        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
+        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-xl sm:rounded-full transition-all hover:from-purple-600 hover:to-pink-600 shadow-lg"
       >
-        <ArrowRight size={20} />
         Continue to Details
+        <ArrowRight size={20} />
       </motion.button>
     </form>
   );
@@ -290,21 +404,21 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       <motion.div 
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
-        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10"
+        className="rounded-xl sm:rounded-2xl bg-white/5 backdrop-blur-sm p-4 sm:p-5 ring-1 ring-white/10 space-y-4"
       >
-        <div className="flex items-center gap-3 text-white/80 mb-2">
+        <div className="flex items-center gap-3 text-white/80 mb-1 sm:mb-2">
           <DollarSign size={20} />
           <span className="font-medium">Total Budget for Stay</span>
         </div>
-        <div className="space-y-6 pt-4">
+        <div className="space-y-5 pt-2">
           {/* Budget input fields */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="text-white/60 text-sm block mb-1">Min Budget</label>
               <input
                 type="number"
                 min="0"
-                step="100"
+                step="50"
                 value={form.budget.min}
                 onChange={(e) => {
                   const newMin = parseInt(e.target.value) || 0;
@@ -316,7 +430,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
                     } 
                   });
                 }}
-                className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
+                className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
             <div>
@@ -324,7 +438,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               <input
                 type="number"
                 min="0"
-                step="100"
+                step="50"
                 value={form.budget.max}
                 onChange={(e) => {
                   const newMax = parseInt(e.target.value) || 0;
@@ -336,11 +450,11 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
                     } 
                   });
                 }}
-                className="w-full bg-white/5 text-white rounded-xl p-3 outline-none"
+                className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 outline-none focus:ring-1 focus:ring-purple-500"
               />
             </div>
           </div>
-          <div className="flex justify-between text-white/60 text-sm">
+          <div className="flex justify-between text-white/60 text-sm px-1">
             <span>{formatPrice(form.budget.min)}</span>
             <span>{formatPrice(form.budget.max)}</span>
           </div>
@@ -351,26 +465,25 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       <motion.div 
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
-        className="rounded-2xl bg-white/5 backdrop-blur-sm p-5 ring-1 ring-white/10"
+        className="rounded-xl sm:rounded-2xl bg-white/5 backdrop-blur-sm p-4 sm:p-5 ring-1 ring-white/10 space-y-4"
       >
-        <div className="flex items-center gap-3 text-white/80 mb-4">
+        <div className="flex items-center gap-3 text-white/80 mb-1 sm:mb-2">
           <Bed size={20} />
           <span className="font-medium">Number of Rooms</span>
         </div>
-        <div className="flex flex-wrap gap-3">
-          {[1, 2, 3, 4, 5, '6+'].map((num) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((num) => (
             <button
               key={num}
               type="button"
               onClick={() => setForm({ 
                 ...form, 
-                number_of_rooms: typeof num === 'number' ? num : 6,
+                number_of_rooms: num,
                 // Match adults to room count as requested
-                adults: typeof num === 'number' ? num : 6
+                adults: num
               })}
-              className={`flex-1 min-w-[80px] py-3 px-4 rounded-xl flex items-center justify-center transition-colors ${
-                (typeof num === 'number' && form.number_of_rooms === num) || 
-                (num === '6+' && form.number_of_rooms >= 6)
+              className={`py-3 sm:py-4 rounded-lg flex items-center justify-center transition-colors ${
+                form.number_of_rooms === num
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
                   : 'bg-white/10 text-white/60 hover:bg-white/20'
               }`}
@@ -381,25 +494,25 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
         </div>
       </motion.div>
 
-      <div className="flex gap-4">
+      <div className="flex gap-3 sm:gap-4">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="button"
           onClick={() => setCurrentStep('location')}
-          className="flex-1 flex items-center justify-center gap-2 bg-white/10 text-white font-medium py-4 px-6 rounded-full transition-all hover:bg-white/20"
+          className="flex-1 flex items-center justify-center gap-2 bg-white/10 text-white font-medium py-4 px-4 sm:px-6 rounded-xl sm:rounded-full transition-all hover:bg-white/20"
         >
-          <ArrowLeft size={20} />
-          Back
+          <ArrowLeft size={18} className="sm:w-5 sm:h-5" />
+          <span className="text-sm sm:text-base">Back</span>
         </motion.button>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
-          className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
+          className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-4 sm:px-6 rounded-xl sm:rounded-full transition-all hover:from-purple-600 hover:to-pink-600 shadow-lg"
         >
-          <ArrowRight size={20} />
-          Continue to Preferences
+          <span className="text-sm sm:text-base">Continue</span>
+          <ArrowRight size={18} className="sm:w-5 sm:h-5" />
         </motion.button>
       </div>
     </form>
@@ -518,84 +631,59 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   );
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-black"
-    >
-      <div className="w-full max-w-2xl space-y-6 sm:space-y-8">
-        <motion.div 
-          initial={{ y: 20 }}
-          animate={{ y: 0 }}
-          className="text-center space-y-4"
-        >
-          <h1 className="text-5xl font-serif text-white">nexthaven.ai</h1>
-          <p className="text-xl text-gray-400 font-light">Find your next short-term hotel / apartment / hostel.</p>
-        </motion.div>
-
-        {/* Progress Indicator - Updated for 3 steps */}
-        <div className="flex items-center justify-between mb-8">
-          {['location', 'details', 'preferences'].map((step, index) => (
-            <React.Fragment key={step}>
-              <div className="flex items-center">
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-base ${
-                  currentStep === step
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                    : (currentStep === 'details' && step === 'location') || 
-                      (currentStep === 'preferences' && (step === 'location' || step === 'details'))
-                    ? 'bg-purple-500 text-white'
-                    : 'bg-white/10 text-white/40'
-                }`}>
-                  {index + 1}
-                </div>
-                <span className="ml-2 text-sm text-white/60 capitalize hidden sm:inline">{step}</span>
-              </div>
-              {index < 2 && (
-                <div className={`flex-1 h-px mx-2 sm:mx-4 ${
-                  (currentStep === 'details' && index === 0) || 
-                  (currentStep === 'preferences' && index < 2)
-                    ? 'bg-purple-500'
-                    : 'bg-white/10'
-                }`} />
-              )}
-            </React.Fragment>
-          ))}
+    <div className="min-h-screen bg-black">
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-white/80 hover:text-white mb-4"
+            >
+              <ArrowLeft size={20} />
+              <span>Back</span>
+            </button>
+          )}
+          <h1 className="text-2xl sm:text-3xl font-serif text-white">Find your perfect stay</h1>
+          <p className="text-gray-400 mt-2">Tell us what you're looking for</p>
         </div>
 
         {/* AI Message */}
-        <AnimatePresence>
-          {aiMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="rounded-2xl bg-purple-500/10 backdrop-blur-sm p-5 ring-1 ring-purple-500/20"
-            >
-              <div className="flex items-start gap-3">
-                {isLoading ? (
-                  <Sparkles className="text-purple-400 mt-1" size={20} />
-                ) : (
-                  <AlertCircle className="text-purple-400 mt-1" size={20} />
-                )}
-                <p className="text-purple-200">{aiMessage}</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {aiMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 sm:p-5 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm"
+          >
+            <div className="flex gap-3">
+              <Sparkles className="text-purple-400 w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5" />
+              <p className="text-white/90 text-sm sm:text-base">{aiMessage}</p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-600/20 border border-red-600 text-red-100 p-4 rounded-lg">
-            {error}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 sm:p-5 rounded-xl bg-red-500/20 backdrop-blur-sm"
+          >
+            <div className="flex gap-3">
+              <AlertCircle className="text-red-400 w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 mt-0.5" />
+              <p className="text-white/90 text-sm sm:text-base">{error}</p>
+            </div>
+          </motion.div>
         )}
 
-        {/* Step Content */}
-        {currentStep === 'location' && renderLocationStep()}
-        {currentStep === 'details' && renderDetailsStep()}
-        {currentStep === 'preferences' && renderPreferencesStep()}
+        {/* Search Steps */}
+        <div className="space-y-6">
+          {currentStep === 'location' && renderLocationStep()}
+          {currentStep === 'details' && renderDetailsStep()}
+          {currentStep === 'preferences' && renderPreferencesStep()}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

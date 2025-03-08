@@ -6,30 +6,32 @@ import HomeScreen from './components/HomeScreen';
 import HistoryScreen from './components/HistoryScreen';
 import LoadingScreen from './components/LoadingScreen';
 import BookingScreen from './components/BookingScreen';
-import { propertyService, PropertyResult } from './services/api';
+import { propertyService } from './services/api';
+import { UnifiedProperty } from './types/unified-property';
 type Screen = 'home' | 'search' | 'loading' | 'compare' | 'history' | 'booking';
 
-const transformResponse = (property: PropertyResult): PropertyResult => {
-  return {
-    id: property.id,
-    url: property.url,
-    name: property.name,
-    price: property.price,
-    location: property.location,
-    rooms: property.rooms,
-    baths: property.baths,
-    amenities: property.amenities,
-    score: property.score,
-    image: property.image,
-    gallery: property.gallery,
-  };
-};
+// This function is no longer needed as we're using UnifiedProperty directly
+// const transformResponse = (property: PropertyResult): PropertyResult => {
+//   return {
+//     id: property.id,
+//     url: property.url,
+//     name: property.name,
+//     price: property.price,
+//     location: property.location,
+//     rooms: property.rooms,
+//     baths: property.baths,
+//     amenities: property.amenities,
+//     score: property.score,
+//     image: property.image,
+//     gallery: property.gallery,
+//   };
+// };
 
 function App() {
   const [screen, setScreen] = useState<Screen>('home');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState<PropertyResult | null>(null);
-  const [topProperties, setTopProperties] = useState<PropertyResult[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<UnifiedProperty | null>(null);
+  const [topProperties, setTopProperties] = useState<UnifiedProperty[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const handleSearch = async (query: string) => {
@@ -46,84 +48,84 @@ function App() {
       const properties = await propertyService.evaluateProperties({
         query: parsedQuery.query || '',
         date: parsedQuery.date || '',
-        budget: parsedQuery.budget || { min: 0, max: 10000 },
+        budget: parsedQuery.budget || { min: 200, max: 600 },
         adults: parsedQuery.adults || 2,
         children: parsedQuery.children || 0,
         number_of_rooms: parsedQuery.number_of_rooms || 1,
-        // property_type: parsedQuery.property_type || 'Hotels',
         preferences: parsedQuery.preferences || '',
       });
       
-      console.log('Received properties:', properties);
+      console.log('Properties from API:', properties);
+      
+      if (properties.length === 0) {
+        setError('No properties found. Please try a different search.');
+        setScreen('search');
+        return;
+      }
+      
       setTopProperties(properties);
       setScreen('compare');
     } catch (error) {
-      console.error('Error during property evaluation:', error);
-      setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      console.error('Search error:', error);
+      setError(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setScreen('search');
     }
   };
-
+  
   const handleStartNewCampaign = () => {
-    setTopProperties([]);
-    setError(null);
     setScreen('search');
+    setTopProperties([]);
+    setSelectedProperty(null);
   };
-
+  
   const handleViewCampaign = (id: number) => {
-    setScreen('compare');
+    // Implement viewing a saved campaign
   };
-
-  const handleWinnerSelected = (property: any) => {
+  
+  const handleWinnerSelected = (property: UnifiedProperty) => {
     setSelectedProperty(property);
-    setTimeout(() => {
-      setScreen('booking');
-    }, 1000);
+    setScreen('booking');
   };
-
+  
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {error && (
-        <div className="fixed top-0 left-0 right-0 bg-red-600 text-white p-4 text-center">
-          {error}
-        </div>
-      )}
-      
+    <div className="min-h-screen bg-black text-white">
       {screen === 'home' && (
-        <HomeScreen
-          onStartNewCampaign={handleStartNewCampaign}
+        <HomeScreen 
+          onStartNewCampaign={handleStartNewCampaign} 
           onViewHistory={() => setScreen('history')}
         />
       )}
       
       {screen === 'search' && (
-        <SearchScreen onSearch={handleSearch} error={error} />
+        <SearchScreen 
+          onSearch={handleSearch} 
+          error={error}
+        />
       )}
-
+      
       {screen === 'loading' && (
         <LoadingScreen />
       )}
       
-      {screen === 'compare' && (
-        <ComparisonScreen
+      {screen === 'compare' && topProperties.length > 0 && (
+        <ComparisonScreen 
           properties={topProperties}
           onWinnerSelected={handleWinnerSelected}
           onBack={() => setScreen('search')}
-          searchQuery={searchQuery}
         />
       )}
-
-      {screen === 'history' && (
-        <HistoryScreen
-          onBack={() => setScreen('home')}
-          onViewCampaign={handleViewCampaign}
-        />
-      )}
-
+      
       {screen === 'booking' && selectedProperty && (
-        <BookingScreen
+        <BookingScreen 
           property={selectedProperty}
           onBack={() => setScreen('compare')}
+        />
+      )}
+      
+      {screen === 'history' && (
+        <HistoryScreen 
+          onBack={() => setScreen('home')}
+          onViewCampaign={handleViewCampaign}
         />
       )}
     </div>

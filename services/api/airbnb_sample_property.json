@@ -1,0 +1,725 @@
+{
+  "id": "963048078029205948",
+  "coordinates": {
+    "latitude": 40.70625448988039,
+    "longitude": -74.01654140841708
+  },
+  "description": "Fill your New York City stay with style at Battery Park. Your Sonder will be on floors 3\u20139 and includes a modern kitchen. Savor the view of this magical city from the seasonal rooftop pool. There's a fitness center, golf simulator, and co-working space. Why not have it all with endless amenities and an incredible location? You'll be across from The Battery \u2014 a beautiful waterfront oasis. The New York Stock Exchange, Wall Street, and One World Trade Center are also a short walk away.The spaceWe\u2019re here to help navigate your stay from start to finish. Check in. Request amenities. Connect to WiFi. Contact customer support. Whatever you need, we\u2019ve got you covered.\n\nThis Sonder has a front desk which is staffed 24/7. Our on-site team is available to ensure you have a better stay.\n\n- Contact-free check-in\n- 24/7 virtual support\n- Super-fast WiFi\n- Fresh towels and bathroom essentials\n- Housekeeping services available on-demand for a nominal fee\n- In-suite laundry\n- Fully equipped kitchen\n- Chromecast for streaming\n- Seasonal rooftop pool\n- Fitness center\n- Co-working space\n- Music studio\n- Golf simulator room\n- Luggage lockers (first available)\n- Limited paid street parking available\n\nWhat\u2019s nearby\n- 5 minute walk to Antica Ristorante (tableside preparations of classic Italian dishes)\n- 8 minute walk to The Dead Rabbit (Redbreast 12, neat, at this iconic Irish bar)\n- 10 minute subway to Takahachi Bakery (try the matcha crepe, thank us later)\n- 10 minute walk to One World Trade Center (stunning 360-degree views from the observation deck)\n\nWe have multiple spaces at this property, each designed to give you a beautiful place to stay \u2014 while our style is consistent, the view, layout, and design may vary.\n\nGuests can book housekeeping services on-demand for a nominal fee. This ensures you can enjoy an uninterrupted and environmentally sustainable stay. Housekeeping services must be scheduled 24 hours in advance.Other things to note- There's no cable\n- The pool is open from Memorial Day to Labor Day, yearly\n- You may hear construction noise from renovations nearby\n- This building briefly tests the fire alarms on the last Friday of each month. We apologize for any inconvenienceRegistration numberExempt",
+  "descriptionOriginalLanguage": "en",
+  "title": "Sonder Battery Park | Superior King Studio",
+  "thumbnail": "https://a0.muscache.com/pictures/prohost-api/Hosting-963048078029205948/original/adc087ca-3009-4f72-9b5a-76eeb92131d6.jpeg",
+  "url": "https://www.airbnb.com/rooms/963048078029205948?locale=en-US&currency=USD&adults=2&children=0&check_in=2025-04-07&check_out=2025-04-14",
+  "androidLink": "airbnb://rooms/963048078029205948",
+  "iosLink": "airbnb://rooms/963048078029205948",
+  "roomType": "Entire home/apt",
+  "propertyType": "Entire rental unit",
+  "isSuperHost": false,
+  "homeTier": 1,
+  "personCapacity": 2,
+  "rating": {
+    "accuracy": 4.75,
+    "checking": 4.82,
+    "cleanliness": 4.7,
+    "communication": 4.73,
+    "location": 4.83,
+    "value": 4.55,
+    "guestSatisfaction": 4.76,
+    "reviewsCount": 121
+  },
+  "houseRules": {
+    "additional": null,
+    "general": [
+      {
+        "title": "Checking in and out",
+        "values": [
+          {
+            "title": "Check-in after 4:00\u202fPM",
+            "icon": "SYSTEM_CLOCK",
+            "subtitle": null,
+            "available": null
+          },
+          {
+            "title": "Checkout before 11:00\u202fAM",
+            "icon": "SYSTEM_CLOCK",
+            "subtitle": null,
+            "available": null
+          },
+          {
+            "title": "Self check-in with keypad",
+            "icon": "SYSTEM_CHECK_IN",
+            "subtitle": null,
+            "available": null
+          }
+        ]
+      },
+      {
+        "title": "During your stay",
+        "values": [
+          {
+            "title": "2 guests maximum",
+            "icon": "SYSTEM_FAMILY",
+            "subtitle": null,
+            "available": null
+          },
+          {
+            "title": "No pets",
+            "icon": "SYSTEM_NO_PETS",
+            "subtitle": null,
+            "available": null
+          },
+          {
+            "title": "No parties or events",
+            "icon": "SYSTEM_NO_EVENTS",
+            "subtitle": null,
+            "available": null
+          },
+          {
+            "title": "No smoking",
+            "icon": "SYSTEM_SMOKING_NOT_ALLOWED",
+            "subtitle": null,
+            "available": null
+          },
+          {
+            "title": "Additional rules",
+            "icon": "SYSTEM_CLIPBOARD",
+            "subtitle": null,
+            "available": null
+          }
+        ]
+      }
+    ]
+  },
+  "host": {
+    "id": "RGVtYW5kVXNlcjoyMTk1MTc4NjE=",
+    "name": "Sonder NYC Team",
+    "isSuperHost": false,
+    "profileImage": "https://a0.muscache.com/im/pictures/user/6df60e57-388e-46b1-8570-981f0ceb0906.jpg",
+    "highlights": [
+      "My work: Sonder",
+      "Speaks English, French, and Spanish"
+    ],
+    "about": "Rooms, suites, and apartments in over 40 cities around the world. Every Sonder features designer details, keyless entry, and fast free WiFi. Experience a better way to stay today.",
+    "ratingCount": 18950,
+    "ratingAverage": 4.64,
+    "hostDetails": [
+      "Response rate: 98%",
+      "Responds within an hour"
+    ],
+    "timeAsHost": {
+      "months": 3,
+      "years": 6
+    },
+    "isVerified": true
+  },
+  "subDescription": {
+    "title": "Entire rental unit in New York, United States",
+    "items": [
+      "2 guests",
+      "Studio",
+      "1 bed",
+      "1 bath"
+    ]
+  },
+  "amenities": [
+    {
+      "title": "Bathroom",
+      "values": [
+        {
+          "title": "Hair dryer",
+          "subtitle": "",
+          "icon": "SYSTEM_HAIRDRYER",
+          "available": true
+        },
+        {
+          "title": "Shampoo",
+          "subtitle": "",
+          "icon": "SYSTEM_SHAMPOO",
+          "available": true
+        },
+        {
+          "title": "Hot water",
+          "subtitle": "",
+          "icon": "SYSTEM_HOT_WATER",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Bedroom and laundry",
+      "values": [
+        {
+          "title": "Washer",
+          "subtitle": "",
+          "icon": "SYSTEM_WASHER",
+          "available": true
+        },
+        {
+          "title": "Dryer",
+          "subtitle": "",
+          "icon": "SYSTEM_DRYER",
+          "available": true
+        },
+        {
+          "title": "Essentials",
+          "subtitle": "Towels, bed sheets, soap, and toilet paper",
+          "icon": "SYSTEM_TOILETRIES",
+          "available": true
+        },
+        {
+          "title": "Hangers",
+          "subtitle": "",
+          "icon": "SYSTEM_HANGERS",
+          "available": true
+        },
+        {
+          "title": "Bed linens",
+          "subtitle": "",
+          "icon": "SYSTEM_BLANKETS",
+          "available": true
+        },
+        {
+          "title": "Iron",
+          "subtitle": "",
+          "icon": "SYSTEM_IRON",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Entertainment",
+      "values": [
+        {
+          "title": "TV",
+          "subtitle": "",
+          "icon": "SYSTEM_TV",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Heating and cooling",
+      "values": [
+        {
+          "title": "Air conditioning",
+          "subtitle": "",
+          "icon": "SYSTEM_SNOWFLAKE",
+          "available": true
+        },
+        {
+          "title": "Heating",
+          "subtitle": "",
+          "icon": "SYSTEM_THERMOMETER",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Home safety",
+      "values": [
+        {
+          "title": "Noise decibel monitors on property",
+          "subtitle": "Noise detecting technology may be used inside the guest space to monitor excessive noise levels.",
+          "icon": "SYSTEM_AV_VOLUME",
+          "available": true
+        },
+        {
+          "title": "Exterior security cameras on property",
+          "subtitle": "We may have security cameras on the exterior of the building and in shared spaces, such as hallways, parking lots, lobbies, amenity spaces, and elevators. Security cameras are not actively monitored.",
+          "icon": "SYSTEM_SURVEILLANCE",
+          "available": true
+        },
+        {
+          "title": "Smoke alarm",
+          "subtitle": "",
+          "icon": "SYSTEM_DETECTOR_SMOKE",
+          "available": true
+        },
+        {
+          "title": "Carbon monoxide alarm",
+          "subtitle": "",
+          "icon": "SYSTEM_DETECTOR_CO",
+          "available": true
+        },
+        {
+          "title": "Fire extinguisher",
+          "subtitle": "",
+          "icon": "SYSTEM_FIRE_EXTINGUISHER",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Internet and office",
+      "values": [
+        {
+          "title": "Wifi",
+          "subtitle": "",
+          "icon": "SYSTEM_WI_FI",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Kitchen and dining",
+      "values": [
+        {
+          "title": "Kitchen",
+          "subtitle": "Space where guests can cook their own meals",
+          "icon": "SYSTEM_COOKING_BASICS",
+          "available": true
+        },
+        {
+          "title": "Refrigerator",
+          "subtitle": "",
+          "icon": "SYSTEM_REFRIGERATOR",
+          "available": true
+        },
+        {
+          "title": "Microwave",
+          "subtitle": "",
+          "icon": "SYSTEM_MICROWAVE",
+          "available": true
+        },
+        {
+          "title": "Cooking basics",
+          "subtitle": "Pots and pans, oil, salt and pepper",
+          "icon": "SYSTEM_COOKING_BASICS",
+          "available": true
+        },
+        {
+          "title": "Dishes and silverware",
+          "subtitle": "Bowls, chopsticks, plates, cups, etc.",
+          "icon": "SYSTEM_DISHES_AND_SILVERWARE",
+          "available": true
+        },
+        {
+          "title": "Dishwasher",
+          "subtitle": "",
+          "icon": "SYSTEM_DISHWASHER",
+          "available": true
+        },
+        {
+          "title": "Stove",
+          "subtitle": "",
+          "icon": "SYSTEM_STOVE",
+          "available": true
+        },
+        {
+          "title": "Oven",
+          "subtitle": "",
+          "icon": "SYSTEM_OVEN",
+          "available": true
+        },
+        {
+          "title": "Coffee maker",
+          "subtitle": "",
+          "icon": "SYSTEM_COFFEE_MAKER",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Parking and facilities",
+      "values": [
+        {
+          "title": "Pool",
+          "subtitle": "",
+          "icon": "SYSTEM_POOL",
+          "available": true
+        },
+        {
+          "title": "Elevator",
+          "subtitle": "The home or building has an elevator that\u2019s at least 52 inches deep and a doorway at least 32 inches wide",
+          "icon": "SYSTEM_ELEVATOR",
+          "available": true
+        },
+        {
+          "title": "Gym",
+          "subtitle": "",
+          "icon": "SYSTEM_GYM",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Services",
+      "values": [
+        {
+          "title": "Long term stays allowed",
+          "subtitle": "Allow stay for 28 days or more",
+          "icon": "SYSTEM_CALENDAR",
+          "available": true
+        },
+        {
+          "title": "Self check-in",
+          "subtitle": "",
+          "icon": "SYSTEM_KEY",
+          "available": true
+        },
+        {
+          "title": "Keypad",
+          "subtitle": "Check yourself into the home with a door code",
+          "icon": "SYSTEM_BUZZER",
+          "available": true
+        }
+      ]
+    },
+    {
+      "title": "Not included",
+      "values": [
+        {
+          "title": "Private entrance",
+          "subtitle": "",
+          "icon": "SYSTEM_NO_PRIVATE_ENTRANCE",
+          "available": false
+        }
+      ]
+    }
+  ],
+  "coHosts": [],
+  "images": [
+    {
+      "caption": "Listing image 1",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/adc087ca-3009-4f72-9b5a-76eeb92131d6.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 2",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/4c4f540c-c836-4a87-94ee-0b840050b05b.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 3",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/6b4fd2a6-08b8-49ab-9cd6-18ae812b20d3.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 4",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/f232b15d-c28c-4dbb-a78b-dc0d398cab33.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 5",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/dd7622d3-2ef2-47fe-84f3-90bfb069eee7.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 6",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/8b298205-4c97-4954-9f6d-a996ea57dfa9.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 7",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/401d08a4-235e-4831-ba93-d37f5e51fd67.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 8",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/3eef0b3b-5894-421d-a487-5ccc6e94306e.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 9",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/e998820c-f2ff-42bf-870e-2719cd1f320b.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 10",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/29771c6a-348f-49f7-a931-e5240400b633.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 11",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/5ce9fa8b-5b7f-4ad0-be54-1ad8fcdeb8e3.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 12",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/6292e8c9-6e61-40c1-9356-b5ba185b9c24.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 13",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/0413a31d-993c-48ce-a2de-93ef49862a78.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 14",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/99cc8922-82dd-4d65-849f-4c86f38c3ff8.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 15",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/2027bbca-e36e-4764-b444-b4b9cc00b1f0.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 16",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/055fa87b-3b2d-4934-99f7-a194b66fccf1.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 17",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/084806bd-abc4-4b48-a42b-bb6bba18a4e3.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 18",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/f0f14fca-0a57-4340-aa70-66a53fddd025.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 19",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/a2a103ac-d94c-4391-a6bc-dfd0a5e90000.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 20",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/445cf7af-2e53-43cd-9ae2-dbc0b67fdbc9.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 21",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/869dbb89-7b51-48a3-baf7-4ddb43447f0f.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 22",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/b57bf07d-ca38-4875-ae89-3815899bc7a8.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 23",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/34d7c4d5-07f8-4d05-9fa6-b26b9e426920.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 24",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/8b0662aa-95f6-43ca-9d8d-d5a5c0e619ca.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 25",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/f5787f43-74fd-4cd4-847b-bbda86a05766.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 26",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/a6298e82-52c2-422d-aa36-8a9990a27a24.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 27",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/85ccbee9-91b3-4179-bc2b-d3536ee5ab38.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 28",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/bb4f52fd-67c9-4829-a5b5-27175bbb6a5b.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 29",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/892dbada-8885-43e0-973b-56f832abc18b.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 30",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/fdfa3ded-4427-485b-a4d8-b4d7fd859e0d.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 31",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/e43a40db-1c3a-43cc-9b24-ff0a1ac6868b.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 32",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/41fc7cd2-9ae7-4be6-b316-4143a99b2025.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 33",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/29a6002f-9fce-4b56-b87d-776c5fccce2a.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 34",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/ce643f05-c4e4-40ae-9de5-71013b2cd330.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 35",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/56ecf84b-84d5-487b-851a-b314644ed1a9.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 36",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/fff6ee9d-150e-475b-8183-958479e3907f.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 37",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/9c4f30cc-441a-48a0-8004-ef6ef7473386.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 38",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/ace50e59-3ac1-4a41-a4bb-ce0ed51d036a.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 39",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/9f22e73e-e178-4f82-9c20-89fedffdd755.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 40",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/e4ec47e5-922b-4f2e-8ac1-695bf964b544.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 41",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/7b2a4242-82eb-4849-a68c-4d2e207c9fd3.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 42",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/e5af3ee4-ed19-4f0c-a97d-5fcde2afb690.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 43",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/922c5b19-cd6f-4195-80c7-f3c6c5644dc2.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 44",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/04cc65b0-6471-426e-95a6-878a2c077311.jpeg",
+      "orientation": "PORTRAIT"
+    },
+    {
+      "caption": "Listing image 45",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/a5f37bdb-a510-42fe-8ec1-e7488e436bbb.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 46",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/9505f053-238c-4b77-8bca-d69197eaae86.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 47",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/36484561-6108-4240-bd48-80a3366600bb.jpeg",
+      "orientation": "LANDSCAPE"
+    },
+    {
+      "caption": "Listing image 48",
+      "imageUrl": "https://a0.muscache.com/im/pictures/prohost-api/Hosting-963048078029205948/original/fd13363f-8dfc-49c2-a3cc-ba54a04fc252.jpeg",
+      "orientation": "LANDSCAPE"
+    }
+  ],
+  "locationDescriptions": [
+    {
+      "title": "Neighborhood highlights",
+      "content": "High-rises, cobbled streets, and the New York Stock Exchange. At the southern tip of Manhattan Island, the Financial District is one of the city\u2019s most historic areas. And this neighborhood is more than just a financial hub. Find iconic monuments and stunning mid-century architecture on every block. Catch the ferry from Wall Street for East River views of the Statue of Liberty and the Brooklyn Bridge. Or to get a taste of local delights, there are sidewalk cafes for cozy coffees and Stone Street dive bars for happy-hour drinks. Whether you\u2019re the Charging Bull or the Fearless Girl \u2014 FiDi is for you.",
+      "mapMarkerRadiusInMeters": 152
+    }
+  ],
+  "highlights": [
+    {
+      "title": "Self check-in",
+      "subtitle": "Check yourself in with the keypad.",
+      "icon": "SYSTEM_CHECK_IN",
+      "type": "LISTING_SELF_CHECKIN"
+    },
+    {
+      "title": "Extra spacious",
+      "subtitle": "Guests love this home\u2019s spaciousness for a comfortable stay.",
+      "icon": "SYSTEM_WHY_HOST",
+      "type": "LISTING_REVIEW_EXTRA_SPACIOUS"
+    },
+    {
+      "title": "Great location",
+      "subtitle": "Guests who stayed here in the past year loved the location.",
+      "icon": "SYSTEM_LOCATION",
+      "type": "LISTING_LOCATION_REVIEW_RATING"
+    }
+  ],
+  "locale": "en",
+  "language": "en",
+  "price": {
+    "label": "$306 per night",
+    "amount": null,
+    "price": "$306",
+    "qualifier": "night before taxes",
+    "breakDown": {
+      "basePrice": {
+        "description": "$261 x 7 nights",
+        "price": "$1,828"
+      },
+      "basePriceBreakdown": [],
+      "serviceFee": null,
+      "totalBeforeTaxes": null,
+      "taxes": {
+        "description": "Taxes",
+        "price": "$308"
+      },
+      "total": {
+        "description": "Total",
+        "price": "$2,136"
+      },
+      "cleaningFee": null,
+      "specialOffer": null,
+      "earlyBirdDiscount": null
+    },
+    "originalPrice": null,
+    "discountedPrice": null
+  },
+  "metaDescription": "Mar 8, 2025 - Entire rental unit for $208. Fill your New York City stay with style at Battery Park. Your Sonder will be on floors 3\u20139 and includes a modern kitchen. Savor the view of this ma...",
+  "seoTitle": "Sonder Battery Park | Superior King Studio - Apartments for Rent in New York, New York, United States - Airbnb",
+  "sharingConfigTitle": "Rental unit in New York \u00b7 \u26054.76 \u00b7 Studio \u00b7 1 bed \u00b7 1 bath",
+  "breadcrumbs": [
+    {
+      "linkRoute": "/new-york-ny/stays",
+      "linkText": "New York",
+      "searchText": "New York, NY"
+    },
+    {
+      "linkRoute": "/s/homes",
+      "linkText": "Stays",
+      "searchText": ""
+    },
+    {
+      "linkRoute": "/",
+      "linkText": "Airbnb",
+      "searchText": ""
+    }
+  ],
+  "location": "New York",
+  "locationSubtitle": "New York, United States",
+  "htmlDescription": {
+    "htmlText": "Fill your New York City stay with style at Battery Park. Your Sonder will be on floors 3\u20139 and includes a modern kitchen. Savor the view of this magical city from the seasonal rooftop pool. There's a fitness center, golf simulator, and co-working space. Why not have it all with endless amenities and an incredible location? You'll be across from The Battery \u2014 a beautiful waterfront oasis. The New York Stock Exchange, Wall Street, and One World Trade Center are also a short walk away.<br /><br /><b>The space</b><br />We\u2019re here to help navigate your stay from start to finish. Check in. Request amenities. Connect to WiFi. Contact customer support. Whatever you need, we\u2019ve got you covered.\r<br />\r<br />This Sonder has a front desk which is staffed 24/7. Our on-site team is available to ensure you have a better stay.\r<br />\r<br />- Contact-free check-in\r<br />- 24/7 virtual support\r<br />- Super-fast WiFi\r<br />- Fresh towels and bathroom essentials\r<br />- Housekeeping services available on-demand for a nominal fee\r<br />- In-suite laundry\r<br />- Fully equipped kitchen\r<br />- Chromecast for streaming\r<br />- Seasonal rooftop pool\r<br />- Fitness center\r<br />- Co-working space\r<br />- Music studio\r<br />- Golf simulator room\r<br />- Luggage lockers (first available)\r<br />- Limited paid street parking available\r<br />\r<br /><b>What\u2019s nearby</b>\r<br />- 5 minute walk to Antica Ristorante (tableside preparations of classic Italian dishes)\r<br />- 8 minute walk to The Dead Rabbit (Redbreast 12, neat, at this iconic Irish bar)\r<br />- 10 minute subway to Takahachi Bakery (try the matcha crepe, thank us later)\r<br />- 10 minute walk to One World Trade Center (stunning 360-degree views from the observation deck)\r<br />\r<br />We have multiple spaces at this property, each designed to give you a beautiful place to stay \u2014 while our style is consistent, the view, layout, and design may vary.\r<br />\r<br />Guests can book housekeeping services on-demand for a nominal fee. This ensures you can enjoy an uninterrupted and environmentally sustainable stay. Housekeeping services must be scheduled 24 hours in advance.<br /><br /><b>Other things to note</b><br />- There's no cable\r<br />- The pool is open from Memorial Day to Labor Day, yearly\r<br />- You may hear construction noise from renovations nearby\r<br />- This building briefly tests the fire alarms on the last Friday of each month. We apologize for any inconvenience<br /><br /><b>Registration number</b><br />Exempt",
+    "recommendedNumberOfLines": 6
+  },
+  "brandHighlights": {
+    "title": "Extraordinary homes, vetted for quality.",
+    "subtitle": null,
+    "hasGoldenLaurel": null
+  },
+  "cancellationPolicies": [
+    {
+      "title": "",
+      "policyName": "Non-refundable",
+      "policyId": 51
+    },
+    {
+      "title": "Free cancellation before Apr 2. Cancel before check-in on Apr 7 for a partial refund.",
+      "policyName": "Refundable",
+      "policyId": 4
+    }
+  ],
+  "checkIn": "2025-04-07",
+  "checkOut": "2025-04-14",
+  "timestamp": "2025-03-08T08:34:31.825Z"
+}

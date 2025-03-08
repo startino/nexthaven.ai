@@ -4,7 +4,7 @@ import asyncio
 import base64
 import httpx
 from io import BytesIO
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -13,18 +13,21 @@ from langchain_core.runnables import RunnableParallel
 from langchain_openai import ChatOpenAI
 
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
-from src.models.apify import ApifyRequest, ApifyResponse
+from src.models.apify import BookingApifyRequest, BookingApifyResponse
+from src.models.airbnb_apify import AirbnbApifyResponse
 from src.interfaces.llm import gpt_4o_mini, o3_mini, gpt_4o, o1, gemini_flash_2
-from src.lib.scraper.apify import ApifyAgent
+from src.lib.scraper.booking_apify import BookingApifyAgent
+from src.lib.scraper.airbnb_apify import AirbnbApifyAgent
 from src.models.result import Result, Property
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
+from src.models.unified_property import UnifiedProperty, PricingModel, CapacityModel, FeaturesModel, MediaModel
 
 class EvaluateAgent:
     def __init__(self):
         self.llm = o3_mini()
         self.vision_llm = o1()
 
-    async def evaluate(self, user_request: GeneratedRequirement, properties: list[ApifyResponse], include_images: bool = True):
+    async def evaluate(self, user_request: GeneratedRequirement, properties: list[BookingApifyResponse | AirbnbApifyResponse], include_images: bool = True):
         """
         Evaluate properties in parallel using RunnableParallel
         
@@ -34,7 +37,7 @@ class EvaluateAgent:
             include_images: Whether to include image analysis
             
         Returns:
-            List of evaluated properties with scores
+            List of evaluated properties with scores as UnifiedProperty objects
         """
         logging.info(f"Evaluating {len(properties)} properties")
         
@@ -43,8 +46,16 @@ class EvaluateAgent:
         if include_images:
             image_tasks = []
             for i, prop in enumerate(properties):
-                if prop.gallery:
+                # Handle both Booking.com and Airbnb property types
+                if isinstance(prop, BookingApifyResponse) and prop.gallery:
                     image_tasks.append(self._analyze_images(prop.gallery))
+                elif isinstance(prop, AirbnbApifyResponse) and prop.images:
+                    # Extract image URLs from Airbnb images
+                    image_urls = [img.imageUrl for img in prop.images if img.imageUrl]
+                    if image_urls:
+                        image_tasks.append(self._analyze_images(image_urls))
+                    else:
+                        image_tasks.append(None)
                 else:
                     image_tasks.append(None)
             
@@ -73,7 +84,10 @@ class EvaluateAgent:
                 Evaluate this property against the my requirements and return a match score and analysis.
                 
                 Analyze the property based on the following criteria:
-                - Price: Does it match the user's budget?
+                - Price:
+                  - Does it match the user's budget? (Don't focus too much on nightly price, focus on the total price.)
+                  - The price is a big factor in the score, if the price is too high, the score should be quite low, unless everything else is perfect.
+                  - If the price is below the user's budget, the score can still be high.
                 - Location: Is it in the desired location?
                 - Rooms: Does it have the required number of rooms?
                 - Amenities: Does it have the requested amenities?
@@ -118,23 +132,23 @@ class EvaluateAgent:
             results = await parallel_chain.ainvoke({})
 
             # Process results
-            processed_results = []
+            processed_results: list[UnifiedProperty] = []
             for i, prop in enumerate(properties):
                 try:
                     result = results[f"property_{i}"][0]["args"]
-                    # Add gallery to results
-                    result["gallery"] = prop.gallery
-                    result["image"] = prop.image
-                    result["url"] = prop.url
-                    processed_results.append(result)
-                    logging.info(f"Evaluated property: {result['name']} with score: {result.get('score', 'N/A')}")
+                    
+                    # Create a UnifiedProperty object
+                    unified_prop = self._create_unified_property(prop, result)
+                    processed_results.append(unified_prop)
+                    
+                    logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
                 except Exception as e:
                     logging.error(f"Error processing property {i}: {str(e)}")
 
-            # Sort results by score
+            # Sort results by score (now using numeric values directly)
             sorted_results = sorted(
                 processed_results, 
-                key=lambda x: float(x.get('score')), 
+                key=lambda x: x.score, 
                 reverse=True
             )
 
@@ -167,7 +181,7 @@ class EvaluateAgent:
                             "image_url": {
                                 "url": url
                             }
-                        } for url in image_urls
+                        } for url in image_urls if url
                     ]
                 ]
             )
@@ -177,11 +191,17 @@ class EvaluateAgent:
         response = await self.vision_llm.ainvoke(messages)
         return f"Image Analysis: {response.content}"
     
-    def _simplify_property(self, property_data: ApifyResponse) -> Dict[str, Any]:
+    def _simplify_property(self, property_data: BookingApifyResponse | AirbnbApifyResponse) -> Dict[str, Any]:
         """Convert ApifyResponse to a simplified dictionary for the LLM"""
-        # Debug logging for image field
-        logging.info(f"ApifyResponse image field: {property_data.image}")
-        
+        if isinstance(property_data, BookingApifyResponse):
+            return self._simplify_booking_property(property_data)
+        elif isinstance(property_data, AirbnbApifyResponse):
+            return self._simplify_airbnb_property(property_data)
+        else:
+            raise ValueError(f"Unsupported property type: {type(property_data)}")
+    
+    def _simplify_booking_property(self, property_data: BookingApifyResponse) -> Dict[str, Any]:
+        """Convert BookingApifyResponse to a simplified dictionary for the LLM"""
         amenities = []
         for facility in property_data.facilities:
             if facility.facilities:
@@ -208,13 +228,176 @@ class EvaluateAgent:
             "score": f"{avg_score:.1f}/10" if avg_score else "No reviews",
             "image": property_data.image,
             "description": property_data.description,
-            "gallery": property_data.gallery
+            "gallery": property_data.gallery,
+            "source": "booking"
         }
         
-        # Debug logging for simplified property
-        logging.info(f"Simplified property image field: {result['image']}")
+        return result
+    
+    def _simplify_airbnb_property(self, property_data: AirbnbApifyResponse) -> Dict[str, Any]:
+        """Convert AirbnbApifyResponse to a simplified dictionary for the LLM"""
+        # Extract amenities from Airbnb property
+        amenities = []
+        for amenity_group in property_data.amenities:
+            for value in amenity_group.values:
+                if value.title:
+                    amenities.append(value.title)
+        
+        # Calculate average review score
+        avg_score = 0
+        if property_data.rating and property_data.rating.guestSatisfaction:
+            avg_score = property_data.rating.guestSatisfaction
+        
+        # Extract images
+        image_urls = [img.imageUrl for img in property_data.images if img.imageUrl]
+        main_image = property_data.thumbnail if property_data.thumbnail else (image_urls[0] if image_urls else "")
+        
+        # Extract price
+        price_value = None
+        if property_data.price and property_data.price.price:
+            # Try to extract numeric value from price string
+            try:
+                price_str = property_data.price.price
+                price_value = float(''.join(filter(lambda x: x.isdigit() or x == '.', price_str)))
+            except:
+                price_value = None
+        
+        # Get location
+        location = property_data.location if property_data.location else ""
+        
+        # Get room count (estimate from person capacity)
+        room_count = 1  # Default assumption
+        if property_data.personCapacity:
+            # Rough estimate: 1 room for every 2 people
+            room_count = max(1, property_data.personCapacity // 2)
+        
+        result = {
+            "name": property_data.title,
+            "url": property_data.url,
+            "price": price_value,
+            "location": location,
+            "rooms": room_count,
+            "amenities": amenities[:10],
+            "reviews": [],  # No direct review titles in Airbnb model
+            "score": f"{avg_score:.1f}/10" if avg_score else "No reviews",
+            "image": main_image,
+            "description": property_data.description,
+            "gallery": image_urls,
+            "source": "airbnb"
+        }
         
         return result
+    
+    def _create_unified_property(self, property_data: BookingApifyResponse | AirbnbApifyResponse, evaluation_result: Dict[str, Any]) -> UnifiedProperty:
+        """Convert property data and evaluation result to a UnifiedProperty object"""
+        # Determine source
+        source = "Booking.com" if isinstance(property_data, BookingApifyResponse) else "Airbnb"
+        
+        # Extract property ID
+        if isinstance(property_data, BookingApifyResponse):
+            property_id = str(hash(property_data.url))  # Generate ID from URL for Booking.com
+            name = property_data.name
+            description = property_data.description
+            url = property_data.url
+            location = property_data.address.full if property_data.address else ""
+            
+            # Extract pricing
+            per_night = property_data.price if property_data.price else 0.0
+            total = per_night * 7  # Estimate total for a week
+            
+            # Extract capacity
+            bedrooms = len(property_data.rooms) if property_data.rooms else 1
+            beds = sum(room.persons or 1 for room in property_data.rooms) if property_data.rooms else 1
+            
+            # Extract features
+            amenities = []
+            for facility in property_data.facilities:
+                if facility.facilities:
+                    for detail in facility.facilities:
+                        if detail.name:
+                            amenities.append(detail.name)
+            
+            # Extract media
+            main_image = property_data.image
+            gallery = property_data.gallery if property_data.gallery else []
+            
+        else:  # AirbnbApifyResponse
+            property_id = property_data.id
+            name = property_data.title
+            description = property_data.description if property_data.description else ""
+            url = property_data.url
+            location = property_data.location if property_data.location else ""
+            
+            # Extract pricing
+            per_night = 0.0
+            total = 0.0
+            if property_data.price and property_data.price.price:
+                try:
+                    price_str = property_data.price.price
+                    per_night = float(''.join(filter(lambda x: x.isdigit() or x == '.', price_str)))
+                    total = per_night * 7  # Estimate total for a week
+                except:
+                    pass
+            
+            # Extract capacity
+            bedrooms = 1  # Default assumption
+            beds = property_data.personCapacity if property_data.personCapacity else 1
+            
+            # Extract features
+            amenities = []
+            for amenity_group in property_data.amenities:
+                for value in amenity_group.values:
+                    if value.title:
+                        amenities.append(value.title)
+            
+            # Extract media
+            image_urls = [img.imageUrl for img in property_data.images if img.imageUrl]
+            main_image = property_data.thumbnail if property_data.thumbnail else (image_urls[0] if image_urls else "")
+            gallery = image_urls
+        
+        # Create UnifiedProperty object
+        unified_property = UnifiedProperty(
+            id=property_id,
+            source=source,
+            url=url,
+            name=name,
+            description=description,
+            location=location if location else "",  # Ensure location is never None
+            pricing=PricingModel(
+                per_night=per_night,
+                total=total
+            ),
+            capacity=CapacityModel(
+                bedrooms=bedrooms,
+                beds=beds
+            ),
+            features=FeaturesModel(
+                size=None,  # Size information not consistently available
+                amenities=amenities[:10]  # Limit to top 10 amenities
+            ),
+            media=MediaModel(
+                main_image=main_image,
+                gallery=gallery
+            ),
+            score=self._parse_score(evaluation_result.get("score", "0")),
+            reasoning=evaluation_result.get("reasoning", ""),
+            raw_data=property_data
+        )
+        
+        return unified_property
+    
+    def _parse_score(self, score_str: str) -> Union[int, float]:
+        """Convert a score string to a numeric value (int or float)"""
+        try:
+            # First try to convert to int
+            return int(score_str)
+        except ValueError:
+            try:
+                # If that fails, try to convert to float
+                return float(score_str)
+            except ValueError:
+                # If all conversions fail, return 0
+                return 0
 
 if __name__ == "__main__":
     user_request = UserRequirement(
@@ -228,17 +411,32 @@ if __name__ == "__main__":
     )
     
     generate_requirement = AnalyzeUserRequirement().analyze_user_requirement(user_request)
-    generate_requirement = GeneratedRequirement(**generate_requirement)
+    # Convert to GeneratedRequirement properly
+    if isinstance(generate_requirement, dict):
+        generate_requirement = GeneratedRequirement(**generate_requirement)
+    else:
+        # If it's already a GeneratedRequirement object, use it directly
+        generate_requirement = generate_requirement
     
-    apify_agent = ApifyAgent()
-    apify_request = apify_agent.generate_request(generate_requirement)
-    properties = apify_agent.get_properties(apify_request)
+    # Create both Booking and Airbnb agents
+    booking_agent = BookingApifyAgent()
+    airbnb_agent = AirbnbApifyAgent()
+    
+    # Get properties from both sources
+    booking_request = booking_agent.generate_request(generate_requirement)
+    booking_properties = booking_agent.get_properties(booking_request)
+    
+    airbnb_request = airbnb_agent.generate_request(generate_requirement)
+    airbnb_properties = airbnb_agent.get_properties(airbnb_request)
+    
+    # Combine properties from both sources
+    all_properties = booking_properties + airbnb_properties
     
     # Use the RunnableParallel version
     start_time = time.time()
     evaluate_agent = EvaluateAgent()
-    response = evaluate_agent.evaluate(user_request, properties)
+    response = asyncio.run(evaluate_agent.evaluate(generate_requirement, all_properties))
     end_time = time.time()
     print(f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds")
     for prop in response:
-        print(f"Property: {prop['name']}, Score: {prop['score']}")
+        print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")

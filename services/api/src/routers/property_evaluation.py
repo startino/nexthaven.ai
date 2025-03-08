@@ -4,14 +4,18 @@ from pydantic import BaseModel
 from typing import List, Optional
 import logging
 import time
+import asyncio
 
-from src.models.apify import ApifyRequest, ApifyResponse
+from src.models.apify import BookingApifyRequest, BookingApifyResponse
+from src.models.airbnb_apify import AirbnbApifyResponse
 from src.models.requirement import GeneratedRequirement, UserRequirement, Budget, DateRange
 # from src.lib.evaluate.agents import EvaluateAgent
 from src.lib.evaluate.agents_with_vision import EvaluateAgent
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
-from src.lib.scraper.apify import ApifyAgent
+from src.lib.scraper.booking_apify import BookingApifyAgent
+from src.lib.scraper.airbnb_apify import AirbnbApifyAgent
 from src.models.result import Result
+from src.models.unified_property import UnifiedProperty
 
 router = APIRouter(prefix="/properties")
 
@@ -51,13 +55,31 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         # Analyze with preferences included
         analyzer = AnalyzeUserRequirement()
         generated_requirements = analyzer.analyze_user_requirement(user_requirement)
-        generated_req_obj = GeneratedRequirement(**generated_requirements)
         
-        apify_agent = ApifyAgent()
-        apify_request = apify_agent.generate_request(generated_req_obj)
-        properties = apify_agent.get_properties(apify_request)
+        # Ensure generated_requirements is a dictionary before unpacking
+        if isinstance(generated_requirements, dict):
+            generated_req_obj = GeneratedRequirement(**generated_requirements)
+        else:
+            # If it's already a GeneratedRequirement object, use it directly
+            generated_req_obj = generated_requirements
         
-        if not properties:
+        # Get properties from both Booking.com and Airbnb in parallel
+        booking_agent = BookingApifyAgent()
+        airbnb_agent = AirbnbApifyAgent()
+        
+        booking_request = booking_agent.generate_request(generated_req_obj)
+        airbnb_request = airbnb_agent.generate_request(generated_req_obj)
+        
+        # Execute both scrapers concurrently
+        booking_properties, airbnb_properties = await asyncio.gather(
+            booking_agent.get_properties(booking_request),
+            airbnb_agent.get_properties(airbnb_request)
+        )
+        
+        # Combine properties from both sources
+        all_properties = booking_properties + airbnb_properties
+        
+        if not all_properties:
             return JSONResponse(
                 status_code=404,
                 content={"message": "No properties found matching your criteria"}
@@ -65,51 +87,20 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         
         # Evaluate properties
         evaluate_agent = EvaluateAgent()
-        results = await evaluate_agent.evaluate(generated_req_obj, properties)
+        results = await evaluate_agent.evaluate(generated_req_obj, all_properties)
         
         # Limit to requested number of results
         top_results = results[:5]
         
-        # Convert to Result model
+        # Convert UnifiedProperty objects to dictionaries for JSON response
         formatted_results = []
         for prop in top_results:
             try:
-                # Debug logging for property before formatting
-                logging.info(f"Property before formatting - image field: {prop.get('image')}")
-                
-                # Fix the gallery field - ensure it's a flat list of strings
-                gallery = prop.get("gallery", [])
-                if gallery and isinstance(gallery, list):
-                    # If the first element is itself a list, flatten it
-                    if gallery and isinstance(gallery[0], list):
-                        gallery = gallery[0]
-                
-                # Convert to Result model
-                result = Result(
-                    url=prop.get("url", ""),
-                    name=prop.get("name", ""),
-                    price=round(float(prop.get("price", 0) or 0)),
-                    location=prop.get("location", ""),
-                    rooms=prop.get("rooms", 0),
-                    baths=prop.get("baths", 0),
-                    amenities=prop.get("amenities", []),
-                    score=prop.get("score", ""),
-                    reasoning=prop.get("reasoning", ""),
-                    image=prop.get("image", ""),
-                    gallery=gallery
-                )
-                
-                # Debug logging for result after formatting
-                logging.info(f"Result after formatting - image field: {result.image}")
-                
-                formatted_results.append(result.model_dump())
-                
-                # Debug logging for result after model_dump
-                logging.info(f"Result after model_dump - image field: {formatted_results[-1].get('image')}")
+                # The prop is already a UnifiedProperty object, so we can directly use model_dump()
+                formatted_results.append(prop.model_dump(exclude={"raw_data"}))
+                logging.info(f"Evaluated property: {prop.name} with score: {prop.score}")
             except Exception as e:
                 logging.error(f"Error formatting result: {str(e)}")
-                logging.error(f"Gallery data: {prop.get('gallery')}")
-                logging.error(f"Property data: {prop}")
         
         end_time = time.time()
         

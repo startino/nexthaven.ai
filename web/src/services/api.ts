@@ -15,6 +15,7 @@ interface PropertyEvaluationRequest {
   preferences: string;
 }
 
+// This interface is kept for backward compatibility but will be deprecated
 export interface PropertyResult {
   id: number;
   url: string;
@@ -30,11 +31,13 @@ export interface PropertyResult {
   gallery: string[];
 }
 
+import { UnifiedProperty } from '../types/unified-property';
+
 interface PropertyEvaluationResponse {
   status: string;
   message: string;
   count: number;
-  results: PropertyResult[];
+  results: UnifiedProperty[]; // Now expecting UnifiedProperty objects directly
   processing_time: string;
 }
 
@@ -56,6 +59,7 @@ const transformRequest = (payload: PropertyEvaluationRequest) => {
   };
 };
 
+// This function is kept for backward compatibility but will be deprecated
 const transformResponse = (property: any): PropertyResult => {
   console.log('Property from API before transform:', property);
   console.log('Image field from API:', property.image);
@@ -83,7 +87,7 @@ const transformResponse = (property: any): PropertyResult => {
 export const propertyService = {
   evaluateProperties: async (
     payload: PropertyEvaluationRequest
-  ): Promise<PropertyResult[]> => {
+  ): Promise<UnifiedProperty[]> => {
     try {
       console.log('Making request to:', `${API_BASE_URL}/properties/evaluate`);
       console.log('Request payload:', payload);
@@ -111,11 +115,11 @@ export const propertyService = {
         throw new Error(`Property evaluation failed: ${data.message}`);
       }
       
-      // Transform each property in the results array
-      const transformedResults = data.results.map(property => transformResponse(property));
-      console.log('Transformed results:', transformedResults);
+      // The API now returns UnifiedProperty objects directly, so no transformation is needed
+      const unifiedProperties = data.results;
+      console.log('Unified properties:', unifiedProperties);
       
-      return transformedResults;
+      return unifiedProperties;
     } catch (error) {
       console.error('Property evaluation error:', error);
       throw error;

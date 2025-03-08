@@ -2,17 +2,18 @@ import os
 import json
 import logging
 from dotenv import load_dotenv
+import asyncio
 
 from apify_client import ApifyClient
-from src.models.apify import ApifyRequest, ApifyResponse, Room, Location, Address, Facilities, CategoryReview, Details
+from src.models.apify import BookingApifyRequest, BookingApifyResponse, Room, Location, Address, Facilities, CategoryReview, Details
 from src.models.requirement import GeneratedRequirement
 
 # Load environment variables
 load_dotenv()
 
-class ApifyAgent:
+class BookingApifyAgent:
     """
-    This class is used to interact with the Apify API.
+    This class is used to interact with the Apify API for Booking.com scraping.
     """
     def __init__(self):
         self.client = ApifyClient(os.getenv("APIFY_API_TOKEN"))
@@ -23,7 +24,7 @@ class ApifyAgent:
         # # Default to Hotels if property_type is not specified or invalid
         # property_type = "Hotels"
         
-        return ApifyRequest(
+        return BookingApifyRequest(
             search=user_request.query,
             rooms=user_request.number_of_rooms,
             adults=user_request.adults,
@@ -34,7 +35,7 @@ class ApifyAgent:
             # propertyType=property_type,
         )
 
-    def get_properties(self, request: ApifyRequest) -> list:
+    async def get_properties(self, request: BookingApifyRequest) -> list[BookingApifyResponse]:
         """
         This method is used to get properties from the Apify API.
         """
@@ -42,15 +43,31 @@ class ApifyAgent:
         
         logging.info(f"Running Apify actor with input: {run_input}")
 
-        result = self.client.actor("oeiQgfg5fsmIJB7Cn").call(run_input=run_input)
+        # Run in a thread to avoid blocking the event loop
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None, 
+            lambda: self.client.actor("oeiQgfg5fsmIJB7Cn").call(run_input=run_input)
+        )
         
-        properties = []
+        properties: list[BookingApifyResponse] = []
         if result and "defaultDatasetId" in result:
-            for item in self.client.dataset(result["defaultDatasetId"]).iterate_items():
-                # Debug logging for raw Apify item
-                logging.info(f"Raw Apify item - image field: {item.get('image')}")
+            # Get dataset items in a non-blocking way
+            dataset_id = result["defaultDatasetId"]
+            
+            async def get_dataset_items():
+                items = []
+                for item in self.client.dataset(dataset_id).iterate_items():
+                    items.append(item)
+                return items
                 
-                parsed_item = ApifyResponse(
+            items = await loop.run_in_executor(
+                None,
+                lambda: list(self.client.dataset(dataset_id).iterate_items())
+            )
+            
+            for item in items:
+                parsed_item = BookingApifyResponse(
                     url=item.get("url", ""),
                     name=item.get("name", ""),
                     type=item.get("type", ""),
@@ -93,9 +110,6 @@ class ApifyAgent:
                     ) for facility in item.get("facilities", [])],
                 )
                 
-                # Debug logging for parsed Apify item
-                logging.info(f"Parsed Apify item - image field: {parsed_item.image}")
-                
                 properties.append(parsed_item)
         else:
             logging.error("No dataset ID returned from Apify")
@@ -103,8 +117,8 @@ class ApifyAgent:
         return properties
 
 if __name__ == "__main__":
-    apify_agent = ApifyAgent()
-    request = ApifyRequest(
+    apify_agent = BookingApifyAgent()
+    request = BookingApifyRequest(
         search="New York",
         maxItems=2,
         sortBy="review_score_and_price",
@@ -118,5 +132,7 @@ if __name__ == "__main__":
         checkIn="2025-02-28",
         checkOut="2025-03-13",
     )
-    properties = apify_agent.get_properties(request)
-    print(properties)
+    
+    # Run the async function in a new event loop
+    properties = asyncio.run(apify_agent.get_properties(request))
+    print(properties) 
