@@ -51,10 +51,8 @@ const getPreviousPreferences = () => {
 
 // Define default locations
 const DEFAULT_LOCATIONS = [
-  { name: 'Cebu', country: 'Philippines' },
+  { name: 'Kuala Lumpur', country: 'Malaysia' },
   { name: 'Bali', country: 'Indonesia' },
-  { name: 'Chiang Mai', country: 'Thailand' },
-  { name: 'Phuket', country: 'Thailand' },
   { name: 'Da Nang', country: 'Vietnam' }
 ];
 
@@ -63,12 +61,10 @@ const WHEN_OPTIONS = [
   { label: 'Next Week', value: 'Next Week' },
   { label: 'Two Weeks', value: 'In Two Weeks' },
   { label: 'Next Month', value: 'Next Month' },
-  { label: 'In 3 Months', value: 'In 3 Months' },
 ];
 
 const PERIOD_OPTIONS = [
   { label: '1 Week', value: 'for 1 Week' },
-  { label: '2 Weeks', value: 'for 2 Weeks' },
   { label: '1 Month', value: 'for 1 Month' },
   { label: '3 Months', value: 'for 3 Months' },
 ];
@@ -108,7 +104,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       min: 200,
       max: 600
     },
-    adults: 1,
+    adults: 2,
     // children removed
     number_of_rooms: 1,
     // property_type removed
@@ -124,7 +120,6 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
     const requiredFields = [];
     if (!form.query) requiredFields.push('location');
     if (!form.date) requiredFields.push('dates');
-    if (!form.adults) requiredFields.push('guests');
 
     if (requiredFields.length > 0) {
       setAiMessage(`Please provide your ${requiredFields.join(', ')} to help me find the best matches for you.`);
@@ -151,7 +146,6 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
     e.preventDefault();
     if (!validateLocationStep()) return;
     setCurrentStep('details');
-    setAiMessage('Now, let me know about your budget and room requirements.');
   };
 
   // Handle details step submission
@@ -272,6 +266,79 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           <Calendar size={20} />
           <span className="font-medium">When?</span>
         </div>
+        <p className="text-sm text-white/60">
+          Use the buttons or type your own dates in the field below.
+        </p>
+        
+        {/* Recommended Time Periods - Moved above the input field */}
+        <div>
+          <p className="text-sm text-white/60 mb-2">When:</p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {WHEN_OPTIONS.map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => {
+                  // Extract any existing period part (after "for")
+                  const currentPeriod = form.date.includes(" for ") 
+                    ? form.date.split(" for ")[1] 
+                    : "";
+                  
+                  // Combine the new "when" with any existing period
+                  const newDate = currentPeriod 
+                    ? `${option.value} for ${currentPeriod}` 
+                    : option.value;
+                  
+                  setForm({ ...form, date: newDate });
+                }}
+                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  form.date.startsWith(option.value) 
+                    ? 'bg-purple-500/30 text-white' 
+                    : 'bg-white/10 hover:bg-white/20 text-white/80'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div>
+
+          <p className="text-sm text-white/60 mb-2">Period:</p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {PERIOD_OPTIONS.map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                onClick={() => {
+                  // Extract any existing "when" part (before "for")
+                  const currentWhen = form.date.split(" for ")[0].trim();
+                  
+                  // Only use the currentWhen if it's not empty and not just the period
+                  const whenPart = currentWhen && !PERIOD_OPTIONS.some(p => p.value === `for ${currentWhen}`) 
+                    ? currentWhen 
+                    : "";
+                  
+                  // Combine any existing "when" with the new period
+                  const newDate = whenPart 
+                    ? `${whenPart} ${option.value}` 
+                    : option.value.startsWith("for ") ? option.value.substring(4) : option.value;
+                  
+                  setForm({ ...form, date: newDate });
+                }}
+                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                  form.date.includes(option.value) 
+                    ? 'bg-purple-500/30 text-white' 
+                    : 'bg-white/10 hover:bg-white/20 text-white/80'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
         <input
           type="text"
           placeholder="e.g. March 15 - April 15"
@@ -280,107 +347,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           onChange={(e) => setForm({ ...form, date: e.target.value })}
         />
         
-        {/* Recommended Time Periods */}
-        <div className="pt-2">
-          <p className="text-sm text-white/60 mb-3">
-            You can also type your own dates directly in the field above.
-          </p>
-          
-          <div className="mb-4">
-            <p className="text-sm text-white/60 mb-2">When:</p>
-            <div className="flex flex-wrap gap-2">
-              {WHEN_OPTIONS.map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  onClick={() => {
-                    // Extract any existing period part (after "for")
-                    const currentPeriod = form.date.includes(" for ") 
-                      ? form.date.split(" for ")[1] 
-                      : "";
-                    
-                    // Combine the new "when" with any existing period
-                    const newDate = currentPeriod 
-                      ? `${option.value} for ${currentPeriod}` 
-                      : option.value;
-                    
-                    setForm({ ...form, date: newDate });
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                    form.date.startsWith(option.value) 
-                      ? 'bg-purple-500/30 text-white' 
-                      : 'bg-white/10 hover:bg-white/20 text-white/80'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <p className="text-sm text-white/60 mb-2">Period:</p>
-            <div className="flex flex-wrap gap-2">
-              {PERIOD_OPTIONS.map((option) => (
-                <button
-                  key={option.label}
-                  type="button"
-                  onClick={() => {
-                    // Extract any existing "when" part (before "for")
-                    const currentWhen = form.date.split(" for ")[0].trim();
-                    
-                    // Only use the currentWhen if it's not empty and not just the period
-                    const whenPart = currentWhen && !PERIOD_OPTIONS.some(p => p.value === `for ${currentWhen}`) 
-                      ? currentWhen 
-                      : "";
-                    
-                    // Combine any existing "when" with the new period
-                    const newDate = whenPart 
-                      ? `${whenPart} ${option.value}` 
-                      : option.value.startsWith("for ") ? option.value.substring(4) : option.value;
-                    
-                    setForm({ ...form, date: newDate });
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                    form.date.includes(option.value) 
-                      ? 'bg-purple-500/30 text-white' 
-                      : 'bg-white/10 hover:bg-white/20 text-white/80'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div>
 
-      {/* Guests - Adults only */}
-      <motion.div 
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        className="rounded-xl sm:rounded-2xl bg-white/5 backdrop-blur-sm p-4 sm:p-5 ring-1 ring-white/10 space-y-3 sm:space-y-4"
-      >
-        <div className="flex items-center gap-3 text-white/80 mb-1 sm:mb-2">
-          <Users size={20} />
-          <span className="font-medium">How many adults?</span>
-        </div>
-        <div className="flex gap-2 sm:gap-3">
-          {[1, 2, 3, 4].map((num) => (
-            <button
-              key={num}
-              type="button"
-              onClick={() => setForm({ ...form, adults: num })}
-              className={`flex-1 py-3 sm:py-4 rounded-lg text-center transition-colors ${
-                form.adults === num
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
-                  : 'bg-white/10 text-white/60 hover:bg-white/20'
-              }`}
-            >
-              {num}
-            </button>
-          ))}
-        </div>
       </motion.div>
 
       <motion.button
@@ -398,7 +365,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   // Details step (second step)
   const renderDetailsStep = () => (
     <form onSubmit={handleDetailsSubmit} className="space-y-6">
-      {/* Budget Range - Double ended slider using react-range */}
+      {/* Budget Range - Single input with calculated minimum */}
       <motion.div 
         initial={{ scale: 0.95 }}
         animate={{ scale: 1 }}
@@ -408,53 +375,30 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           <DollarSign size={20} />
           <span className="font-medium">Total Budget for Stay</span>
         </div>
-        <div className="space-y-5 pt-2">
-          {/* Budget input fields */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label className="text-white/60 text-sm block mb-1">Min Budget</label>
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={form.budget.min}
-                onChange={(e) => {
-                  const newMin = parseInt(e.target.value) || 0;
-                  setForm({ 
-                    ...form, 
-                    budget: { 
-                      ...form.budget, 
-                      min: newMin
-                    } 
-                  });
-                }}
-                className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 outline-none focus:ring-1 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="text-white/60 text-sm block mb-1">Max Budget</label>
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={form.budget.max}
-                onChange={(e) => {
-                  const newMax = parseInt(e.target.value) || 0;
-                  setForm({ 
-                    ...form, 
-                    budget: { 
-                      ...form.budget, 
-                      max: newMax
-                    } 
-                  });
-                }}
-                className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 outline-none focus:ring-1 focus:ring-purple-500"
-              />
-            </div>
-          </div>
-          <div className="flex justify-between text-white/60 text-sm px-1">
-            <span>{formatPrice(form.budget.min)}</span>
-            <span>{formatPrice(form.budget.max)}</span>
+        <div className="pt-2">
+          {/* Single budget input field */}
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60">$</span>
+            <input
+              type="number"
+              min="100"
+              step="50"
+              value={form.budget.max}
+              onChange={(e) => {
+                const newMax = parseInt(e.target.value) || 0;
+                // Calculate minimum as 70% of maximum (can be adjusted)
+                const calculatedMin = Math.floor(newMax * 0.7);
+                setForm({ 
+                  ...form, 
+                  budget: { 
+                    min: calculatedMin,
+                    max: newMax
+                  } 
+                });
+              }}
+              className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 pl-8 outline-none focus:ring-1 focus:ring-purple-500"
+              placeholder="Enter your maximum budget"
+            />
           </div>
         </div>
       </motion.div>
@@ -477,8 +421,6 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               onClick={() => setForm({ 
                 ...form, 
                 number_of_rooms: num,
-                // Match adults to room count as requested
-                adults: num
               })}
               className={`py-3 sm:py-4 rounded-lg flex items-center justify-center transition-colors ${
                 form.number_of_rooms === num
@@ -632,7 +574,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
     <div className="min-h-screen bg-black">
       <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-6 sm:mb-8 text-center md:text-left">
           {onBack && (
             <button
               onClick={onBack}

@@ -16,7 +16,7 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
       <div className="flex-1 flex flex-col items-center justify-center">
         <div className="text-center space-y-4 mb-8 sm:mb-12 px-2">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-white leading-tight">
-            Find your next short-term<br className="" /> <span className="text-pink-400">hotel</span> / <span className="text-purple-400">apartment</span> / <span className="text-indigo-400">hostel</span>.
+            Find your next<br className="" /> <span className="text-pink-400">hotel</span> / <span className="text-purple-400">apartment</span> / <span className="text-indigo-400">hostel</span>.
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-gray-400 font-light max-w-3xl mx-auto">
             Hours of accommodation searching, condensed into seconds.
@@ -32,15 +32,13 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
               <Search size={22} className="sm:w-6 sm:h-6 flex-shrink-0" />
               <div className="text-left">
                 <div className="text-lg sm:text-xl font-semibold">Start New Search</div>
-                <div className="text-sm text-white/80 max-w-md">
-                  With a simple description in your own words, our AI scans major platforms to deliver the top 5 personalized options.
-                </div>
+                
               </div>
             </div>
             <ArrowRight className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 group-hover:translate-x-1 transition-transform" />
           </button>
-          <div className="flex flex-col items-center mt-8">
-            <p className="text-xs sm:text-sm">Interested in partnering with us? (Affiliate, Partner, etc.)</p>
+          <div className="flex flex-col items-center mt-8 text-center">
+            <p className="text-xs sm:text-sm">Interested in partnering with us?</p>
             <p className="text-xs sm:text-sm mt-1">Contact: <a href="mailto:jorge.lewis@starti.no" className="text-purple-400 hover:text-purple-300">jorge.lewis@starti.no</a></p>
           </div>
 
