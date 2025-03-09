@@ -378,7 +378,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
         <div className="pt-2">
           {/* Single budget input field */}
           <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60">$</span>
+            <span className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-white/60">$</span>
             <input
               type="number"
               min="100"
@@ -396,7 +396,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
                   } 
                 });
               }}
-              className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 pl-8 outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 pl-8 sm:pl-10 outline-none focus:ring-1 focus:ring-purple-500"
               placeholder="Enter your maximum budget"
             />
           </div>
