@@ -314,7 +314,9 @@ class EvaluateAgent:
             
             # Extract pricing
             if isinstance(property_data.price, str):
-                total = float(property_data.price.strip("$"))
+                total = float(property_data.price.replace("$", "").replace(",", ""))
+            else:
+                total = property_data.price
 
             # Extract capacity
             bedrooms = len(property_data.rooms) if property_data.rooms else 1
@@ -339,8 +341,12 @@ class EvaluateAgent:
             url = property_data.url
             location = property_data.location if property_data.location else ""
             
-            total = property_data.price if property_data.price else 0.0
-
+            # Extract pricing
+            if isinstance(property_data.price, str):
+                total = float(property_data.price.replace("$", "").replace(",", ""))
+            else:
+                total = property_data.price
+                
             # Extract capacity
             bedrooms = 1  # Default assumption
             beds = property_data.personCapacity if property_data.personCapacity else 1
@@ -366,7 +372,7 @@ class EvaluateAgent:
             description=description,
             location=location if location else "",  # Ensure location is never None
             pricing=PricingModel(
-                total=float(total.price) if isinstance(total, Price) and total.price else (total if isinstance(total, (int, float)) else 0.0)
+                total=float(total.price.replace("$", "").replace(",", "")) if isinstance(total, Price) and total.price else (total if isinstance(total, (int, float)) else 0.0)
             ),
             capacity=CapacityModel(
                 bedrooms=bedrooms,
@@ -374,7 +380,7 @@ class EvaluateAgent:
             ),
             features=FeaturesModel(
                 size=None,  # Size information not consistently available
-                amenities=amenities[:10]  # Limit to top 10 amenities
+                amenities=amenities
             ),
             media=MediaModel(
                 main_image=main_image,
