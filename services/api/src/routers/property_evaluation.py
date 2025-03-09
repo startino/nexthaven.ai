@@ -79,12 +79,6 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         # Combine properties from both sources
         all_properties = booking_properties + airbnb_properties
         
-        if not all_properties:
-            return JSONResponse(
-                status_code=404,
-                content={"message": "No properties found matching your criteria"}
-            )
-        
         # Evaluate properties
         evaluate_agent = EvaluateAgent()
         results = await evaluate_agent.evaluate(generated_req_obj, all_properties)
