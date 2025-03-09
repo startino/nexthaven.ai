@@ -109,7 +109,7 @@ class EvaluateAgent:
                 You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
                 This reasoning will be shown to the user to help them understand why this property received its score.
                 Be specific about which preferences were met and which weren't.
-                Format this as a list of sentences, with emojis for each item. E.g. ✅, 🏆, 👌, 👎. Make the emojis relevant to the item, but don't overdo them.
+                Format this as a list of sentences, with emojis for each item. E.g. ✅, 🏆, 👌, 👎. Make the emojis relevant to the item and scoring of that attribute, but don't overdo them.
                 Don't use "-" or "•" or "*" or any other bullet point. Use a colon ":" to separate the item and the score.
                 """
                     ),
@@ -155,6 +155,7 @@ class EvaluateAgent:
             except Exception as e:
                 logging.error(f"Error processing property {i}: {str(e)}")
 
+
         # Sort results by score (now using numeric values directly)
         if processed_results:
             sorted_results = sorted(
@@ -162,9 +163,8 @@ class EvaluateAgent:
                 key=lambda x: x.score, 
                 reverse=True
             )
-            
-            # Return top 10 results or all if less than 10
-            return sorted_results[:10]
+
+            return sorted_results
         else:
             logging.warning("No properties were successfully processed")
             return []
@@ -315,7 +315,7 @@ class EvaluateAgent:
             # Extract pricing
             if isinstance(property_data.price, str):
                 total = float(property_data.price.strip("$"))
-                
+
             # Extract capacity
             bedrooms = len(property_data.rooms) if property_data.rooms else 1
             beds = sum(room.persons or 1 for room in property_data.rooms) if property_data.rooms else 1
