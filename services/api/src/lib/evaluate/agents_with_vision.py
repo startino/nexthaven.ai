@@ -132,47 +132,43 @@ class EvaluateAgent:
         # Create the parallel runner
         parallel_chain = RunnableParallel(**property_chains)
 
-        try:
-            # Run all evaluations in parallel
-            # The RunnableParallel will now handle exceptions for individual properties
-            results = await parallel_chain.ainvoke({}, return_exceptions=True)
+        # Run all evaluations in parallel
+        # The RunnableParallel will now handle exceptions for individual properties
+        results = await parallel_chain.ainvoke({}, return_exceptions=True)
 
-            # Process results
-            processed_results: list[UnifiedProperty] = []
-            for i, prop in enumerate(properties):
-                try:
-                    # Check if the result is an exception
-                    if isinstance(results.get(f"property_{i}"), Exception):
-                        logging.error(f"Error evaluating property {i}: {str(results[f'property_{i}'])}")
-                        continue
-                        
-                    result = results[f"property_{i}"][0]["args"]
+        # Process results
+        processed_results: list[UnifiedProperty] = []
+        for i, prop in enumerate(properties):
+            try:
+                # Check if the result is an exception
+                if isinstance(results.get(f"property_{i}"), Exception):
+                    logging.error(f"Error evaluating property {i}: {str(results[f'property_{i}'])}")
+                    continue
                     
-                    # Create a UnifiedProperty object
-                    unified_prop = self._create_unified_property(prop, result)
-                    processed_results.append(unified_prop)
-                    
-                    logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
-                except Exception as e:
-                    logging.error(f"Error processing property {i}: {str(e)}")
-
-            # Sort results by score (now using numeric values directly)
-            if processed_results:
-                sorted_results = sorted(
-                    processed_results, 
-                    key=lambda x: x.score, 
-                    reverse=True
-                )
+                result = results[f"property_{i}"][0]["args"]
                 
-                # Return top 10 results or all if less than 10
-                return sorted_results[:10]
-            else:
-                logging.warning("No properties were successfully processed")
-                return []
+                # Create a UnifiedProperty object
+                unified_prop = self._create_unified_property(prop, result)
+                processed_results.append(unified_prop)
+                
+                logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
+            except Exception as e:
+                logging.error(f"Error processing property {i}: {str(e)}")
 
-        except Exception as e:
-            logging.error(f"Error in parallel evaluation: {str(e)}")
+        # Sort results by score (now using numeric values directly)
+        if processed_results:
+            sorted_results = sorted(
+                processed_results, 
+                key=lambda x: x.score, 
+                reverse=True
+            )
+            
+            # Return top 10 results or all if less than 10
+            return sorted_results[:10]
+        else:
+            logging.warning("No properties were successfully processed")
             return []
+        
     
     async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
         """Analyze property images using vision model"""
@@ -317,8 +313,9 @@ class EvaluateAgent:
             location = property_data.address.full if property_data.address else ""
             
             # Extract pricing
-            total = property_data.price if property_data.price else 0.0
-            
+            if isinstance(property_data.price, str):
+                total = float(property_data.price.strip("$"))
+                
             # Extract capacity
             bedrooms = len(property_data.rooms) if property_data.rooms else 1
             beds = sum(room.persons or 1 for room in property_data.rooms) if property_data.rooms else 1
