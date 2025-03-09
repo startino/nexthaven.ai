@@ -14,42 +14,42 @@ class AirbnbApifyRequest(BaseModel):
     Request model for the Airbnb Apify scraper.
     Based on: https://apify.com/tri_angle/airbnb-scraper/input-schema
     """
-    locationQueries: Optional[List[str]] = Field(default=None, description="List of location queries to scrape")
-    startUrls: Optional[List[Dict[str, str]]] = Field(default=None, description="List of Airbnb URLs to start with")
-    checkIn: Optional[str] = Field(default=None, description="Check-in date in YYYY-MM-DD format")
-    checkOut: Optional[str] = Field(default=None, description="Check-out date in YYYY-MM-DD format")
+    locationQueries: List[str] | None = Field(default=None, description="List of location queries to scrape")
+    startUrls: List[Dict[str, str]] | None = Field(default=None, description="List of Airbnb URLs to start with")
+    checkIn: str | None = Field(default=None, description="Check-in date in YYYY-MM-DD format")
+    checkOut: str | None = Field(default=None, description="Check-out date in YYYY-MM-DD format")
     locale: str = Field(default="en-US", description="Localized results in this locale will be extracted")
     currency: str = Field(default="USD", description="Currency that will be extracted for prices")
-    priceMin: Optional[int] = Field(default=None, description="Minimum price")
-    priceMax: Optional[int] = Field(default=None, description="Maximum price")
-    minBeds: Optional[int] = Field(default=None, description="Minimum beds")
-    minBedrooms: Optional[int] = Field(default=None, description="Minimum bedrooms")
-    minBathrooms: Optional[int] = Field(default=None, description="Minimum bathrooms")
-    adults: Optional[int] = Field(default=None, description="Number of adults")
-    children: Optional[int] = Field(default=None, description="Number of children")
-    infants: Optional[int] = Field(default=None, description="Number of infants")
-    pets: Optional[int] = Field(default=None, description="Number of pets")
-    proxyConfiguration: Optional[Dict[str, Any]] = Field(default=None, description="Proxy configuration")
+    priceMin: int | None = Field(default=None, description="Minimum price")
+    priceMax: int | None = Field(default=None, description="Maximum price")
+    minBeds: int | None = Field(default=None, description="Minimum beds")
+    minBedrooms: int | None = Field(default=None, description="Minimum bedrooms")
+    minBathrooms: int | None = Field(default=None, description="Minimum bathrooms")
+    adults: int | None = Field(default=None, description="Number of adults")
+    children: int | None = Field(default=None, description="Number of children")
+    infants: int | None = Field(default=None, description="Number of infants")
+    pets: int | None = Field(default=None, description="Number of pets")
+    proxyConfiguration: Dict[str, Any] | None = Field(default=None, description="Proxy configuration")
 
 class Coordinates(BaseModel):
     latitude: float
     longitude: float
 
 class Rating(BaseModel):
-    accuracy: Optional[float] = None
-    checking: Optional[float] = None
-    cleanliness: Optional[float] = None
-    communication: Optional[float] = None
-    location: Optional[float] = None
-    value: Optional[float] = None
-    guestSatisfaction: Optional[float] = None
-    reviewsCount: Optional[int] = None
+    accuracy: float | None = None
+    checking: float | None = None
+    cleanliness: float | None = None
+    communication: float | None = None
+    location: float | None = None
+    value: float | None = None
+    guestSatisfaction: float | None = None
+    reviewsCount: int | None = None
 
 class RuleValue(BaseModel):
     title: str
-    icon: Optional[str] = None
-    subtitle: Optional[str] = None
-    available: Optional[Union[bool, str]] = None
+    icon: str | None = None
+    subtitle: str | None = None
+    available: bool | str | None = None
 
 class RuleGroup(BaseModel):
     title: str
@@ -61,16 +61,16 @@ class HouseRules(BaseModel):
 
 class Host(BaseModel):
     id: Optional[str] = None
-    name: Optional[str] = None
-    isSuperHost: Optional[bool] = False
-    profileImage: Optional[str] = None
+    name: str | None = None
+    isSuperHost: bool | None = False
+    profileImage: str | None = None
     highlights: List[str] = []
     about: Union[str, List[str]] = ""
-    ratingCount: Optional[int] = None
-    ratingAverage: Optional[float] = None
-    hostDetails: Optional[List[str]] = None
-    timeAsHost: Optional[Dict[str, Any]] = None
-    isVerified: Optional[bool] = None
+    ratingCount: int | None = None
+    ratingAverage: float | None = None
+    hostDetails: List[str] | None = None
+    timeAsHost: Dict[str, Any] | None = None
+    isVerified: bool | None = None
 
 class SubDescription(BaseModel):
     title: Optional[str] = None
@@ -102,48 +102,48 @@ class PriceBreakdownItem(BaseModel):
     price: str
 
 class PriceBreakdown(BaseModel):
-    basePrice: Optional[PriceBreakdownItem] = None
+    basePrice: PriceBreakdownItem | None = None
     basePriceBreakdown: List[PriceBreakdownItem] = []
-    serviceFee: Optional[PriceBreakdownItem] = None
-    totalBeforeTaxes: Optional[PriceBreakdownItem] = None
-    taxes: Optional[PriceBreakdownItem] = None
-    total: Optional[PriceBreakdownItem] = None
-    cleaningFee: Optional[PriceBreakdownItem] = None
-    specialOffer: Optional[PriceBreakdownItem] = None
-    earlyBirdDiscount: Optional[PriceBreakdownItem] = None
+    serviceFee: PriceBreakdownItem | None = None
+    totalBeforeTaxes: PriceBreakdownItem | None = None
+    taxes: PriceBreakdownItem | None = None
+    total: PriceBreakdownItem | None = None
+    cleaningFee: PriceBreakdownItem | None = None
+    specialOffer: PriceBreakdownItem | None = None
+    earlyBirdDiscount: PriceBreakdownItem | None = None
 
 class Price(BaseModel):
-    label: Optional[str] = None
-    amount: Optional[str] = None
-    price: Optional[str] = None
-    qualifier: Optional[str] = None
-    breakDown: Optional[PriceBreakdown] = None
-    originalPrice: Optional[str] = None
-    discountedPrice: Optional[str] = None
+    label: str | None = None
+    amount: str | None = None
+    price: str | None = None
+    qualifier: str | None = None
+    breakDown: PriceBreakdown | None = None
+    originalPrice: str | None = None
+    discountedPrice: str | None = None
 
 class Image(BaseModel):
-    caption: Optional[str] = None
-    imageUrl: Optional[str] = None
-    orientation: Optional[str] = None
+    caption: str | None = None
+    imageUrl: str | None = None
+    orientation: str | None = None
 
 class HtmlDescription(BaseModel):
-    htmlText: Optional[str] = None
-    recommendedNumberOfLines: Optional[int] = None
+    htmlText: str | None = None
+    recommendedNumberOfLines: int | None = None
 
 class Breadcrumb(BaseModel):
-    linkRoute: Optional[str] = None
-    linkText: Optional[str] = None
-    searchText: Optional[str] = None
+    linkRoute: str | None = None
+    linkText: str | None = None
+    searchText: str | None = None
 
 class BrandHighlights(BaseModel):
-    title: Optional[str] = None
-    subtitle: Optional[str] = None
-    hasGoldenLaurel: Optional[bool] = None
+    title: str | None = None
+    subtitle: str | None = None
+    hasGoldenLaurel: bool | None = None
 
 class CancellationPolicy(BaseModel):
-    title: Optional[str] = None
-    policyName: Optional[str] = None
-    policyId: Optional[int] = None
+    title: str | None = None
+    policyName: str | None = None
+    policyId: int | None = None
 
 class AirbnbApifyResponse(BaseModel):
     """
@@ -151,20 +151,20 @@ class AirbnbApifyResponse(BaseModel):
     """
     id: str
     coordinates: Coordinates
-    description: Optional[str] = ""
-    descriptionOriginalLanguage: Optional[str] = None
+    description: str | None = ""
+    descriptionOriginalLanguage: str | None = None
     title: str
-    thumbnail: Optional[str] = ""
+    thumbnail: str | None = ""
     url: str
-    androidLink: Optional[str] = None
-    iosLink: Optional[str] = None
-    roomType: Optional[str] = ""
-    propertyType: Optional[str] = None
-    isSuperHost: Optional[bool] = False
-    homeTier: Optional[int] = None
-    personCapacity: Optional[int] = 0
-    rating: Optional[Rating] = None
-    houseRules: Optional[HouseRules] = None
+    androidLink: str | None = None
+    iosLink: str | None = None
+    roomType: str | None = ""
+    propertyType: str | None = None
+    isSuperHost: bool | None = False
+    homeTier: int | None = None
+    personCapacity: int | None = 0
+    rating: Rating | None = None
+    houseRules: HouseRules | None = None
     host: Host
     subDescription: SubDescription
     amenities: List[AmenityGroup] = []
@@ -172,21 +172,21 @@ class AirbnbApifyResponse(BaseModel):
     images: List[Image] = []
     locationDescriptions: List[LocationDescription] = []
     highlights: List[Highlight] = []
-    locale: Optional[str] = "en"
-    language: Optional[str] = "en"
+    locale: str | None = "en"
+    language: str | None = "en"
     price: Price
-    metaDescription: Optional[str] = None
-    seoTitle: Optional[str] = None
-    sharingConfigTitle: Optional[str] = None
-    breadcrumbs: Optional[List[Breadcrumb]] = None
-    location: Optional[str] = None
-    locationSubtitle: Optional[str] = None
-    htmlDescription: Optional[HtmlDescription] = None
-    brandHighlights: Optional[BrandHighlights] = None
-    cancellationPolicies: Optional[List[CancellationPolicy]] = None
-    checkIn: Optional[str] = None
-    checkOut: Optional[str] = None
-    timestamp: Optional[str] = None
+    metaDescription: str | None = None
+    seoTitle: str | None = None
+    sharingConfigTitle: str | None = None
+    breadcrumbs: List[Breadcrumb] | None = None
+    location: str | None = None
+    locationSubtitle: str | None = None
+    htmlDescription: HtmlDescription | None = None
+    brandHighlights: BrandHighlights | None = None
+    cancellationPolicies: List[CancellationPolicy] | None = None
+    checkIn: str | None = None
+    checkOut: str | None = None
+    timestamp: str | None = None
     
     # Add model_config to allow extra fields
     model_config = {
