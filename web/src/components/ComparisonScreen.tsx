@@ -183,6 +183,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
         <div className="flex items-center justify-between mb-6 sm:mb-8">
           <button
             onClick={onBack}
+            id="btn-comparison-back"
             className="flex items-center gap-2 text-white/80 hover:text-white transition-colors p-2 -ml-2"
           >
             <ArrowLeft size={20} className="sm:w-6 sm:h-6" />
@@ -209,6 +210,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                 <div className="flex items-center justify-between p-4">
                   <button
                     onClick={() => setSelectedProperty(null)}
+                    id="btn-close-property-details"
                     className="flex items-center gap-2 text-white/80 hover:text-white p-2 -ml-2"
                   >
                     <ArrowLeft size={20} />
@@ -219,6 +221,7 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleWinnerSelection(selectedProperty)}
+                      id="btn-select-winner"
                       className="px-4 py-2 sm:px-6 sm:py-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold flex items-center gap-2 text-sm sm:text-base shadow-lg"
                     >
                       <Crown size={16} className="sm:w-5 sm:h-5" />

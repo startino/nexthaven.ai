@@ -26,6 +26,7 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
         <div className="w-full max-w-xl px-2">
           <button
             onClick={onStartNewCampaign}
+            id="btn-start-new-search"
             className="w-full flex items-center justify-between bg-gradient-to-r from-purple-700 to-pink-700 text-white p-5 sm:p-6 rounded-xl sm:rounded-2xl group hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
           >
             <div className="flex items-center gap-3 sm:gap-4">
@@ -44,6 +45,7 @@ function HomeScreen({ onStartNewCampaign, onViewHistory }: HomeScreenProps) {
 
           {/* <button
             onClick={onViewHistory}
+            id="btn-view-history"
             className="w-full flex items-center justify-between bg-white/5 backdrop-blur-sm text-white p-6 rounded-2xl group hover:bg-white/10 transition-all"
           >
             <div className="flex items-center gap-4">

@@ -61,6 +61,7 @@ function HistoryScreen({ onBack, onViewCampaign }: HistoryScreenProps) {
         <div className="flex items-center gap-4 p-4">
           <button
             onClick={onBack}
+            id="btn-history-back"
             className="p-2 rounded-full hover:bg-white/10 transition-colors"
           >
             <ArrowLeft className="text-white" size={24} />
@@ -74,6 +75,7 @@ function HistoryScreen({ onBack, onViewCampaign }: HistoryScreenProps) {
           <div
             key={campaign.id}
             onClick={() => onViewCampaign(campaign.id)}
+            id={`btn-view-campaign-${campaign.id}`}
             className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer hover:bg-white/10 transition-all"
           >
             <div className="p-4 space-y-4">

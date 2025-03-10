@@ -22,6 +22,7 @@ function BookingScreen({ property, onBack }: BookingScreenProps) {
         <div className="flex items-center gap-3 p-4">
           <button
             onClick={onBack}
+            id="btn-booking-back"
             className="p-2 rounded-full hover:bg-white/10 transition-colors -ml-2"
           >
             <ArrowLeft className="text-white" size={20} />
@@ -122,6 +123,7 @@ function BookingScreen({ property, onBack }: BookingScreenProps) {
                 href={bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                id="btn-complete-booking"
                 className="block w-full bg-white text-purple-700 font-bold py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors text-center flex items-center justify-center gap-2 shadow-md"
               >
                 <ExternalLink size={18} className="sm:w-5 sm:h-5" />

@@ -179,6 +179,7 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
             <div className="p-4 flex justify-between items-center">
               <button
                 onClick={() => setShowFullGallery(false)}
+                id="btn-close-gallery"
                 className="text-white p-2 rounded-full hover:bg-white/10"
               >
                 <X size={24} />
@@ -203,6 +204,7 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
               {currentImageIndex > 0 && (
                 <button
                   onClick={() => setCurrentImageIndex(prev => prev - 1)}
+                  id="btn-gallery-prev"
                   className="absolute left-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
                 >
                   <ChevronLeft size={24} />
@@ -212,6 +214,7 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
               {currentImageIndex < allImages.length - 1 && (
                 <button
                   onClick={() => setCurrentImageIndex(prev => prev + 1)}
+                  id="btn-gallery-next"
                   className="absolute right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
                 >
                   <ChevronRight size={24} />
@@ -225,6 +228,7 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
                 {allImages.map((image, index) => (
                   <div
                     key={index}
+                    id={`btn-gallery-thumbnail-${index}`}
                     className={`w-16 h-16 flex-shrink-0 rounded-md overflow-hidden cursor-pointer ${
                       index === currentImageIndex ? 'ring-2 ring-purple-500' : ''
                     }`}
@@ -423,6 +427,7 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handleSwipe(false)}
+            id="btn-swipe-dislike"
             className="w-16 h-16 flex items-center justify-center rounded-full bg-red-500/90 backdrop-blur-sm text-white shadow-lg hover:bg-red-600 transition-all"
           >
             <X size={32} />
@@ -431,6 +436,7 @@ function SwipeScreen({ properties, onLike, likedCount, totalProperties }: SwipeS
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => handleSwipe(true)}
+            id="btn-swipe-like"
             className="w-16 h-16 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg hover:from-purple-600 hover:to-pink-600 transition-all"
           >
             <Heart size={32} />

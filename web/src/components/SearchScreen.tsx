@@ -312,6 +312,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               <button
                 key={location.name}
                 type="button"
+                id={`btn-location-${location.name.toLowerCase().replace(/\s/g, '-')}`}
                 onClick={() => setForm({ ...form, query: `${location.name}, ${location.country}` })}
                 className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-full text-sm text-white/80 transition-colors"
               >
@@ -344,6 +345,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               <button
                 key={option.label}
                 type="button"
+                id={`btn-when-${option.label.toLowerCase().replace(/\s/g, '-')}`}
                 onClick={() => {
                   // Extract any existing period part (after "for")
                   const currentPeriod = form.date.includes(" for ") 
@@ -377,6 +379,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               <button
                 key={option.label}
                 type="button"
+                id={`btn-period-${option.label.toLowerCase().replace(/\s/g, '-')}`}
                 onClick={() => {
                   // Extract any existing "when" part (before "for")
                   const currentWhen = form.date.split(" for ")[0].trim();
@@ -420,6 +423,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         type="submit"
+        id="btn-continue-to-details"
         disabled={isLoading}
         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-xl sm:rounded-full transition-all hover:from-purple-600 hover:to-pink-600 shadow-lg"
       >
@@ -494,6 +498,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
             <button
               key={num}
               type="button"
+              id={`btn-room-${num}`}
               onClick={() => setForm({ 
                 ...form, 
                 number_of_rooms: num,
@@ -515,6 +520,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="button"
+          id="btn-back-to-location"
           onClick={() => setCurrentStep('location')}
           className="flex-1 flex items-center justify-center gap-2 bg-white/10 text-white font-medium py-4 px-4 sm:px-6 rounded-xl sm:rounded-full transition-all hover:bg-white/20"
         >
@@ -525,6 +531,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
+          id="btn-continue-to-preferences"
           disabled={isLoading}
           className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-4 sm:px-6 rounded-xl sm:rounded-full transition-all hover:from-purple-600 hover:to-pink-600 shadow-lg"
         >
@@ -559,6 +566,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           </div>
           <button
             type="button"
+            id="btn-toggle-previous-preferences"
             onClick={() => setShowPreviousPreferences(!showPreviousPreferences)}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/80 hover:bg-white/20 transition-colors"
           >
@@ -579,6 +587,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
                 <motion.button
                   key={prev.id}
                   type="button"
+                  id={`btn-select-preference-${prev.id}`}
                   onClick={() => handleSelectPreviousPreference(prev.preferences)}
                   className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-left group"
                 >
@@ -593,6 +602,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               ))}
               <motion.button
                 type="button"
+                id="btn-close-preferences"
                 onClick={() => setShowPreviousPreferences(false)}
                 className="w-full p-4 rounded-xl border-2 border-dashed border-white/10 hover:border-white/20 transition-colors flex items-center justify-center gap-2 text-white/60 hover:text-white/80"
               >
@@ -623,6 +633,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           </p>
           <button
             type="button"
+            id="btn-reset-template"
             onClick={resetToTemplate}
             className="text-xs text-pink-400 hover:text-pink-300 transition-colors"
           >
@@ -636,6 +647,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="button"
+          id="btn-back-to-details"
           onClick={() => setCurrentStep('details')}
           className="flex-1 flex items-center justify-center gap-2 bg-white/10 text-white font-medium py-4 px-6 rounded-full transition-all hover:bg-white/20"
         >
@@ -646,6 +658,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
+          id="btn-discover-properties"
           className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
           disabled={isLoading}
         >
@@ -678,6 +691,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           {onBack && (
             <button
               onClick={onBack}
+              id="btn-search-back"
               className="flex items-center gap-2 text-white/80 hover:text-white mb-4"
             >
               <ArrowLeft size={20} />
