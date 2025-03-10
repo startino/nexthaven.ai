@@ -19,19 +19,43 @@ class BookingApifyAgent:
         self.client = ApifyClient(os.getenv("APIFY_API_TOKEN"))
         
     def generate_request(self, user_request: GeneratedRequirement):
-        logging.info(f"Generating Apify request for user request: {user_request}")
+        """
+        Generate a request for the Booking.com Apify actor based on user requirements.
+        
+        Args:
+            user_request: The generated requirements object containing search parameters
+            
+        Returns:
+            BookingApifyRequest: A properly formatted request for the Apify API
+            
+        This method converts our internal GeneratedRequirement format into the specific
+        format required by the Booking.com Apify actor, ensuring that all necessary
+        parameters are properly formatted and included.
+        
+        Cursor Edit count: 1
+        """
+        logging.info(f"Generating Apify request for user request type: {type(user_request)}")
+        
+        # Ensure user_request is a GeneratedRequirement object
+        if isinstance(user_request, dict):
+            logging.info(f"Converting dict to GeneratedRequirement: {user_request}")
+            user_request_obj = GeneratedRequirement(**user_request)
+        else:
+            user_request_obj = user_request
+            
+        logging.info(f"Using GeneratedRequirement object: {user_request_obj.model_dump_json()}")
         
         # # Default to Hotels if property_type is not specified or invalid
         # property_type = "Hotels"
         
         return BookingApifyRequest(
-            search=user_request.query,
-            rooms=user_request.number_of_rooms,
-            adults=user_request.adults,
-            children=user_request.children,
-            checkIn=user_request.date_range.start_date,
-            checkOut=user_request.date_range.end_date,
-            minMaxPrice=f"{user_request.nightly_budget.min}-{user_request.nightly_budget.max}",
+            search=user_request_obj.query,
+            rooms=user_request_obj.number_of_rooms,
+            adults=user_request_obj.adults,
+            children=user_request_obj.children,
+            checkIn=user_request_obj.date_range.start_date,
+            checkOut=user_request_obj.date_range.end_date,
+            minMaxPrice=f"{user_request_obj.nightly_budget.min}-{user_request_obj.nightly_budget.max}",
         )
 
     async def get_properties(self, request: BookingApifyRequest) -> list[BookingApifyResponse]:

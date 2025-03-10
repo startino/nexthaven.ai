@@ -1,0 +1,29 @@
+## Python
+
+You should add comments and docstrings to every function and class.
+
+For each docstring, there should always be a field for "Cursor Edit count" that shows how many times the class/function has been edited.
+
+docstrings should be explanatory rather than descriptive. F.x. "Generate a unique session ID **for persisting data across /query and /evaluate endpoints for each user**.".
+The **why** is super important.
+
+You should always attempt to use pydantic (BaseModel) before writing any custom or dictionary code.
+
+Write testing functionality with `if __name__ == "__main__":` for new files.
+
+Use `| None` instead of `Optional` for type hints
+
+Don't write spaghetti code; Use regions instead of many functions, like shown here:
+#region Description
+your_code()
+#endregion
+
+Class names should be descriptive rather than generic for the sake of being short.
+
+
+## Front-end (React, Svelte)
+
+Use Tailwind CSS for styling.
+
+Don't change styling of existing components unless you are asked to.
+

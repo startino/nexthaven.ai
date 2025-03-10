@@ -45,15 +45,29 @@ function App() {
       const parsedQuery = JSON.parse(query);
       console.log('Parsed query:', parsedQuery);
       
-      const properties = await propertyService.evaluateProperties({
-        query: parsedQuery.query || '',
-        date: parsedQuery.date || '',
-        budget: parsedQuery.budget || { min: 200, max: 600 },
-        adults: parsedQuery.adults || 2,
-        children: parsedQuery.children || 0,
-        number_of_rooms: parsedQuery.number_of_rooms || 1,
-        preferences: parsedQuery.preferences || '',
-      });
+      let properties: UnifiedProperty[] = [];
+      
+      // Check if we're using the new flow with session_id
+      if (parsedQuery.sessionId) {
+        console.log('Using new API flow with session ID:', parsedQuery.sessionId);
+        // Use the new API endpoint
+        properties = await propertyService.evaluatePropertiesWithPreferences(
+          parsedQuery.sessionId,
+          parsedQuery.preferences
+        );
+      } else {
+        console.log('Using legacy API flow');
+        // Use the legacy API endpoint
+        properties = await propertyService.evaluateProperties({
+          query: parsedQuery.query || '',
+          date: parsedQuery.date || '',
+          budget: parsedQuery.budget || { min: 200, max: 600 },
+          adults: parsedQuery.adults || 2,
+          children: parsedQuery.children || 0,
+          number_of_rooms: parsedQuery.number_of_rooms || 1,
+          preferences: parsedQuery.preferences || '',
+        });
+      }
       
       console.log('Properties from API:', properties);
       

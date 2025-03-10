@@ -11,6 +11,7 @@ dist/
 eggs/
 *.egg-info/
 .env
+*/api/cache
 
 # IDEs
 .idea/

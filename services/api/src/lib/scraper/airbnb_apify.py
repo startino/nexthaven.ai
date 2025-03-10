@@ -52,26 +52,51 @@ class AirbnbApifyAgent:
         self.actor_id = "tri_angle/airbnb-scraper"
         
     def generate_request(self, user_request: GeneratedRequirement):
-        logging.info(f"Generating Airbnb Apify request for user request: {user_request}")
+        """
+        Generate a request for the Airbnb Apify actor based on user requirements.
+        
+        Args:
+            user_request: The generated requirements object containing search parameters
+            
+        Returns:
+            AirbnbApifyRequest: A properly formatted request for the Apify API
+            
+        This method converts our internal GeneratedRequirement format into the specific
+        format required by the Airbnb Apify actor, ensuring that all necessary parameters
+        are properly formatted and included. It also handles special cases like long-term
+        stays (28+ days) where Airbnb uses monthly pricing instead of nightly.
+        
+        Cursor Edit count: 1
+        """
+        logging.info(f"Generating Airbnb Apify request for user request type: {type(user_request)}")
+        
+        # Ensure user_request is a GeneratedRequirement object
+        if isinstance(user_request, dict):
+            logging.info(f"Converting dict to GeneratedRequirement: {user_request}")
+            user_request_obj = GeneratedRequirement(**user_request)
+        else:
+            user_request_obj = user_request
+            
+        logging.info(f"Using GeneratedRequirement object: {user_request_obj.model_dump_json()}")
         
         # Handle stays of 28+ days
-        if user_request.date_range.end_date and user_request.date_range.start_date:
-            stay_duration = (datetime.strptime(user_request.date_range.end_date, "%Y-%m-%d") - datetime.strptime(user_request.date_range.start_date, "%Y-%m-%d")).days
+        if user_request_obj.date_range.end_date and user_request_obj.date_range.start_date:
+            stay_duration = (datetime.strptime(user_request_obj.date_range.end_date, "%Y-%m-%d") - datetime.strptime(user_request_obj.date_range.start_date, "%Y-%m-%d")).days
             if stay_duration >= 28:
                 # Update Apify request's max and min prices to reflect monthly pricing
-                user_request.nightly_budget.min *= 28
-                user_request.nightly_budget.max *= 28
+                user_request_obj.nightly_budget.min *= 28
+                user_request_obj.nightly_budget.max *= 28
 
         # Use locationQueries instead of search
         return AirbnbApifyRequest(
-            locationQueries=[user_request.query],  # Pass as a list of locations
-            checkIn=user_request.date_range.start_date,
-            checkOut=user_request.date_range.end_date,
-            adults=user_request.adults,
-            children=user_request.children,
+            locationQueries=[user_request_obj.query],  # Pass as a list of locations
+            checkIn=user_request_obj.date_range.start_date,
+            checkOut=user_request_obj.date_range.end_date,
+            adults=user_request_obj.adults,
+            children=user_request_obj.children,
             # Prices are nightly until >=28 days (Airbnb switches to monthly pricing)
-            priceMin=user_request.nightly_budget.min,
-            priceMax=user_request.nightly_budget.max,
+            priceMin=user_request_obj.nightly_budget.min,
+            priceMax=user_request_obj.nightly_budget.max,
             currency="USD",
             locale="en-US",
         )

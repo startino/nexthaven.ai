@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, Users, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus, Bed, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { propertyService } from '../services/api';
+import LoadingScreen from './LoadingScreen';
 
 interface SearchScreenProps {
   onSearch: (query: string) => void;
@@ -26,7 +28,19 @@ interface SearchForm {
   number_of_rooms: number;
   // property_type removed as requested
   preferences: string;
+  sessionId: string | null;
 }
+
+// Default form values
+const DEFAULT_FORM_VALUES = {
+  query: '',
+  date: '',
+  budget: { min: 420, max: 600 }, // Set min to 70% of max
+  adults: 2,
+  number_of_rooms: 1,
+  preferences: '',
+  sessionId: null
+};
 
 // Function to get previous preferences from local storage
 const getPreviousPreferences = () => {
@@ -97,23 +111,22 @@ interface Preference {
 
 function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   const [currentStep, setCurrentStep] = useState<SearchStep>('location');
-  const [form, setForm] = useState<SearchForm>({
-    query: '',
-    date: '',
-    budget: {
-      min: 200,
-      max: 600
-    },
-    adults: 2,
-    // children removed
-    number_of_rooms: 1,
-    // property_type removed
-    preferences: PREFERENCE_TEMPLATE,
-  });
+  const [form, setForm] = useState<SearchForm>(DEFAULT_FORM_VALUES);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [showPreviousPreferences, setShowPreviousPreferences] = useState(false);
   const [previousPreferences, setPreviousPreferences] = useState<Preference[]>(getPreviousPreferences());
+  
+  // Ensure budget is properly initialized
+  useEffect(() => {
+    if (!form.budget.max || form.budget.max === 0) {
+      setForm(prev => ({
+        ...prev,
+        budget: DEFAULT_FORM_VALUES.budget
+      }));
+    }
+  }, [form.budget.max]);
 
   // Validate location step
   const validateLocationStep = () => {
@@ -130,14 +143,23 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
 
   // Validate details step
   const validateDetailsStep = () => {
-    const requiredFields = [];
-    if (!form.budget.min || !form.budget.max) requiredFields.push('budget range');
-    if (!form.number_of_rooms) requiredFields.push('number of rooms');
-
-    if (requiredFields.length > 0) {
-      setAiMessage(`Please provide your ${requiredFields.join(', ')} to help me find the best matches for you.`);
+    // Ensure budget is valid
+    if (!form.budget.max || form.budget.max < 100) {
+      setAiMessage('Please enter a valid budget (minimum $100)');
+      // Set default budget if invalid
+      setForm(prev => ({
+        ...prev,
+        budget: DEFAULT_FORM_VALUES.budget
+      }));
       return false;
     }
+    
+    // Ensure date is provided
+    if (!form.date.trim()) {
+      setAiMessage('Please provide your travel dates');
+      return false;
+    }
+    
     return true;
   };
 
@@ -149,25 +171,55 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   };
 
   // Handle details step submission
-  const handleDetailsSubmit = (e: React.FormEvent) => {
+  const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateDetailsStep()) return;
     
-    // If preferences is empty, reset to template
-    if (!form.preferences.trim()) {
-      setForm({ ...form, preferences: PREFERENCE_TEMPLATE });
-    }
+    // Start the property query
+    setIsLoading(true);
     
-    setCurrentStep('preferences');
-    setAiMessage('Finally, tell me more about your specific preferences for your ideal home.');
+    try {
+      // Call the query endpoint to start the property search
+      const sessionId = await propertyService.queryProperties({
+        query: form.query,
+        date: form.date,
+        budget: form.budget,
+        adults: form.adults,
+        children: 0, // Default to 0
+        number_of_rooms: form.number_of_rooms
+      });
+      
+      // Update form with session ID
+      setForm({
+        ...form,
+        sessionId,
+        // If preferences is empty, reset to template
+        preferences: form.preferences.trim() ? form.preferences : PREFERENCE_TEMPLATE
+      });
+      
+      // Proceed to preferences step
+      setCurrentStep('preferences');
+    } catch (error) {
+      console.error('Error starting property search:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setAiMessage(`Error starting property search: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle preferences step submission
-  const handlePreferencesSubmit = (e: React.FormEvent) => {
+  const handlePreferencesSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Ensure we have a session ID
+    if (!form.sessionId) {
+      setAiMessage('Error: No active property search session');
+      return;
+    }
+    
     setIsLoading(true);
-    setAiMessage('Analyzing your preferences and finding perfect matches...');
+    setIsEvaluating(true);
 
     // Save preferences to local storage
     const newPreference = {
@@ -176,31 +228,45 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       preferences: form.preferences
     };
     
-    const updatedPreferences = [newPreference, ...previousPreferences.slice(0, 4)]; // Keep only the 5 most recent
-    
     try {
+      // Save to local storage
+      const updatedPreferences = [newPreference, ...previousPreferences.slice(0, 4)]; // Keep only the 5 most recent
       localStorage.setItem('previousPreferences', JSON.stringify(updatedPreferences));
+      
+      // Create a legacy-format search query for backward compatibility
+      const searchQuery = JSON.stringify({
+        sessionId: form.sessionId,
+        preferences: form.preferences,
+        // Include these for backward compatibility
+        query: form.query,
+        date: form.date,
+        budget: form.budget,
+        adults: form.adults,
+        children: 0,
+        number_of_rooms: form.number_of_rooms
+      });
+      
+      // Pass the results to the parent component
+      setTimeout(() => {
+        onSearch(searchQuery);
+      }, 1500);
     } catch (error) {
-      console.error('Error saving preferences to local storage:', error);
+      console.error('Error evaluating properties:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setAiMessage(`Error evaluating properties: ${errorMessage}`);
+      setIsLoading(false);
+      setIsEvaluating(false);
     }
-
-    const searchQuery = JSON.stringify({
-      ...form,
-      budget: {
-        min: form.budget.min,
-        max: form.budget.max
-      },
-      children: 0 // Default to 0 as requested
-    });
-
-    setTimeout(() => {
-      onSearch(searchQuery);
-    }, 1500);
   };
 
   const handleSelectPreviousPreference = (preference: string) => {
     setForm({ ...form, preferences: preference });
     setShowPreviousPreferences(false);
+  };
+
+  // Reset form to default values
+  const resetForm = () => {
+    setForm(DEFAULT_FORM_VALUES);
   };
 
   // Reset preferences to template
@@ -354,10 +420,20 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         type="submit"
+        disabled={isLoading}
         className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-xl sm:rounded-full transition-all hover:from-purple-600 hover:to-pink-600 shadow-lg"
       >
-        Continue to Details
-        <ArrowRight size={20} />
+        {isLoading ? (
+          <>
+            <Clock className="animate-spin" size={20} />
+            <span>Processing...</span>
+          </>
+        ) : (
+          <>
+            <span>Continue to Details</span>
+            <ArrowRight size={20} />
+          </>
+        )}
       </motion.button>
     </form>
   );
@@ -383,9 +459,9 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
               type="number"
               min="100"
               step="50"
-              value={form.budget.max}
+              value={form.budget.max === 0 ? DEFAULT_FORM_VALUES.budget.max : form.budget.max}
               onChange={(e) => {
-                const newMax = parseInt(e.target.value) || 0;
+                const newMax = parseInt(e.target.value) || DEFAULT_FORM_VALUES.budget.max; // Default to 600 if invalid
                 // Calculate minimum as 70% of maximum (can be adjusted)
                 const calculatedMin = Math.floor(newMax * 0.7);
                 setForm({ 
@@ -449,10 +525,20 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           type="submit"
+          disabled={isLoading}
           className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-4 sm:px-6 rounded-xl sm:rounded-full transition-all hover:from-purple-600 hover:to-pink-600 shadow-lg"
         >
-          <span className="text-sm sm:text-base">Continue</span>
-          <ArrowRight size={18} className="sm:w-5 sm:h-5" />
+          {isLoading ? (
+            <>
+              <Clock className="animate-spin" size={18} />
+              <span className="text-sm sm:text-base">Processing...</span>
+            </>
+          ) : (
+            <>
+              <span className="text-sm sm:text-base">Continue</span>
+              <ArrowRight size={18} className="sm:w-5 sm:h-5" />
+            </>
+          )}
         </motion.button>
       </div>
     </form>
@@ -519,7 +605,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
 
         <textarea
           className="w-full bg-white/5 text-white placeholder-gray-500 rounded-xl p-4 outline-none resize-none font-medium"
-          placeholder="Tell me more about your ideal home. What makes a place feel special to you? Any specific features or qualities you're looking for?"
+          placeholder="Tell me more about your ideal stay. What makes a place feel special to you? Any specific features or qualities you're looking for?"
           rows={12}
           value={form.preferences}
           onChange={(e) => setForm({ ...form, preferences: e.target.value })}
@@ -563,13 +649,27 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
           disabled={isLoading}
         >
-          <Search size={20} />
-          {isLoading ? "Finding Perfect Matches..." : "Discover Properties"}
+          {isLoading ? (
+            <>
+              <Clock className="animate-spin" size={20} />
+              Finding Perfect Matches...
+            </>
+          ) : (
+            <>
+              <Search size={20} />
+              Discover Properties
+            </>
+          )}
         </motion.button>
       </div>
     </form>
   );
 
+  // Render the appropriate step
+  if (isEvaluating) {
+    return <LoadingScreen />;
+  }
+  
   return (
     <div className="min-h-screen bg-black">
       <div className="max-w-2xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
@@ -588,7 +688,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
           <p className="text-gray-400 mt-2">Tell us what you're looking for</p>
         </div>
 
-        {/* AI Message */}
+        {/* AI Message - Only show if there is one */}
         {aiMessage && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
