@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SearchScreen from './components/SearchScreen';
 import SwipeScreen from './components/SwipeScreen';
 import ComparisonScreen from './components/ComparisonScreen';
@@ -8,6 +8,10 @@ import LoadingScreen from './components/LoadingScreen';
 import BookingScreen from './components/BookingScreen';
 import { propertyService } from './services/api';
 import { UnifiedProperty } from './types/unified-property';
+import { GA4_CONFIG, ANALYTICS_EVENTS, ANALYTICS_PARAMS } from './config/analytics';
+import { updateBrowserUrl } from './utils/url';
+
+// Define Screen type
 type Screen = 'home' | 'search' | 'loading' | 'compare' | 'history' | 'booking';
 
 // This function is no longer needed as we're using UnifiedProperty directly
@@ -28,11 +32,60 @@ type Screen = 'home' | 'search' | 'loading' | 'compare' | 'history' | 'booking';
 // };
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('home');
+  // Initialize state from URL parameters if available
+  const getInitialScreen = (): Screen => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page');
+    if (page && ['home', 'search', 'loading', 'compare', 'history', 'booking'].includes(page)) {
+      return page as Screen;
+    }
+    return 'home';
+  };
+
+  const [screen, setScreen] = useState<Screen>(getInitialScreen());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProperty, setSelectedProperty] = useState<UnifiedProperty | null>(null);
   const [topProperties, setTopProperties] = useState<UnifiedProperty[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // Update URL and track page views
+  useEffect(() => {
+    // Create parameters for the URL
+    const urlParams: Record<string, string> = {};
+
+    // Update browser URL
+    updateBrowserUrl(screen, urlParams);
+
+    // Send pageview to GA4
+    if (GA4_CONFIG.ENABLED) {
+      // Create analytics-specific parameters
+      const analyticsParams = new URLSearchParams();
+      analyticsParams.set(ANALYTICS_PARAMS.SCREEN, screen);
+      
+      if (screen === 'search' && searchQuery) {
+        analyticsParams.set(ANALYTICS_PARAMS.QUERY, searchQuery);
+      }
+
+      if (screen === 'booking' && selectedProperty) {
+        analyticsParams.set(ANALYTICS_PARAMS.PROPERTY_ID, String(selectedProperty.id));
+        analyticsParams.set(ANALYTICS_PARAMS.PROPERTY_NAME, selectedProperty.name);
+        analyticsParams.set(ANALYTICS_PARAMS.PROPERTY_PRICE, String(selectedProperty.pricing.total));
+      }
+
+      window.gtag?.('config', GA4_CONFIG.MEASUREMENT_ID, {
+        debug_mode: GA4_CONFIG.DEBUG_MODE,
+        page_path: `/${screen}?${analyticsParams.toString()}`,
+        page_title: `nexthaven.ai - ${screen}`,
+        page_location: window.location.href,
+      });
+
+      // Track screen view event
+      window.gtag?.('event', ANALYTICS_EVENTS.PAGE_VIEW, {
+        screen_name: screen,
+        ...Object.fromEntries(analyticsParams)
+      });
+    }
+  }, [screen, searchQuery, selectedProperty, topProperties]);
   
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
