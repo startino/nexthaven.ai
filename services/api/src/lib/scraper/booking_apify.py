@@ -70,7 +70,7 @@ class BookingApifyAgent:
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None, 
-            lambda: self.client.actor("oeiQgfg5fsmIJB7Cn").call(run_input=run_input)
+            lambda: self.client.actor("oeiQgfg5fsmIJB7Cn").call(run_input=run_input, memory_mbytes=8192)
         )
         
         properties: list[BookingApifyResponse] = []
