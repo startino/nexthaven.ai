@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class PricingModel(BaseModel):
     total: float
@@ -42,7 +42,7 @@ class UnifiedProperty(BaseModel):
     media: MediaModel
 
     # AI Scoring
-    score: Union[int, float]
+    score: Union[int, float] = Field(ge=0, description="Score must be a non-negative number")
     reasoning: str
 
     # Raw Data
