@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, Users, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus, Bed, Home } from 'lucide-react';
+import { Search, Calendar, DollarSign, MapPin, Sparkles, AlertCircle, ArrowLeft, ArrowRight, Clock, Plus, Bed } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { propertyService } from '../services/api';
 import LoadingScreen from './LoadingScreen';
+import { Slider } from '@mui/material';
+import { styled } from '@mui/material/styles';
 
 interface SearchScreenProps {
   onSearch: (query: string) => void;
@@ -109,6 +111,24 @@ interface Preference {
   preferences: string;
 }
 
+// Custom styled components
+const CustomSlider = styled(Slider)(() => ({
+  color: '#ffffff',
+  '& .MuiSlider-thumb': {
+    backgroundColor: '#ffffff',
+  },
+  '& .MuiSlider-track': {
+    backgroundColor: '#ffffff',
+  },
+  '& .MuiSlider-rail': {
+    backgroundColor: '#ffffff40',
+  },
+  '& .MuiSlider-valueLabel': {
+    backgroundColor: '#ffffff',
+    color: '#000000',
+  },
+}));
+
 function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   const [currentStep, setCurrentStep] = useState<SearchStep>('location');
   const [form, setForm] = useState<SearchForm>(DEFAULT_FORM_VALUES);
@@ -116,7 +136,7 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [showPreviousPreferences, setShowPreviousPreferences] = useState(false);
-  const [previousPreferences, setPreviousPreferences] = useState<Preference[]>(getPreviousPreferences());
+  const [previousPreferences] = useState<Preference[]>(getPreviousPreferences());
   
   // Ensure budget is properly initialized
   useEffect(() => {
@@ -262,11 +282,6 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
   const handleSelectPreviousPreference = (preference: string) => {
     setForm({ ...form, preferences: preference });
     setShowPreviousPreferences(false);
-  };
-
-  // Reset form to default values
-  const resetForm = () => {
-    setForm(DEFAULT_FORM_VALUES);
   };
 
   // Reset preferences to template
@@ -453,32 +468,39 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       >
         <div className="flex items-center gap-3 text-white/80 mb-1 sm:mb-2">
           <DollarSign size={20} />
-          <span className="font-medium">Total Budget for Stay</span>
+          <span className="font-medium">Maximum Budget</span>
         </div>
-        <div className="pt-2">
-          {/* Single budget input field */}
-          <div className="relative">
-            <span className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-white/60">$</span>
-            <input
-              type="number"
-              min="100"
-              step="50"
-              value={form.budget.max === 0 ? DEFAULT_FORM_VALUES.budget.max : form.budget.max}
-              onChange={(e) => {
-                const newMax = parseInt(e.target.value) || DEFAULT_FORM_VALUES.budget.max; // Default to 600 if invalid
-                // Calculate minimum as 70% of maximum (can be adjusted)
+        <div className="space-y-5">
+          <div className="text-center">
+            <span className="text-2xl font-bold text-white">{formatPrice(form.budget.max)}</span>
+            <p className="text-white/60 text-sm mt-1">
+              Drag the slider to set your maximum budget
+            </p>
+          </div>
+          <div className="px-2">
+            <CustomSlider
+              value={form.budget.max}
+              onChange={(_, newValue) => {
+                const newMax = newValue as number;
                 const calculatedMin = Math.floor(newMax * 0.7);
-                setForm({ 
-                  ...form, 
-                  budget: { 
+                setForm({
+                  ...form,
+                  budget: {
                     min: calculatedMin,
                     max: newMax
-                  } 
+                  }
                 });
               }}
-              className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 pl-8 sm:pl-10 outline-none focus:ring-1 focus:ring-purple-500"
-              placeholder="Enter your maximum budget"
+              min={100}
+              max={10000}
+              step={50}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `$${value}`}
             />
+            <div className="flex justify-between text-white/60 text-sm mt-1">
+              <span>$100</span>
+              <span>$10,000</span>
+            </div>
           </div>
         </div>
       </motion.div>
