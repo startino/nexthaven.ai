@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
     "currency-converter-lt": "^2.0.1",
     "framer-motion": "^11.0.8",
     "lucide-react": "^0.344.0",

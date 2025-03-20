@@ -13,14 +13,23 @@ import {
   Plus,
   Bed,
   Home,
+<<<<<<< HEAD
+=======
+  LogIn,
+>>>>>>> 9f04840 (feat(auth): implement authentication)
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { propertyService } from "../services/api";
 import LoadingScreen from "./LoadingScreen";
+<<<<<<< HEAD
+=======
+import { useAuth } from "../context/AuthContext";
+>>>>>>> 9f04840 (feat(auth): implement authentication)
 
 interface SearchScreenProps {
   onSearch: (query: string) => void;
   onBack?: () => void;
+  onNavigateToAuth: () => void;
   error?: string | null;
 }
 
@@ -124,7 +133,17 @@ interface Preference {
   preferences: string;
 }
 
+<<<<<<< HEAD
 function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
+=======
+function SearchScreen({
+  onSearch,
+  onBack,
+  onNavigateToAuth,
+  error,
+}: SearchScreenProps) {
+  const { user, loading: authLoading } = useAuth();
+>>>>>>> 9f04840 (feat(auth): implement authentication)
   const [currentStep, setCurrentStep] = useState<SearchStep>("location");
   const [form, setForm] = useState<SearchForm>(DEFAULT_FORM_VALUES);
   const [isLoading, setIsLoading] = useState(false);
@@ -135,6 +154,43 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
     getPreviousPreferences()
   );
 
+<<<<<<< HEAD
+=======
+  // If user is not authenticated, show authentication prompt
+  if (authLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-gradient-to-br from-gray-900 to-black p-8 rounded-xl shadow-lg border border-gray-800 text-center">
+          <div className="mb-6">
+            <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-700 to-pink-700 flex items-center justify-center">
+              <Search size={32} className="text-white" />
+            </div>
+            <h2 className="text-2xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+              Authentication Required
+            </h2>
+          </div>
+
+          <p className="text-gray-300 mb-6">
+            Please sign in to access our advanced accommodation search features
+          </p>
+
+          <button
+            onClick={onNavigateToAuth}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 to-pink-700 text-white p-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
+          >
+            <LogIn size={20} />
+            <span>Sign In</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+>>>>>>> 9f04840 (feat(auth): implement authentication)
   // Ensure budget is properly initialized
   useEffect(() => {
     if (!form.budget.max || form.budget.max === 0) {
@@ -256,8 +312,13 @@ function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
       // Save to local storage
       const updatedPreferences = [
         newPreference,
+<<<<<<< HEAD
         ...previousPreferences.slice(0, 5),
       ]; // Keep only the 6 most recent
+=======
+        ...previousPreferences.slice(0, 4),
+      ]; // Keep only the 5 most recent
+>>>>>>> 9f04840 (feat(auth): implement authentication)
       localStorage.setItem(
         "previousPreferences",
         JSON.stringify(updatedPreferences)
