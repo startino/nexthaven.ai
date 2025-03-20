@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { LogOut, User, Loader2 } from "lucide-react";
+import { LogOut, User, Loader2, CreditCard, Crown } from "lucide-react";
 
 // Define the screen type to match App.tsx
 type Screen =
@@ -10,7 +10,8 @@ type Screen =
   | "compare"
   | "history"
   | "booking"
-  | "auth";
+  | "auth"
+  | "subscription";
 
 interface HeaderProps {
   onNavigate: (screen: Screen) => void;
@@ -18,7 +19,7 @@ interface HeaderProps {
 }
 
 export function Header({ onNavigate }: HeaderProps) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, subscription } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -48,6 +49,32 @@ export function Header({ onNavigate }: HeaderProps) {
       </h1>
 
       <div className="flex items-center gap-3">
+        {subscription.isActive ? (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-purple-900/40 rounded-full text-xs">
+            <Crown size={14} className="text-purple-300" />
+            <span className="text-purple-200">
+              {subscription.planName || "Premium"}
+            </span>
+          </div>
+        ) : null}
+
+        <button
+          onClick={() => onNavigate("subscription")}
+          className={`p-2 rounded-full ${
+            subscription.isActive
+              ? "bg-green-900/40 hover:bg-green-900/60"
+              : "bg-purple-900/60 hover:bg-purple-900/80"
+          } transition-colors shadow-sm`}
+          title={subscription.isActive ? "Manage Subscription" : "Get Premium"}
+        >
+          <CreditCard
+            size={18}
+            className={
+              subscription.isActive ? "text-green-200" : "text-purple-200"
+            }
+          />
+        </button>
+
         <button
           onClick={() => onNavigate("auth")}
           className="p-2 rounded-full bg-purple-900/60 hover:bg-purple-900/80 transition-colors shadow-sm"
@@ -55,6 +82,7 @@ export function Header({ onNavigate }: HeaderProps) {
         >
           <User size={18} className="text-purple-200" />
         </button>
+
         <button
           onClick={handleSignOut}
           disabled={isSigningOut}

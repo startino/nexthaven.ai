@@ -5,6 +5,7 @@ import HomeScreen from "./components/HomeScreen";
 import HistoryScreen from "./components/HistoryScreen";
 import LoadingScreen from "./components/LoadingScreen";
 import BookingScreen from "./components/BookingScreen";
+import SubscriptionScreen from "./components/SubscriptionScreen";
 import { Header } from "./components/Header";
 import { AuthPage } from "./components/auth";
 import { propertyService } from "./services/api";
@@ -25,7 +26,8 @@ type Screen =
   | "compare"
   | "history"
   | "booking"
-  | "auth";
+  | "auth"
+  | "subscription";
 
 // This function is no longer needed as we're using UnifiedProperty directly
 // const transformResponse = (property: PropertyResult): PropertyResult => {
@@ -59,6 +61,7 @@ function App() {
         "history",
         "booking",
         "auth",
+        "subscription",
       ].includes(page)
     ) {
       return page as Screen;
@@ -72,7 +75,21 @@ function App() {
     useState<UnifiedProperty | null>(null);
   const [topProperties, setTopProperties] = useState<UnifiedProperty[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, subscription } = useAuth();
+
+  // Handle auth on page refresh
+  useEffect(() => {
+    // If we have URL parameters indicating we need to return to subscription page
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get("success");
+    const canceled = urlParams.get("canceled");
+
+    // If returning from checkout
+    if ((success || canceled) && user) {
+      // Navigate to subscription page
+      setScreen("subscription");
+    }
+  }, [user]);
 
   // Update URL and track page views
   useEffect(() => {
@@ -124,29 +141,65 @@ function App() {
 
   // Redirect unauthenticated users from protected routes
   useEffect(() => {
-    if (!authLoading && !user) {
-      const protectedScreens: Screen[] = [
-        "search",
-        "compare",
-        "history",
-        "booking",
-      ];
-      if (protectedScreens.includes(screen)) {
-        // Save intended destination to redirect back after login
-        sessionStorage.setItem("redirectAfterAuth", screen);
-        setScreen("auth");
+    if (!authLoading) {
+      const protectedScreens: Screen[] = ["compare", "history", "booking"];
+
+      const subscriptionRequiredScreens: Screen[] = ["search"];
+
+      // If user is not authenticated
+      if (!user) {
+        if (
+          [...protectedScreens, ...subscriptionRequiredScreens].includes(screen)
+        ) {
+          // Save intended destination to redirect back after login
+          sessionStorage.setItem("redirectAfterAuth", screen);
+          setScreen("auth");
+        }
       }
-    } else if (!authLoading && user) {
-      // Check if we need to redirect after successful authentication
-      const redirectScreen = sessionStorage.getItem(
-        "redirectAfterAuth"
-      ) as Screen | null;
-      if (redirectScreen) {
-        sessionStorage.removeItem("redirectAfterAuth");
-        setScreen(redirectScreen);
+      // If user is authenticated but doesn't have an active subscription
+      else if (
+        user &&
+        !subscription.isActive &&
+        subscriptionRequiredScreens.includes(screen)
+      ) {
+        // Save intended destination to redirect back after subscription
+        sessionStorage.setItem("redirectAfterSubscription", screen);
+        setScreen("subscription");
+      }
+      // If user is authenticated and has subscription (or accessing non-subscription route)
+      else if (user) {
+        // Check if we need to redirect after successful authentication
+        const redirectScreen = sessionStorage.getItem(
+          "redirectAfterAuth"
+        ) as Screen | null;
+
+        if (redirectScreen) {
+          sessionStorage.removeItem("redirectAfterAuth");
+
+          // If redirect screen requires subscription but user doesn't have one
+          if (
+            subscriptionRequiredScreens.includes(redirectScreen) &&
+            !subscription.isActive
+          ) {
+            sessionStorage.setItem("redirectAfterSubscription", redirectScreen);
+            setScreen("subscription");
+          } else {
+            setScreen(redirectScreen);
+          }
+        }
+
+        // Check if we need to redirect after successful subscription
+        const redirectAfterSubscription = sessionStorage.getItem(
+          "redirectAfterSubscription"
+        ) as Screen | null;
+
+        if (redirectAfterSubscription && subscription.isActive) {
+          sessionStorage.removeItem("redirectAfterSubscription");
+          setScreen(redirectAfterSubscription);
+        }
       }
     }
-  }, [user, authLoading, screen]);
+  }, [user, authLoading, screen, subscription.isActive]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -274,6 +327,12 @@ function App() {
 
         {screen === "auth" && (
           <AuthPage
+            onNavigate={(newScreen) => setScreen(newScreen as Screen)}
+          />
+        )}
+
+        {screen === "subscription" && (
+          <SubscriptionScreen
             onNavigate={(newScreen) => setScreen(newScreen as Screen)}
           />
         )}

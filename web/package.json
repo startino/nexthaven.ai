@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^3.5.1",
+    "@stripe/stripe-js": "^6.1.0",
     "@supabase/supabase-js": "^2.49.1",
     "currency-converter-lt": "^2.0.1",
     "framer-motion": "^11.0.8",
@@ -17,7 +19,8 @@
     "react": "^18.3.1",
     "react-circular-progressbar": "^2.2.0",
     "react-dom": "^18.3.1",
-    "react-range": "^1.10.0"
+    "react-range": "^1.10.0",
+    "supabase": "^2.19.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
