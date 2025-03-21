@@ -84,12 +84,32 @@ function App() {
     const success = urlParams.get("success");
     const canceled = urlParams.get("canceled");
 
+    console.log(
+      "App: Auth state on URL check:",
+      user ? `User ${user.id} logged in` : "No user"
+    );
+    console.log("App: URL parameters:", { success, canceled });
+
     // If returning from checkout
     if ((success || canceled) && user) {
+      console.log(
+        "App: Returning from checkout, navigating to subscription page"
+      );
       // Navigate to subscription page
       setScreen("subscription");
     }
-  }, [user]);
+
+    // Attempt to recover session if needed
+    if (!user && !authLoading) {
+      console.log(
+        "App: No user detected but auth loading complete, checking session storage"
+      );
+      const storedRedirect = sessionStorage.getItem("redirectAfterAuth");
+      if (storedRedirect) {
+        console.log("App: Found stored redirect target:", storedRedirect);
+      }
+    }
+  }, [user, authLoading]);
 
   // Update URL and track page views
   useEffect(() => {

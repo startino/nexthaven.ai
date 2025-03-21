@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Loader2,
   AlertCircle,
+  CalendarDays,
 } from "lucide-react";
 
 interface SubscriptionScreenProps {
@@ -14,39 +15,49 @@ interface SubscriptionScreenProps {
   onNavigate: (screen: string) => void;
 }
 
-interface PricingTier {
+interface PricingOption {
   id: string;
-  name: string;
+  period: "monthly" | "yearly";
   price: number;
-  features: string[];
-  popular?: boolean;
+  description: string;
+  savingsAmount?: number;
 }
 
-// Hardcoded pricing tiers - in a real app, you would fetch these from your backend
-const PRICING_TIERS: PricingTier[] = [
-  {
-    id: "price_1R4h3aP294DyvJuy3WMspgq6",
-    name: "Basic",
-    price: 9.99,
-    features: [
-      "Up to 10 searches per month",
-      "Basic property comparison",
-      "Email support",
-    ],
-  },
-  {
-    id: "price_1R4hBZP294DyvJuyjqGQ7eqt",
-    name: "Pro",
-    price: 19.99,
-    features: [
-      "Unlimited searches",
-      "Advanced property comparison",
-      "Priority support",
-      "Booking assistance",
-    ],
-    popular: true,
-  },
-];
+interface PricingTier {
+  name: string;
+  description: string;
+  features: string[];
+  options: PricingOption[];
+}
+
+// Single tier with monthly and yearly options
+const PRICING_TIER: PricingTier = {
+  name: "Premium",
+  description: "Everything you need to find your perfect accommodation",
+  features: [
+    "Unlimited searches",
+    "Advanced property comparison",
+    "Priority support",
+    "Booking assistance",
+    "Save favorite properties",
+    "Personalized recommendations",
+  ],
+  options: [
+    {
+      id: "price_1R4h3aP294DyvJuy3WMspgq6", // Replace with your actual monthly price ID
+      period: "monthly",
+      price: 19.99,
+      description: "Monthly subscription",
+    },
+    {
+      id: "price_1R4hBZP294DyvJuyjqGQ7eqt", // Replace with your actual yearly price ID
+      period: "yearly",
+      price: 199.99,
+      description: "Annual subscription",
+      savingsAmount: 39.89, // 19.99*12 - 199.99 = 39.89
+    },
+  ],
+};
 
 export default function SubscriptionScreen({
   onNavigate,
@@ -59,7 +70,9 @@ export default function SubscriptionScreen({
   } = useAuth();
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [selectedOption, setSelectedOption] = useState<"monthly" | "yearly">(
+    "monthly"
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -99,11 +112,15 @@ export default function SubscriptionScreen({
     }
   };
 
-  const handleSubscribe = async (priceId: string) => {
+  const handleSubscribe = async () => {
+    const priceId =
+      selectedOption === "monthly"
+        ? PRICING_TIER.options[0].id
+        : PRICING_TIER.options[1].id;
+
     try {
       setLoading(true);
       setError(null);
-      setSelectedTier(priceId);
 
       console.log("Creating checkout session for price:", priceId);
       const url = await createCheckoutSession(priceId);
@@ -167,7 +184,7 @@ export default function SubscriptionScreen({
   }
 
   // If user has an active subscription, show subscription management
-  if (subscription.isActive) {
+  if (subscription.isActive)
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
         <div className="max-w-3xl w-full bg-gradient-to-br from-gray-900 to-black p-8 rounded-xl shadow-lg border border-gray-800">
@@ -238,17 +255,16 @@ export default function SubscriptionScreen({
         </div>
       </div>
     );
-  }
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-      <div className="max-w-5xl w-full">
+      <div className="max-w-3xl w-full">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
-            Choose Your Plan
+            Upgrade to Premium
           </h2>
           <p className="text-gray-400 mt-2">
-            Unlock premium features and start finding your perfect accommodation
+            Find your perfect accommodation with our premium features
           </p>
         </div>
 
@@ -269,32 +285,21 @@ export default function SubscriptionScreen({
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {PRICING_TIERS.map((tier) => (
-            <div
-              key={tier.id}
-              className={`bg-gradient-to-br from-gray-900 to-black p-6 rounded-xl shadow-lg border ${
-                tier.popular
-                  ? "border-purple-700 ring-2 ring-purple-700/20"
-                  : "border-gray-800"
-              } flex flex-col`}
-            >
-              {tier.popular && (
-                <div className="self-end bg-purple-700 text-white px-3 py-1 rounded-full text-xs uppercase font-bold mb-4">
-                  Most Popular
-                </div>
-              )}
+        <div className="bg-gradient-to-br from-gray-900 to-black p-8 rounded-xl shadow-lg border border-purple-700 ring-2 ring-purple-700/20">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
+            {/* Left side: features */}
+            <div className="flex-1">
+              <h3 className="text-2xl font-semibold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+                {PRICING_TIER.name}
+              </h3>
+              <p className="text-gray-300 mb-6">{PRICING_TIER.description}</p>
 
-              <h3 className="text-xl font-semibold mb-2">{tier.name}</h3>
-
-              <div className="mb-6">
-                <span className="text-3xl font-bold">${tier.price}</span>
-                <span className="text-gray-400">/month</span>
-              </div>
-
-              <ul className="mb-6 flex-grow">
-                {tier.features.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 mb-3">
+              <h4 className="font-medium text-white mb-3">
+                Everything included:
+              </h4>
+              <ul className="space-y-3 mb-6">
+                {PRICING_TIER.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2">
                     <Check
                       size={18}
                       className="text-green-500 mt-0.5 flex-shrink-0"
@@ -303,24 +308,81 @@ export default function SubscriptionScreen({
                   </li>
                 ))}
               </ul>
-
-              <button
-                onClick={() => handleSubscribe(tier.id)}
-                disabled={loading && selectedTier === tier.id}
-                className={`w-full py-3 rounded-lg ${
-                  tier.popular
-                    ? "bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600"
-                    : "bg-gray-800 hover:bg-gray-700"
-                } text-white transition-all`}
-              >
-                {loading && selectedTier === tier.id ? (
-                  <Loader2 size={20} className="animate-spin mx-auto" />
-                ) : (
-                  "Subscribe"
-                )}
-              </button>
             </div>
-          ))}
+
+            {/* Right side: pricing options */}
+            <div className="flex-1">
+              <div className="bg-gray-800/50 p-6 rounded-xl">
+                <div className="flex justify-center gap-2 mb-6">
+                  <button
+                    onClick={() => setSelectedOption("monthly")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedOption === "monthly"
+                        ? "bg-purple-700 text-white"
+                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    }`}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    onClick={() => setSelectedOption("yearly")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                      selectedOption === "yearly"
+                        ? "bg-purple-700 text-white"
+                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    }`}
+                  >
+                    Yearly
+                    {PRICING_TIER.options[1].savingsAmount && (
+                      <span className="bg-purple-900 text-white text-xs px-2 py-0.5 rounded-full">
+                        Save ${PRICING_TIER.options[1].savingsAmount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {selectedOption === "monthly" ? (
+                  <div className="text-center mb-4">
+                    <div className="flex items-end justify-center">
+                      <span className="text-4xl font-bold">
+                        ${PRICING_TIER.options[0].price}
+                      </span>
+                      <span className="text-gray-400 ml-1">/month</span>
+                    </div>
+                    <div className="flex items-center justify-center mt-2 text-gray-400">
+                      <CalendarDays size={16} className="mr-1" />
+                      <span>Billed monthly</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center mb-4">
+                    <div className="flex items-end justify-center">
+                      <span className="text-4xl font-bold">
+                        ${PRICING_TIER.options[1].price}
+                      </span>
+                      <span className="text-gray-400 ml-1">/year</span>
+                    </div>
+                    <div className="flex items-center justify-center mt-2 text-gray-400">
+                      <CalendarDays size={16} className="mr-1" />
+                      <span>Billed annually</span>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleSubscribe}
+                  disabled={loading}
+                  className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 text-white transition-all mt-4"
+                >
+                  {loading ? (
+                    <Loader2 size={20} className="animate-spin mx-auto" />
+                  ) : (
+                    "Subscribe Now"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
