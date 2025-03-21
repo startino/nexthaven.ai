@@ -1,9 +1,10 @@
 import React, {
   createContext,
-  useContext,
   useEffect,
   useState,
   useRef,
+  useCallback,
+  useContext,
 } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { auth, AuthResponse } from "../services/auth";
@@ -21,6 +22,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  subscriptionLoading: boolean;
   subscription: SubscriptionStatus;
   signIn: (email: string, password: string) => Promise<AuthResponse>;
   signUp: (email: string, password: string) => Promise<AuthResponse>;
@@ -32,12 +34,15 @@ interface AuthContextType {
   ensureStripeCustomer: () => Promise<string | null>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionStatus>({
     isActive: false,
   });
@@ -49,9 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Minimum time between checks in milliseconds (5 seconds)
   const MIN_CHECK_INTERVAL = 5000;
 
+  // Store current user in a ref to access latest value in callbacks
+  const userRef = useRef<User | null>(null);
+
+  // Sync the ref with state
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   // Ensure the user has a Stripe customer
-  const ensureStripeCustomer = async (): Promise<string | null> => {
-    if (!user) {
+  const ensureStripeCustomer = useCallback(async (): Promise<string | null> => {
+    // Use the ref to get the latest user value
+    const currentUser = userRef.current;
+    if (!currentUser) {
       console.warn(
         "AuthContext: Cannot ensure Stripe customer - no user logged in"
       );
@@ -59,15 +74,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log("AuthContext: Ensuring user has Stripe customer");
+      console.log(
+        "AuthContext: Ensuring user has Stripe customer for",
+        currentUser.id
+      );
       return await stripeService.createCustomer();
     } catch (error) {
       console.error("AuthContext: Error ensuring Stripe customer:", error);
       return null;
     }
-  };
+  }, []); // No dependencies needed as we use the ref
 
-  const fetchSubscriptionStatus = async () => {
+  const fetchSubscriptionStatus = useCallback(async () => {
     // If a check is already in progress or not enough time has passed, skip
     const now = Date.now();
     if (
@@ -78,7 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (!user) {
+    // Use the ref to get the latest user value
+    const currentUser = userRef.current;
+    if (!currentUser) {
       console.log("AuthContext: No user, setting inactive subscription status");
       setSubscription({ isActive: false });
       return;
@@ -87,14 +107,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Set the flag to prevent duplicate calls
       isCheckingSubscription.current = true;
+      setSubscriptionLoading(true);
       lastCheckTime.current = now;
 
       console.log(
         "AuthContext: Fetching subscription status for user:",
-        user.id
+        currentUser.id
       );
 
-      // Ensure the user has a Stripe customer before checking subscription
+      // Ensure user has a Stripe customer before checking subscription
       await ensureStripeCustomer();
 
       const subscriptionStatus = await stripeService.getSubscriptionStatus();
@@ -108,19 +129,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Set default inactive status on error to avoid blocking the UI
       setSubscription({ isActive: false });
     } finally {
-      // Reset the flag when done
+      // Reset the flags when done
       isCheckingSubscription.current = false;
+      setSubscriptionLoading(false);
     }
-  };
+  }, [ensureStripeCustomer]); // Only depends on ensureStripeCustomer
 
   useEffect(() => {
     // Get initial session
     async function getInitialSession() {
       setLoading(true);
+      console.log("AuthContext: Getting initial session...");
 
       try {
-        console.log("AuthContext: Getting initial session...");
-
         // First try to get the session from supabase directly
         const {
           data: { session: initialSession },
@@ -141,14 +162,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             "expires:",
             new Date(initialSession.expires_at! * 1000).toISOString()
           );
+
+          // Set user state immediately
           setSession(initialSession);
           setUser(initialSession.user);
+          userRef.current = initialSession.user;
+
+          console.log("AuthContext: User set to:", initialSession.user.id);
 
           // Ensure user has a Stripe customer
-          await ensureStripeCustomer();
+          setSubscriptionLoading(true);
+          const customerId = await stripeService.createCustomer();
+          console.log("AuthContext: Customer ID:", customerId);
 
           // Fetch subscription status after setting user
-          await fetchSubscriptionStatus();
+          const subscriptionStatus =
+            await stripeService.getSubscriptionStatus();
+          console.log("AuthContext: Subscription status:", subscriptionStatus);
+          setSubscription(subscriptionStatus);
+          setSubscriptionLoading(false);
         } else {
           // Check if we have a refresh token in localStorage
           console.log(
@@ -186,6 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   console.log("AuthContext: Successfully refreshed session");
                   setSession(refreshData.session);
                   setUser(refreshData.session.user);
+                  userRef.current = refreshData.session.user;
 
                   // Ensure user has a Stripe customer
                   await ensureStripeCustomer();
@@ -213,6 +246,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setSession(fallbackSession);
             const user = await auth.getUser();
             setUser(user);
+            userRef.current = user;
 
             // Ensure user has a Stripe customer
             await ensureStripeCustomer();
@@ -223,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log("AuthContext: No session found from any source");
             setSession(null);
             setUser(null);
+            userRef.current = null;
             setSubscription({ isActive: false });
           }
         }
@@ -230,6 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("AuthContext: Error getting initial session:", error);
         setSession(null);
         setUser(null);
+        userRef.current = null;
         setSubscription({ isActive: false });
       } finally {
         setLoading(false);
@@ -241,48 +277,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, session?.user?.id);
+
+        // Always update the session and user immediately
         setSession(session);
-        setUser(session?.user ?? null);
-
-        // Fetch subscription status when auth state changes
         if (session?.user) {
-          // Ensure user has a Stripe customer on auth change
-          await ensureStripeCustomer();
-          await fetchSubscriptionStatus();
-        } else {
-          setSubscription({ isActive: false });
-        }
+          setUser(session.user);
+          userRef.current = session.user;
+          console.log(
+            "AuthContext: User updated via listener to:",
+            session.user.id
+          );
 
-        setLoading(false);
+          // Wait a moment to ensure state updates have propagated
+          setTimeout(async () => {
+            try {
+              setSubscriptionLoading(true);
+
+              // Ensure user has a Stripe customer on auth change
+              const customerId = await stripeService.createCustomer();
+              console.log("AuthContext: Customer created/found:", customerId);
+
+              // Get subscription status
+              const status = await stripeService.getSubscriptionStatus();
+              console.log(
+                "AuthContext: Subscription status via listener:",
+                status
+              );
+              setSubscription(status);
+            } catch (error) {
+              console.error("AuthContext: Error in auth listener:", error);
+              setSubscription({ isActive: false });
+            } finally {
+              setSubscriptionLoading(false);
+              setLoading(false);
+            }
+          }, 100);
+        } else {
+          setUser(null);
+          userRef.current = null;
+          setSubscription({ isActive: false });
+          setLoading(false);
+        }
       }
     );
 
     // Cleanup on unmount
     return () => {
+      console.log("AuthContext: Cleaning up auth listener");
       authListener.subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refreshSubscription = async () => {
+  const refreshSubscription = useCallback(async (): Promise<void> => {
     console.log("Manually refreshing subscription status");
-    return fetchSubscriptionStatus();
-  };
+    await fetchSubscriptionStatus();
+  }, [fetchSubscriptionStatus]);
 
   const value = {
     session,
     user,
     loading,
+    subscriptionLoading,
     subscription,
-    signIn: (email: string, password: string) => auth.signIn(email, password),
-    signUp: (email: string, password: string) => auth.signUp(email, password),
-    signOut: () => auth.signOut(),
-    signInWithMagicLink: (email: string) => auth.signInWithMagicLink(email),
+    signIn: useCallback(
+      (email: string, password: string) => auth.signIn(email, password),
+      []
+    ),
+    signUp: useCallback(
+      (email: string, password: string) => auth.signUp(email, password),
+      []
+    ),
+    signOut: useCallback(() => auth.signOut(), []),
+    signInWithMagicLink: useCallback(
+      (email: string) => auth.signInWithMagicLink(email),
+      []
+    ),
     refreshSubscription,
-    createCheckoutSession: (priceId: string) =>
-      stripeService.createCheckoutSession(priceId),
-    createCustomerPortalSession: () =>
-      stripeService.createCustomerPortalSession(),
+    createCheckoutSession: useCallback(
+      (priceId: string) => stripeService.createCheckoutSession(priceId),
+      []
+    ),
+    createCustomerPortalSession: useCallback(
+      () => stripeService.createCustomerPortalSession(),
+      []
+    ),
     ensureStripeCustomer,
   };
 

@@ -66,6 +66,7 @@ export default function SubscriptionScreen({
     subscription,
     createCheckoutSession,
     createCustomerPortalSession,
+    subscriptionLoading,
     refreshSubscription,
   } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -164,7 +165,7 @@ export default function SubscriptionScreen({
   };
 
   // If we're refreshing subscription status
-  if (refreshing) {
+  if (subscriptionLoading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full bg-gradient-to-br from-gray-900 to-black p-8 rounded-xl shadow-lg border border-gray-800 text-center">
