@@ -19,19 +19,24 @@ export const auth = {
    */
   async getUser(): Promise<User | null> {
     try {
+      console.log("auth.getUser: Attempting to get current user");
       const {
         data: { user },
         error,
       } = await supabase.auth.getUser();
 
       if (error) {
-        console.error("Error getting user:", error);
+        console.error("auth.getUser: Error getting user:", error);
         return null;
       }
 
+      console.log(
+        "auth.getUser: Successfully retrieved user:",
+        user?.id || "no user"
+      );
       return user;
     } catch (e) {
-      console.error("Exception getting user:", e);
+      console.error("auth.getUser: Exception getting user:", e);
       return null;
     }
   },
@@ -41,19 +46,56 @@ export const auth = {
    */
   async getSession(): Promise<Session | null> {
     try {
+      console.log("auth.getSession: Attempting to get current session");
       const {
         data: { session },
         error,
       } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("Error getting session:", error);
+        console.error("auth.getSession: Error getting session:", error);
         return null;
+      }
+
+      if (session) {
+        console.log(
+          "auth.getSession: Successfully retrieved session for user:",
+          session.user.id
+        );
+
+        // Check if session is expired
+        const expiresAt = session.expires_at
+          ? new Date(session.expires_at * 1000)
+          : null;
+        const now = new Date();
+
+        if (expiresAt && expiresAt < now) {
+          console.log(
+            "auth.getSession: Session is expired, attempting to refresh"
+          );
+
+          // Try to refresh the session
+          const { data: refreshData, error: refreshError } =
+            await supabase.auth.refreshSession();
+
+          if (refreshError) {
+            console.error(
+              "auth.getSession: Error refreshing session:",
+              refreshError
+            );
+            return null;
+          }
+
+          console.log("auth.getSession: Successfully refreshed session");
+          return refreshData.session;
+        }
+      } else {
+        console.log("auth.getSession: No session found");
       }
 
       return session;
     } catch (e) {
-      console.error("Exception getting session:", e);
+      console.error("auth.getSession: Exception getting session:", e);
       return null;
     }
   },

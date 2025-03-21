@@ -119,15 +119,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
 
       try {
+        console.log("AuthContext: Getting initial session...");
+
         // First try to get the session from supabase directly
         const {
           data: { session: initialSession },
+          error: sessionError,
         } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error(
+            "AuthContext: Error getting session from supabase:",
+            sessionError
+          );
+        }
 
         if (initialSession) {
           console.log(
-            "Initial session found from supabase:",
-            initialSession.user.id
+            "AuthContext: Initial session found from supabase:",
+            initialSession.user.id,
+            "expires:",
+            new Date(initialSession.expires_at! * 1000).toISOString()
           );
           setSession(initialSession);
           setUser(initialSession.user);
@@ -138,12 +150,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Fetch subscription status after setting user
           await fetchSubscriptionStatus();
         } else {
-          // Fallback to our auth service if needed
-          console.log("No session found from supabase, trying auth service");
-          const session = await auth.getSession();
-          setSession(session);
+          // Check if we have a refresh token in localStorage
+          console.log(
+            "AuthContext: No session found from supabase, checking localStorage"
+          );
+          const storageKey = "nexthaven-auth-token";
+          const storedSession = localStorage.getItem(storageKey);
 
-          if (session) {
+          if (storedSession) {
+            try {
+              const parsedSession = JSON.parse(storedSession);
+              console.log(
+                "AuthContext: Found stored session data:",
+                parsedSession?.refresh_token
+                  ? "has refresh token"
+                  : "no refresh token"
+              );
+
+              // Try to refresh the session
+              if (parsedSession?.refresh_token) {
+                console.log(
+                  "AuthContext: Attempting to refresh session with stored token"
+                );
+                const { data: refreshData, error: refreshError } =
+                  await supabase.auth.refreshSession({
+                    refresh_token: parsedSession.refresh_token,
+                  });
+
+                if (refreshError) {
+                  console.error(
+                    "AuthContext: Error refreshing session:",
+                    refreshError
+                  );
+                } else if (refreshData.session) {
+                  console.log("AuthContext: Successfully refreshed session");
+                  setSession(refreshData.session);
+                  setUser(refreshData.session.user);
+
+                  // Ensure user has a Stripe customer
+                  await ensureStripeCustomer();
+
+                  // Fetch subscription status after setting user
+                  await fetchSubscriptionStatus();
+                  setLoading(false);
+                  return;
+                }
+              }
+            } catch (parseError) {
+              console.error(
+                "AuthContext: Error parsing stored session:",
+                parseError
+              );
+            }
+          }
+
+          // Fallback to our auth service if needed
+          console.log("AuthContext: Trying auth service as final fallback");
+          const fallbackSession = await auth.getSession();
+
+          if (fallbackSession) {
+            console.log("AuthContext: Found session from auth service");
+            setSession(fallbackSession);
             const user = await auth.getUser();
             setUser(user);
 
@@ -153,11 +220,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Fetch subscription status after setting user
             await fetchSubscriptionStatus();
           } else {
-            console.log("No session found from any source");
+            console.log("AuthContext: No session found from any source");
+            setSession(null);
+            setUser(null);
+            setSubscription({ isActive: false });
           }
         }
       } catch (error) {
-        console.error("Error getting initial session:", error);
+        console.error("AuthContext: Error getting initial session:", error);
+        setSession(null);
+        setUser(null);
+        setSubscription({ isActive: false });
       } finally {
         setLoading(false);
       }
