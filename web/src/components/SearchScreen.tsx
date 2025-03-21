@@ -777,7 +777,7 @@ function SearchScreen({
           whileTap={{ scale: 0.98 }}
           type="submit"
           id="btn-discover-properties"
-          className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
+          className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 to-pink-700 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
           disabled={isLoading}
         >
           {isLoading ? (
