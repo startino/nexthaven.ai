@@ -285,7 +285,7 @@ export default function SubscriptionScreen({
           </div>
         )}
 
-        <div className="bg-gradient-to-br from-gray-900 to-black p-8 rounded-xl shadow-lg border border-purple-700 ring-2 ring-purple-700/20">
+        <div className="bg-white/5 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-white/10 ring-1 ring-white/10">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8">
             {/* Left side: features */}
             <div className="flex-1">
@@ -312,7 +312,7 @@ export default function SubscriptionScreen({
 
             {/* Right side: pricing options */}
             <div className="flex-1">
-              <div className="bg-gray-800/50 p-6 rounded-xl">
+              <div className="bg-white/5 backdrop-blur-sm p-6 rounded-xl ring-1 ring-white/10">
                 <div className="flex justify-center gap-2 mb-6">
                   <button
                     onClick={() => setSelectedOption("monthly")}
