@@ -11,6 +11,9 @@ type Screen =
   | "history"
   | "booking"
   | "auth"
+  | "signIn"
+  | "signUp"
+  | "account"
   | "subscription";
 
 interface HeaderProps {
@@ -76,9 +79,9 @@ export function Header({ onNavigate }: HeaderProps) {
         </button>
 
         <button
-          onClick={() => onNavigate("auth")}
+          onClick={() => onNavigate("account")}
           className="p-2 rounded-full bg-purple-900/60 hover:bg-purple-900/80 transition-colors shadow-sm"
-          title="Profile"
+          title="My Account"
         >
           <User size={18} className="text-purple-200" />
         </button>

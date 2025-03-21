@@ -7,7 +7,12 @@ import LoadingScreen from "./components/LoadingScreen";
 import BookingScreen from "./components/BookingScreen";
 import SubscriptionScreen from "./components/SubscriptionScreen";
 import { Header } from "./components/Header";
-import { AuthPage } from "./components/auth";
+import {
+  AuthPage,
+  SignInPage,
+  SignUpPage,
+  AccountPage,
+} from "./components/auth";
 import { propertyService } from "./services/api";
 import { UnifiedProperty } from "./types/unified-property";
 import {
@@ -27,6 +32,9 @@ type Screen =
   | "history"
   | "booking"
   | "auth"
+  | "signIn"
+  | "signUp"
+  | "account"
   | "subscription";
 
 // This function is no longer needed as we're using UnifiedProperty directly
@@ -61,6 +69,9 @@ function App() {
         "history",
         "booking",
         "auth",
+        "signIn",
+        "signUp",
+        "account",
         "subscription",
       ].includes(page)
     ) {
@@ -162,7 +173,12 @@ function App() {
   // Redirect unauthenticated users from protected routes
   useEffect(() => {
     if (!authLoading) {
-      const protectedScreens: Screen[] = ["compare", "history", "booking"];
+      const protectedScreens: Screen[] = [
+        "compare",
+        "history",
+        "booking",
+        "account",
+      ];
 
       const subscriptionRequiredScreens: Screen[] = ["search"];
 
@@ -173,7 +189,7 @@ function App() {
         ) {
           // Save intended destination to redirect back after login
           sessionStorage.setItem("redirectAfterAuth", screen);
-          setScreen("auth");
+          setScreen("signIn");
         }
       }
       // If user is authenticated but doesn't have an active subscription
@@ -196,16 +212,8 @@ function App() {
         if (redirectScreen) {
           sessionStorage.removeItem("redirectAfterAuth");
 
-          // If redirect screen requires subscription but user doesn't have one
-          if (
-            subscriptionRequiredScreens.includes(redirectScreen) &&
-            !subscription.isActive
-          ) {
-            sessionStorage.setItem("redirectAfterSubscription", redirectScreen);
-            setScreen("subscription");
-          } else {
-            setScreen(redirectScreen);
-          }
+          // Always redirect to home page after authentication
+          setScreen("home");
         }
 
         // Check if we need to redirect after successful subscription
@@ -309,7 +317,7 @@ function App() {
         {screen === "home" && (
           <HomeScreen
             onStartNewCampaign={handleStartNewCampaign}
-            onNavigateToAuth={() => setScreen("auth")}
+            onNavigateToAuth={() => setScreen("signIn")}
           />
         )}
 
@@ -317,7 +325,7 @@ function App() {
           <SearchScreen
             onSearch={handleSearch}
             error={error}
-            onNavigateToAuth={() => setScreen("auth")}
+            onNavigateToAuth={() => setScreen("signIn")}
           />
         )}
 
@@ -347,6 +355,24 @@ function App() {
 
         {screen === "auth" && (
           <AuthPage
+            onNavigate={(newScreen) => setScreen(newScreen as Screen)}
+          />
+        )}
+
+        {screen === "signIn" && (
+          <SignInPage
+            onNavigate={(newScreen) => setScreen(newScreen as Screen)}
+          />
+        )}
+
+        {screen === "signUp" && (
+          <SignUpPage
+            onNavigate={(newScreen) => setScreen(newScreen as Screen)}
+          />
+        )}
+
+        {screen === "account" && (
+          <AccountPage
             onNavigate={(newScreen) => setScreen(newScreen as Screen)}
           />
         )}

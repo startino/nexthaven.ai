@@ -36,6 +36,9 @@ export function SignIn() {
         }
 
         setMessage("Check your email for the magic link");
+
+        // Always redirect to home page
+        sessionStorage.setItem("redirectAfterAuth", "home");
       } else {
         // Sign in with email and password
         const { error } = await signIn(email, password);
