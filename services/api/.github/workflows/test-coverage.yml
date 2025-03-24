@@ -1,0 +1,97 @@
+name: API Tests and Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'services/api/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'services/api/**'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+
+    services:
+      # Add any service containers needed for testing here
+      # Example: Redis cache
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        python-version: [3.11]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set up Poetry cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Run linting checks
+        run: |
+          poetry run flake8 src tests
+          poetry run mypy src
+
+      # Run tests in parallel with coverage
+      - name: Run tests with coverage
+        run: |
+          poetry run python tests/run_tests.py --all --parallel --xml --html
+        env:
+          # Add any environment variables needed for tests
+          TESTING: "true"
+          CACHE_TYPE: "memory"
+
+      # Upload coverage reports
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: |
+            services/api/coverage.xml
+            services/api/htmlcov
+
+      # Upload coverage to Codecov
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: services/api/coverage.xml
+          fail_ci_if_error: false
+
+      # Fail if coverage is below threshold (optional)
+      - name: Check coverage threshold
+        run: |
+          poetry run coverage report --fail-under=80 

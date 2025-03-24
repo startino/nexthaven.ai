@@ -33,6 +33,13 @@ pytest-cov = "*"
 pre-commit = "*"
 autoflake = "*"
 pytest-asyncio = "^0.25.3"
+pytest-mock = "*"
+pytest-freezegun = "*"
+hypothesis = "*"
+syrupy = "*"
+pytest-xdist = "*"
+coverage = "*"
+respx = "*"
 
 [tool.isort]
 multi_line_output = 3
@@ -43,3 +50,39 @@ line_length = 80
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+python_classes = "Test*"
+asyncio_mode = "auto"
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "api: marks tests as API tests",
+    "snapshot: marks tests as snapshot tests",
+    "slow: marks tests as slow running tests"
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/__pycache__/*",
+    "*/tests/*",
+    "*/.venv/*",
+    "*/migrations/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "raise ValueError",
+    "except ImportError",
+    "except Exception as e:"
+]
