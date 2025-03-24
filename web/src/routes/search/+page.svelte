@@ -1,16 +1,20 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { setSearchQuery, clearStore } from '$lib/stores/properties';
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Separator } from '$lib/components/ui/separator';
-	import { propertyService } from '$lib/services/api';
-	import type { UnifiedProperty } from '$lib/types/unified-property';
-	import { MapPin, Calendar, DollarSign, Layers, Sparkles, ArrowLeft, ArrowRight, Search, Home } from 'lucide-svelte';
+	import { MapPin, Calendar, DollarSign, Layers, Sparkles, ArrowLeft, ArrowRight, Search, Clock } from 'lucide-svelte';
+	import { onMount } from 'svelte';
+	import { cubicOut } from 'svelte/easing';
+	import { slide } from 'svelte/transition';
+	
+	// Define interface for saved preferences
+	interface SavedPreference {
+		id: number;
+		date: string;
+		preferences: string;
+	}
 	
 	// Get data from loader
 	let { data } = $props();
@@ -38,6 +42,8 @@ Literally any other preferences:
 	let selectedRooms = $state(1);
 	let preferences = $state(TEMPLATE_TEXT);
 	let error = $state<string | null>(null);
+	let previousPreferences = $state<SavedPreference[]>([]);
+	let showPreviousPreferences = $state(false);
 	
 	// Presets
 	const popularDestinations = data?.popularDestinations?.map(d => d.name) || 
@@ -45,6 +51,38 @@ Literally any other preferences:
 	const timeFrames = ['Next Week', 'Two Weeks', 'Next Month'];
 	const durations = ['1 Week', '1 Month', '3 Months'];
 	const roomOptions = [1, 2, 3, 4];
+	
+	// Get previously saved preferences on mount
+	onMount(() => {
+		loadPreviousPreferences();
+	});
+	
+	// Function to load previous preferences from localStorage
+	function loadPreviousPreferences() {
+		try {
+			const storedPreferences = localStorage.getItem('previousPreferences');
+			if (storedPreferences) {
+				previousPreferences = JSON.parse(storedPreferences);
+			} else {
+				// Default preferences if none found
+				previousPreferences = [
+					{
+						id: 1,
+						date: '2025-03-15',
+						preferences: 'Modern apartment with a home office setup, high-speed internet, and a quiet neighborhood. Must have in-unit laundry and a balcony.'
+					}
+				];
+			}
+		} catch (error) {
+			console.error('Error retrieving preferences from localStorage:', error);
+		}
+	}
+	
+	// Function to select a previous preference
+	function selectPreviousPreference(preferenceText: string) {
+		preferences = preferenceText;
+		showPreviousPreferences = false;
+	}
 	
 	// Clear the store on mount
 	clearStore();
@@ -64,11 +102,31 @@ Literally any other preferences:
 			preferences: preferences
 		});
 		
+		// Save preferences to localStorage
+		savePreference();
+		
 		// Store the search query
 		setSearchQuery(searchQuery);
 		
 		// Navigate to loading page
 		goto('/loading');
+	}
+	
+	// Save the current preference to localStorage
+	function savePreference() {
+		try {
+			const newPreference = {
+				id: Date.now(),
+				date: new Date().toISOString().split('T')[0],
+				preferences: preferences
+			};
+			
+			// Prepend new preference and keep only the 5 most recent
+			const updatedPreferences = [newPreference, ...previousPreferences.slice(0, 4)];
+			localStorage.setItem('previousPreferences', JSON.stringify(updatedPreferences));
+		} catch (error) {
+			console.error('Error saving preferences to localStorage:', error);
+		}
 	}
 	
 	function selectDestination(dest: string) {
@@ -343,12 +401,60 @@ Literally any other preferences:
 					<label class="text-lg font-medium">Your Preferences</label>
 				</div>
 				
+				<div class="mb-4 flex items-center justify-between">
+					<p class="text-sm text-muted-foreground">Fill out the template or write your own description.</p>
+					{#if previousPreferences.length > 0}
+						<Button 
+							variant="outline"
+							size="sm"
+							onclick={() => showPreviousPreferences = !showPreviousPreferences}
+						>
+							<Clock class="h-5 w-5 mr-1" /> 
+							Previous Preferences
+							<svg 
+								xmlns="http://www.w3.org/2000/svg" 
+								width="24" 
+								height="24" 
+								viewBox="0 0 24 24" 
+								fill="none" 
+								stroke="currentColor" 
+								stroke-width="2" 
+								stroke-linecap="round" 
+								stroke-linejoin="round" 
+								class={`w-4 h-4 ml-1 transition-transform ${showPreviousPreferences ? 'rotate-180' : ''}`}
+							>
+								<polyline points="6 9 12 15 18 9"></polyline>
+							</svg>
+						</Button>
+					{/if}
+				</div>
+				
+				{#if showPreviousPreferences}
+					<div 
+						class="mb-4 p-3 border border-border rounded-lg bg-black/20 overflow-hidden transition-all duration-300 ease-in-out" 
+						transition:slide={{ duration: 300, easing: cubicOut }}
+					>
+						<p class="text-sm font-medium mb-2">Select a previous preference:</p>
+						<div class="space-y-2">
+							{#each previousPreferences as pref}
+								<div 
+									class="p-2 border border-border rounded cursor-pointer hover:bg-black/40 transition-colors"
+									onclick={() => selectPreviousPreference(pref.preferences)}
+								>
+									<p class="text-xs text-muted-foreground">{pref.date}</p>
+									<p class="text-sm line-clamp-2">{pref.preferences}</p>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+				
 				<textarea 
 					bind:value={preferences}
 					class="w-full h-[300px] bg-black/40 border-border rounded-lg p-4 focus:border-primary focus:ring-primary"
 				></textarea>
 				
-				<p class="text-xs text-muted-foreground mt-2">Fill out the template above with your preferences or write your own description.</p>
+				<p class="text-xs text-muted-foreground mt-2">Your preferences help us find the perfect property for you.</p>
 				
 				<Button 
 					variant="outline"
