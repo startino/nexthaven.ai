@@ -31,12 +31,12 @@
 	let { children } = $props();
 </script>
 
-<div class="bg-background text-foreground dark min-h-screen">
+<div class="min-h-screen bg-black dark text-foreground">
 	<!-- Navigation -->
 	<NavigationBar />
 
 	<!-- Page content -->
-	<main class="container py-6">
+	<main>
 		{@render children()}
 	</main>
 </div>

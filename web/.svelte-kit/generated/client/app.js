@@ -19,7 +19,7 @@ export const dictionary = {
 		"/booking": [3],
 		"/compare": [4],
 		"/history": [5],
-		"/home": [6],
+		"/home": [~6],
 		"/loading": [7],
 		"/search": [8]
 	};

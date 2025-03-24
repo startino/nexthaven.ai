@@ -49,5 +49,8 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"dependencies": {
+		"lucide-svelte": "^0.483.0"
 	}
 }

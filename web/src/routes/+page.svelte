@@ -8,6 +8,7 @@
 	import { navigating } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	// Define the AppState interface
 	interface AppState {
@@ -118,21 +119,68 @@
 		// Implement viewing a saved campaign
 		console.log('View campaign:', id);
 	}
+	
+	function navigateToSearch() {
+		goto('/search');
+	}
 
 	onMount(() => {
-		// Redirect to home page
-		goto('/home');
+		// If the route is directly accessed, redirect to /home
+		if (window.location.pathname === '/') {
+			goto('/home');
+		}
 	});
 </script>
 
-<div class="flex items-center justify-center h-[80vh]">
-	<div class="text-center space-y-4">
-		<h1 class="text-4xl font-bold">NextHaven.ai</h1>
-		<p class="text-muted-foreground text-lg">Redirecting to home page...</p>
-		<div class="mt-4 flex justify-center">
-			<div class="relative flex items-center justify-center w-8 h-8">
-				<div class="absolute w-full h-full border-2 rounded-full border-primary animate-spin border-t-transparent"></div>
-			</div>
+<div class="flex flex-col items-center justify-center min-h-screen py-12 px-4">
+	<!-- Header -->
+	<div class="w-full max-w-md text-center mb-16">
+		<h1 class="text-4xl font-serif font-bold mb-2">nexthaven.ai</h1>
+	</div>
+	
+	<div class="mt-8 text-center mb-16">
+		<h2 class="text-5xl font-serif font-bold leading-tight mb-4">
+			Find your <span class="text-gradient">next</span>
+		</h2>
+		<div class="mt-2 text-5xl font-serif font-bold leading-tight">
+			<span class="text-[hsl(var(--hotel))]">hotel</span>
+			<span class="mx-2">/</span>
+			<span class="text-[hsl(var(--apartment))]">apartment</span>
+			<span class="mx-2">/</span>
+			<span class="text-[hsl(var(--hostel))]">hostel</span><span>.</span>
 		</div>
+		<p class="text-muted-foreground font-light mt-4 text-lg">
+			Hours of accommodation searching, condensed into seconds.
+		</p>
+	</div>
+	
+	<!-- Search Button -->
+	<div class="w-full max-w-md">
+		<Button 
+			variant="default" 
+			class="w-full h-14 button-gradient text-white text-lg font-semibold flex items-center justify-between group rounded-2xl shadow-lg p-4"
+			onclick={navigateToSearch}
+		>
+			<div class="flex items-center">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+				Start New Search
+			</div>
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-hover:translate-x-1"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+		</Button>
+		
+		<div class="mt-20 text-center text-sm">
+			<p class="text-muted-foreground text-xs sm:text-sm">
+				Interested in partnering with us?
+			</p>
+			<p class="mt-1 text-xs sm:text-sm">
+				Contact:
+				<a href="mailto:jorge.lewis@startin.no" class="text-primary hover:text-primary/80 hover:underline">jorge.lewis@startin.no</a>
+			</p>
+		</div>
+	</div>
+	
+	<!-- Footer -->
+	<div class="mt-16 text-center text-gray-400">
+		<p class="text-xs sm:text-sm">Made by the <a href="https://startino.no" target="_blank" rel="noopener noreferrer" class="text-purple-400 hover:text-purple-300 hover:underline">Startino Team</a></p>
 	</div>
 </div>

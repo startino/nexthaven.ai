@@ -3,7 +3,9 @@
 	"/booking": [],
 	"/compare": [],
 	"/history": [],
-	"/home": [],
+	"/home": [
+		"src/routes/home/+page.server.ts"
+	],
 	"/loading": [
 		"src/routes/loading/+page.ts"
 	],

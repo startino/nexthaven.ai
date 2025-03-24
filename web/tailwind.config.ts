@@ -1,5 +1,9 @@
 import { fontFamily } from 'tailwindcss/defaultTheme';
 import type { Config } from 'tailwindcss';
+// @ts-ignore
+import tailwindcssAnimate from 'tailwindcss-animate';
+// @ts-ignore
+import tailwindcssForms from '@tailwindcss/forms';
 
 const config: Config = {
 	darkMode: ['class'],
@@ -55,11 +59,12 @@ const config: Config = {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			fontFamily: {
-				sans: [...fontFamily.sans]
+				sans: ['Inter', ...fontFamily.sans],
+				serif: ['Merriweather', 'Georgia', ...fontFamily.serif]
 			}
 		}
 	},
-	plugins: [require('tailwindcss-animate'), require('@tailwindcss/forms')]
+	plugins: [tailwindcssAnimate, tailwindcssForms]
 };
 
 export default config;
