@@ -1,0 +1,318 @@
+---
+description: Shadcn rules
+globs: 
+alwaysApply: false
+---
+---
+description: shadcn next (svelte 5 version)
+globs: 
+---
+# shadcn-svelte next.mdc
+
+## Overview
+
+shadcn-svelte next is a community-led Svelte port of shadcn/ui. It gives you full ownership over the component code so you can customize, extend, or even remove parts as needed. This rules file outlines the configuration and migration guidelines for integrating shadcn-svelte next into a SvelteKit 2 project running on Svelte 5.
+
+---
+
+## Configuration Guidelines
+
+### `components.json`
+
+The `components.json` file controls how the CLI generates and manages UI components. It should include the following keys:
+
+- **`$schema`**  
+  A link to the corresponding JSON schema.
+
+- **`style`**  
+  Name of the style to use (e.g., `"default"` or `"new-york"`).
+
+- **`tailwind`**  
+  Contains:
+  - **`config`**: The path to your Tailwind configuration file.  
+  - **`css`**: The path to your global CSS file (e.g., `"src/app.pcss"`).  
+  - **`baseColor`**: The base color used for theming (e.g., `"zinc"`, `"slate"`).
+
+- **`aliases`**  
+  Maps import aliases used by the CLI:
+  - **`components`**: e.g., `"$lib/components"`
+  - **`utils`**: e.g., `"$lib/utils"`
+  - **`ui`**: e.g., `"$lib/components/ui"`
+  - **`hooks`**: e.g., `"$lib/hooks"`
+
+- **`typescript`**  
+  A boolean indicating if TypeScript is in use (recommended: `true`).
+
+- **`registry`**  
+  The URL of the shadcn-svelte component registry.
+
+Below is an example configuration:
+
+```json:path/to/components.json
+{
+  "$schema": "https://next.shadcn-svelte.com/schema.json",
+  "style": "default",
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "src/app.pcss",
+    "baseColor": "zinc"
+  },
+  "aliases": {
+    "components": "$lib/components",
+    "utils": "$lib/utils",
+    "ui": "$lib/components/ui",
+    "hooks": "$lib/hooks"
+  },
+  "typescript": true,
+  "registry": "https://next.shadcn-svelte.com/registry"
+}
+```
+
+---
+
+### Utility Functions
+
+shadcn-svelte next provides a single utility function, the `cn` helper, which simplifies merging and conditionally applying Tailwind CSS classes.
+
+```typescript:path/to/src/lib/utils.ts
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+ 
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+---
+
+### CLI Usage
+
+The CLI provided by shadcn-svelte next streamlines component management:
+
+- **Initialize the Project**
+
+  Automatically install dependencies, update configurations, and generate the `cn` helper:
+  
+  ```bash
+  bun x shadcn-svelte@next init
+  ```
+
+- **Add Components**
+
+  Add a new component (like a button) to your project:
+  
+  ```bash
+  bun x shadcn-svelte@next add button
+  ```
+
+- **Update Components**
+
+  Update existing components. *Be sure to commit your changes first since this may overwrite custom modifications:*
+  
+  ```bash
+  bun x shadcn-svelte@next update
+  ```
+
+---
+
+## Migration & Best Practices
+
+### Migrating to Svelte 5
+
+- **Review Component Code:**  
+  Some components from earlier versions may depend on functions (e.g., `flyAndScale`) that have been removed. Revisit these components and adjust them to fit Svelte 5’s runic reactivity and event handling patterns.
+
+- **Event Handlers:**  
+  With Svelte 5, event handlers are treated as properties (e.g., `onclick` instead of `on:click`), so update components accordingly.  
+
+- **Reactivity:**  
+  Migrate your reactive state declarations to use Svelte 5’s `$state` and `$derived` primitives as needed.
+
+### Integration with SvelteKit 2
+
+- **Path Aliases:**  
+  Ensure your aliases are set in your `svelte.config.js` and `tsconfig.json`. For instance:
+  
+  ```javascript:path/to/svelte.config.js
+  const config = {
+    kit: {
+      alias: {
+        "@/*": "./src/lib/*"
+      }
+    }
+  };
+
+  export default config;
+  ```
+
+- **Project Structure:**  
+  Use the CLI to generate a consistent project structure, which can be further customized manually if needed.
+
+### Best Practices
+
+- **Backup Before Updates:**  
+  Always commit or backup your code before running CLI commands that modify configuration files.
+
+- **Review Auto-generated Files:**  
+  After running CLI commands, review changes to ensure they align with your project’s requirements.
+
+- **Separate Customizations:**  
+  Keep custom modifications in separate branches or files to ease the process of updating components in the future.
+
+---
+
+## FAQ
+
+- **Why isn’t shadcn-svelte next published as an npm package?**  
+  The source code is provided so you have full control over the implementation and styling, allowing for maximum customization.
+
+- **Which frameworks are supported?**  
+  shadcn-svelte next is built for Svelte/SvelteKit and is designed to work seamlessly with Svelte 5.
+
+---
+
+This rules file should serve as a comprehensive guide to setting up and managing shadcn-svelte next within your SvelteKit 2 project using Svelte 5. Use it as a reference for project initialization, configuration, and migration best practices.
+
+## Components
+
+Below is a list of all the components in shadcn‑svelte next along with a brief description of their purpose. For more details and usage examples, you can refer to the [shadcn‑svelte documentation](mdc:https:/www.shadcn-svelte.com/docs/components).
+
+- **Accordion**  
+  A vertically stacked set of interactive headings that can expand or collapse to reveal associated content.
+
+- **Alert**  
+  Displays important messages or warnings to the user in a visually distinct style.
+
+- **Alert Dialog**  
+  A modal dialog designed to show critical alerts that require user confirmation or interaction.
+
+- **Aspect Ratio**  
+  Wraps content to maintain a specific aspect ratio, making it especially useful for images or videos.
+
+- **Avatar**  
+  Renders a user’s profile image or initials, typically used for displaying user identities.
+
+- **Badge**  
+  Shows small numerical values, counts, or status indicators attached to UI elements.
+
+- **Breadcrumb**  
+  Visualizes a hierarchy of navigation links, helping users understand their current location within the app.
+
+- **Button**  
+  A standard clickable element used to trigger actions or events.
+
+- **Calendar**  
+  Provides an interface for date selection with an overview of days, weeks, and months.
+
+- **Card**  
+  A container that groups related information and actions concerning a single subject.
+
+- **Carousel**  
+  Displays multiple items in a horizontal slider, enabling users to cycle through content.
+
+- **Checkbox**  
+  A form control for selecting one or more options from a set of binary choices.
+
+- **Collapsible**  
+  Manages sections of content that can be expanded or collapsed to conserve space.
+
+- **Combobox**  
+  Combines a text input with a dropdown list to allow for typeahead filtering of options.
+
+- **Command**  
+  Emulates a command palette, offering a searchable list of commands or actions for quick navigation.
+
+- **Context Menu**  
+  Opens a custom menu, typically upon right-click, presenting actions related to the current context.
+
+- **Data Table**  
+  Arranges data in a tabular format with support for features like sorting, filtering, and pagination.
+
+- **Date Picker**  
+  A specialized input component that allows users to pick a single date from a calendar interface.
+
+- **Dialog**  
+  A modal window that displays content and actions, interrupting the usual workflow for critical interactions.
+
+- **Drawer**  
+  A side panel that slides into view, often used for navigation or to provide auxiliary content.
+
+- **Dropdown Menu**  
+  Presents a list of options in a menu that appears when triggered, often used for navigational lists or settings.
+
+- **Form**  
+  Structures and styles form elements consistently, including input fields, labels, and validation messages.
+
+- **Hover Card**  
+  Displays a small preview or additional information when a user hovers over an element.
+
+- **Input**  
+  A basic text or number input field for form data capture.
+
+- **Label**  
+  Provides descriptive text for a form field to improve accessibility and usability.
+
+- **Menubar**  
+  A horizontal menu bar that organizes navigational links or actions.
+
+- **Pagination**  
+  Facilitates navigation through blocks of content or data across multiple pages.
+
+- **Popover**  
+  Renders additional content in a floating layer in response to user interactions like clicking or hovering.
+
+- **Progress**  
+  Displays a visual indicator (typically a bar) showing the progress of a task or operation.
+
+- **Radio Group**  
+  Presents a set of radio buttons for selecting a single option from multiple choices.
+
+- **Range Calendar**  
+  Extends the calendar functionality to support the selection of date ranges rather than single dates.
+
+- **Resizable**  
+  Allows elements to be resized interactively by the user.
+
+- **Scroll Area**  
+  Provides a container with customized scroll behaviors, perfect for overflow content.
+
+- **Select**  
+  A stylized dropdown allowing users to choose one option from a list.
+
+- **Separator**  
+  A simple visual divider that separates content or sections within the UI.
+
+- **Sheet**  
+  A slide-in panel (similar to a modal) that can display additional content or actions.
+
+- **Skeleton**  
+  Used as a placeholder to indicate that content is loading, giving users a preview of the layout.
+
+- **Slider**  
+  An interactive control for selecting a numeric value within a range by sliding a handle.
+
+- **Sonner**  
+  A component associated with toast notifications, providing transient messages or alerts to users.
+
+- **Switch**  
+  A toggle control for enabling or disabling a setting, similar to a checkbox but with a distinctive design.
+
+- **Table**  
+  Organizes data into rows and columns, offering a straightforward tabular layout for information.
+
+- **Tabs**  
+  Allows the organization of content into multiple views, each accessible via clickable tab headers.
+
+- **Textarea**  
+  A multi-line text input allowing for more extensive user input compared to a single-line field.
+
+- **Toggle**  
+  A control similar to a button that shifts between two mutually exclusive states.
+
+- **Toggle Group**  
+  Groups multiple toggle buttons together, allowing coordinated control (for example, selecting one or multiple options).
+
+- **Tooltip**  
+  Provides additional contextual information when users hover over an element.
+
+Each of these components is designed to work seamlessly with Svelte 5’s runic reactivity, SvelteKit 2, and the styling provided by Tailwind CSS. This integration makes it easier to build consistent, accessible, and highly customizable interfaces.

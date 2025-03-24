@@ -1,0 +1,13 @@
+{
+	"/": [],
+	"/booking": [],
+	"/compare": [],
+	"/history": [],
+	"/home": [],
+	"/loading": [
+		"src/routes/loading/+page.ts"
+	],
+	"/search": [
+		"src/routes/search/+page.ts"
+	]
+}
