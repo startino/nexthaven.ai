@@ -13,7 +13,7 @@
 	// Remove API_PREFIX to match how the React app makes API calls directly
 	// const API_PREFIX = '/api';
 	
-	// Loading step configuration
+	// Loading step configuration - matching React implementation
 	const steps = [
 		{ icon: Search, text: "Analyzing your preferences...", duration: 15 },
 		{ icon: Database, text: "Searching property databases...", duration: 20 },
@@ -40,6 +40,16 @@
 	
 	// Get search query using the getter function
 	let query = $derived(getSearchQuery());
+	
+	// Format time as MM:SS - matching React implementation
+	function formatTime(seconds: number): string {
+		const mins = Math.floor(seconds / 60);
+		const secs = seconds % 60;
+		return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+	}
+	
+	// Computed value for time remaining
+	let timeRemaining = $derived(Math.max(0, totalDuration - timeElapsed));
 	
 	// Redirect to search with error
 	function redirectToSearchWithError(errorMessage: string) {
@@ -408,7 +418,7 @@
 			// Start the search process
 			processSearch();
 			
-			// Set up the animation
+			// Set up the animation - match React implementation behavior
 			animationInterval = setInterval(() => {
 				if (!isProcessing) {
 					clearInterval(animationInterval);
@@ -417,17 +427,18 @@
 				
 				timeElapsed += 1;
 				
-				// Only update visual progress if not already updated by API
+				// Calculate overall progress based on time (like React)
+				// Only update if not already set by API response
 				if (!sessionId) {
-					// Gradually increase up to 20% during initial request
-					const newProgress = Math.min(20, (timeElapsed / 10) * 20);
+					const newProgress = Math.min(20, (timeElapsed / totalDuration) * 100);
 					progress = newProgress;
 				}
 				
-				// Determine which step we should be on based on progress
+				// Determine which step we should be on based on elapsed time - like React
+				let durationSum = 0;
 				for (let i = 0; i < steps.length; i++) {
-					const thresholdPercent = ((i + 1) / steps.length) * 100;
-					if (progress < thresholdPercent) {
+					durationSum += steps[i].duration;
+					if (timeElapsed <= durationSum) {
 						currentStep = i;
 						break;
 					}
@@ -453,86 +464,77 @@
 	});
 </script>
 
-<div class="flex flex-col items-center justify-center min-h-screen py-12 px-4">
-	<div class="text-center space-y-4 mb-8">
-		<h1 class="text-3xl font-bold mb-2">Finding Your Perfect Stays</h1>
-		<p class="text-muted-foreground max-w-xl mx-auto">
-			Our AI is searching multiple platforms and optimizing for your preferences.
-		</p>
-	</div>
-	
-	<!-- Loading Progress -->
-	<div class="w-full max-w-2xl mb-12">
-		<div class="h-2 w-full bg-secondary rounded-full overflow-hidden">
-			<div 
-				class="h-full bg-primary transition-all duration-300 ease-out" 
-				style="width: {progress}%"
-			></div>
+<div class="min-h-screen bg-black flex items-center justify-center">
+	<div class="w-full max-w-md px-4 py-6 space-y-8">
+		<div class="text-center space-y-4">
+			<h1 class="text-4xl font-serif text-white">nexthaven.ai</h1>
+			<p class="text-lg text-white/70">Our AI agents are working their magic</p>
+			<p class="text-sm text-white/50">This may take a few minutes</p>
 		</div>
-		<div class="flex justify-between text-xs text-muted-foreground mt-2">
-			<span>Searching properties</span>
-			<span>{Math.round(progress)}%</span>
+		
+		<!-- Steps - match React styling and animations -->
+		<div class="space-y-4">
+			{#each steps as step, index}
+				<div class="flex items-center gap-4" 
+					style="opacity: {index === currentStep ? 1 : (index < currentStep ? 0.7 : 0.3)}; 
+						   transform: translateX({index === currentStep ? '10px' : '0px'}); 
+						   transition: all 0.3s ease-in-out;">
+					<div class={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300
+						${index === currentStep 
+							? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/20' 
+							: (index < currentStep ? 'bg-purple-500/50' : 'bg-white/10')}`}>
+						<svelte:component 
+							this={step.icon} 
+							class="text-white" 
+							size={index === currentStep ? 22 : 20}
+							style={index === currentStep ? 'animation: spin 2s infinite;' : ''}
+						/>
+					</div>
+					<span class={`truncate ${
+						index === currentStep ? 'text-white font-medium' : (index < currentStep ? 'text-white/70' : 'text-white/40')
+					}`}>
+						{step.text}
+					</span>
+				</div>
+			{/each}
 		</div>
-	</div>
-	
-	<!-- Current Step -->
-	<div class="mb-12 w-full max-w-lg">
-		<div class="flex items-start gap-4 p-4 bg-card rounded-lg border border-border">
-			<div class="bg-primary text-primary-foreground rounded-full p-3">
-				<svelte:component this={steps[currentStep].icon} class="h-6 w-6" />
+		
+		<!-- Progress Bar - match React styling -->
+		<div class="space-y-2 mt-6 w-full">
+			<div class="flex justify-between text-sm text-gray-500 w-full">
+				<span>Progress: {Math.round(progress)}%</span>
+				<span>Est. time remaining: {formatTime(timeRemaining)}</span>
 			</div>
-			<div>
-				<h3 class="font-medium mb-1">{steps[currentStep].text}</h3>
-				<p class="text-sm text-muted-foreground">This might take a moment...</p>
-			</div>
+			<div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+				<div 
+					class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
+					style="width: {Math.min(progress, 100)}%; box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);"
+				></div>
 			</div>
 		</div>
 		
-		<!-- Property Skeleton Cards -->
-	{#if !error}
-		<div class="w-full max-w-3xl mb-8">
-		<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-			{#each Array(2) as _, i}
-					<Card class="overflow-hidden bg-card">
-					<div class="h-44 overflow-hidden">
-						<Skeleton class="w-full h-full" />
+		<!-- Error Display -->
+		{#if error}
+			<div class="mt-8 p-4 bg-red-500/20 text-red-300 rounded-md w-full">
+				<div class="flex items-start gap-3">
+					<div class="mt-1">⚠️</div>
+					<div>
+						<h3 class="font-medium mb-1">Error</h3>
+						<p class="text-sm">{error}</p>
+						<p class="mt-2 text-xs text-red-400/80">
+							Redirecting to search page in 3 seconds...
+						</p>
 					</div>
-					<CardContent class="p-4 space-y-4">
-						<div class="flex justify-between">
-							<Skeleton class="h-6 w-[150px]" />
-							<Skeleton class="h-6 w-[50px] rounded-full" />
-						</div>
-						<Skeleton class="h-4 w-full" />
-						<Skeleton class="h-4 w-[70%]" />
-						<div class="flex gap-2 pt-2">
-							<Skeleton class="h-8 w-16 rounded-full" />
-							<Skeleton class="h-8 w-20 rounded-full" />
-							<Skeleton class="h-8 w-16 rounded-full" />
-						</div>
-						<div class="flex justify-between pt-2">
-							<Skeleton class="h-8 w-24" />
-							<Skeleton class="h-8 w-[100px]" />
-						</div>
-					</CardContent>
-				</Card>
-			{/each}
-		</div>
-	</div>
-	{/if}
-	
-	<!-- Error Display -->
-	{#if error}
-		<div class="mt-4 p-4 bg-destructive/20 text-destructive rounded-md max-w-lg w-full">
-			<div class="flex items-start gap-3">
-				<div class="mt-1">⚠️</div>
-				<div>
-					<h3 class="font-medium mb-1">Error</h3>
-					<p class="text-sm">{error}</p>
-					<p class="mt-2 text-xs text-destructive/80">
-						Redirecting to search page in 3 seconds...
-					</p>
 				</div>
 			</div>
+		{/if}
 	</div>
-	{/if}
-</div> 
+</div>
+
+<style>
+	@keyframes spin {
+		0% { transform: scale(1) rotate(0deg); }
+		50% { transform: scale(1.2) rotate(180deg); }
+		100% { transform: scale(1) rotate(360deg); }
+	}
+</style> 
