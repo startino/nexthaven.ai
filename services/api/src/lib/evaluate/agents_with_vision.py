@@ -125,53 +125,50 @@ class EvaluateAgent:
                 | JsonOutputToolsParser(return_id=True)
             )
             
-            def handle_evaluation_error(error):
-                
-                """Handles errors during property evaluation, returning a default UnifiedProperty."""
-                
-                logging.error(f"Evaluation failed for property {i}: {error}")
-                
-                # Return a default UnifiedProperty object indicating the error.  Crucially,
-                # you need to populate the properties that the rest of your code expects.
-                
-                return UnifiedProperty(
-                    property_id=f"property_{i}_error",
-                    name=f"Error evaluating property {i}",
-                    description=f"An error occurred during evaluation: {error}",
-                    url="",  # Or some default URL
-                    location="",
-                    pricing=PricingModel(total=0.0, nightly=0.0, currency="USD"),
-                    capacity=CapacityModel(guests=0, bedrooms=0, beds=0, bathrooms=0),
-                    features=FeaturesModel(amenities=[], safety_features=[]),
-                    media=MediaModel(main_image="", gallery=[]),
-                    score=-1,  # Indicate an error score
-                    review_summary="Error during evaluation"
-                )
-            
             property_chains[f"property_{i}"] = chain.with_config(
                 {"run_name": f"evaluate_property_{i}"}
-            ).with_fallbacks(
-                [RunnableLambda(handle_evaluation_error)]
             )
 
         # Create the parallel runner
         parallel_chain = RunnableParallel(**property_chains)
 
         # Run all evaluations in parallel
-        # The RunnableParallel will now handle exceptions for individual properties
+        # Use return_exceptions=True to handle errors without failing the entire process
+        logging.info(f"Starting parallel evaluation of {len(properties)} properties")
         results = await parallel_chain.ainvoke({}, return_exceptions=True)
+        logging.info(f"Completed parallel evaluation, processing results")
 
+        # Count successful and failed evaluations
+        success_count = 0
+        error_count = 0
+        
         # Process results
         processed_results: list[UnifiedProperty] = []
         for i, prop in enumerate(properties):
-            result = results[f"property_{i}"][0]["args"]
+            try:
+                # Check if the result is an exception
+                if isinstance(results.get(f"property_{i}"), Exception):
+                    error_message = str(results.get(f"property_{i}"))
+                    error_count += 1
+                    logging.error(f"Error evaluating property {i}: {error_message}")
+                    # Skip this property - don't add it to processed_results
+                    continue
                 
-            # Create a UnifiedProperty object
-            unified_prop = self._create_unified_property(prop, result)
-            processed_results.append(unified_prop)
-            
-            logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
-            
+                result = results[f"property_{i}"][0]["args"]
+                success_count += 1
+                
+                # Create a UnifiedProperty object
+                unified_prop = self._create_unified_property(prop, result)
+                processed_results.append(unified_prop)
+                
+                logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
+            except Exception as e:
+                error_count += 1
+                logging.error(f"Error processing property {i}: {str(e)}")
+                # Skip this property - don't add it to processed_results
+
+        logging.info(f"Evaluation summary: {success_count} successful, {error_count} errors (skipped)")
+        
         # Sort results by score (now using numeric values directly)
         if processed_results:
             sorted_results = sorted(
