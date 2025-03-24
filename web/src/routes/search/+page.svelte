@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { setSearchQuery, clearStore } from '$lib/stores/properties';
+	import { setSearchQuery, clearStore, setError, getErrorMessage } from '$lib/stores/properties.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
@@ -8,6 +7,7 @@
 	import { onMount } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { slide } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 	
 	// Define interface for saved preferences
 	interface SavedPreference {
@@ -41,9 +41,20 @@ Literally any other preferences:
 	let budget = $state('600');
 	let selectedRooms = $state(1);
 	let preferences = $state(TEMPLATE_TEXT);
-	let error = $state<string | null>(null);
+	let error = $derived(getErrorMessage());
 	let previousPreferences = $state<SavedPreference[]>([]);
 	let showPreviousPreferences = $state(false);
+	
+	// Create an effect to clear the error after a timeout
+	$effect(() => {
+		if (error) {
+			const timeout = setTimeout(() => {
+				setError(null);
+			}, 5000);
+			
+			return () => clearTimeout(timeout);
+		}
+	});
 	
 	// Presets
 	const popularDestinations = data?.popularDestinations?.map(d => d.name) || 
@@ -87,9 +98,13 @@ Literally any other preferences:
 	// Clear the store on mount
 	clearStore();
 	
-	async function handleSearch() {
-		// Build search query object
-		const searchQuery = JSON.stringify({
+	function handleSearch() {
+		console.log("Discover Properties button clicked");
+		
+		// Save current preference
+		savePreference();
+		
+		console.log("Search data:", {
 			query: destination,
 			date: dateRange,
 			budget: {
@@ -102,14 +117,32 @@ Literally any other preferences:
 			preferences: preferences
 		});
 		
-		// Save preferences to localStorage
-		savePreference();
+		// Build search query object
+		const searchQueryJson = JSON.stringify({
+			query: destination,
+			date: dateRange,
+			budget: {
+				min: parseInt(budget) || 200,
+				max: parseInt(budget) * 1.5 || 600
+			},
+			adults: 2,
+			children: 0,
+			number_of_rooms: selectedRooms,
+			preferences: preferences
+		});
 		
-		// Store the search query
-		setSearchQuery(searchQuery);
-		
-		// Navigate to loading page
-		goto('/loading');
+		try {
+			console.log("Storing search query and navigating to loading page");
+			
+			// Store the search query using the new reactive store
+			setSearchQuery(searchQueryJson);
+			
+			// Navigate to loading page using direct window location
+			console.log("Navigating to /loading");
+			window.location.href = '/loading';
+		} catch (error) {
+			console.error('Error starting search:', error);
+		}
 	}
 	
 	// Save the current preference to localStorage
@@ -121,8 +154,8 @@ Literally any other preferences:
 				preferences: preferences
 			};
 			
-			// Prepend new preference and keep only the 5 most recent
-			const updatedPreferences = [newPreference, ...previousPreferences.slice(0, 4)];
+			// Prepend new preference and keep only the 6 most recent
+			const updatedPreferences = [newPreference, ...previousPreferences.slice(0, 5)];
 			localStorage.setItem('previousPreferences', JSON.stringify(updatedPreferences));
 		} catch (error) {
 			console.error('Error saving preferences to localStorage:', error);
@@ -225,10 +258,26 @@ Literally any other preferences:
 <div class="max-w-4xl mx-auto py-8 px-4">
 	<div class="flex justify-between items-center mb-8">
 		<h1 class="text-3xl font-serif font-bold">Find your perfect stay</h1>
-		<Button variant="outline" onclick={() => goto('/')}>
+		<Button variant="outline" onclick={() => window.location.href = '/'}>
 			Back to Home
 		</Button>
 	</div>
+	
+	<!-- Error message box -->
+	{#if error}
+		<div 
+			class="w-full max-w-lg mx-auto mb-6 p-4 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
+			transition:fade={{ duration: 200 }}
+		>
+			<div class="flex items-start gap-3">
+				<div class="mt-1">⚠️</div>
+				<div>
+					<h3 class="font-medium mb-1">Error</h3>
+					<p class="text-sm">{error}</p>
+				</div>
+			</div>
+		</div>
+	{/if}
 	
 	{#if searchStep === 0}
 		<!-- Destination Step -->
@@ -247,7 +296,8 @@ Literally any other preferences:
 				<Input 
 					type="text" 
 					placeholder="e.g. Chiang Mai, Thailand"
-					bind:value={destination}
+					value={destination}
+					oninput={(e: Event) => destination = (e.target as HTMLInputElement).value}
 					class="h-12 bg-black/40 border-border"
 				/>
 				
@@ -308,8 +358,9 @@ Literally any other preferences:
 				<Input 
 					type="text" 
 					placeholder="e.g. Next Week for 1 Month"
-					bind:value={dateRange}
-					on:blur={parseDateRange}
+					value={dateRange}
+					oninput={(e: Event) => dateRange = (e.target as HTMLInputElement).value}
+					onblur={parseDateRange}
 					class="h-12 bg-black/40 border-border"
 				/>
 			</div>
@@ -341,7 +392,8 @@ Literally any other preferences:
 				<div class="flex items-center">
 					<Input 
 						type="number" 
-						bind:value={budget}
+						value={budget}
+						oninput={(e: Event) => budget = (e.target as HTMLInputElement).value}
 						class="h-12 bg-black/40 border-border"
 					/>
 				</div>
@@ -450,7 +502,8 @@ Literally any other preferences:
 				{/if}
 				
 				<textarea 
-					bind:value={preferences}
+					value={preferences}
+					oninput={(e: Event) => preferences = (e.target as HTMLTextAreaElement).value}
 					class="w-full h-[300px] bg-black/40 border-border rounded-lg p-4 focus:border-primary focus:ring-primary"
 				></textarea>
 				
@@ -476,21 +529,43 @@ Literally any other preferences:
 					Back
 				</Button>
 				
-				<Button 
-					variant="default" 
-					class="flex-1 h-12 button-gradient"
-					onclick={handleSearch}
+				<form 
+					action="/loading" 
+					method="GET" 
+					class="flex-1"
+					onsubmit={() => {
+						console.log("Form submitting to loading page");
+						// Save preference first
+						savePreference();
+						
+						// Store search data in our reactive store
+						setSearchQuery(JSON.stringify({
+							query: destination,
+							date: dateRange,
+							budget: {
+								min: parseInt(budget) || 200,
+								max: parseInt(budget) * 1.5 || 600
+							},
+							adults: 2,
+							children: 0,
+							number_of_rooms: selectedRooms,
+							preferences: preferences
+						}));
+					}}
 				>
-					<Search class="h-5 w-5 mr-1" />
-					Discover Properties
-				</Button>
+					<!-- Use hidden input fields to pass data via URL if needed -->
+					<input type="hidden" name="destination" value={destination} />
+					<input type="hidden" name="date" value={dateRange} />
+					
+					<button 
+						type="submit"
+						class="w-full h-12 button-gradient bg-primary text-primary-foreground rounded-md font-medium flex items-center justify-center"
+					>
+						<Search class="h-5 w-5 mr-1" />
+						Discover Properties
+					</button>
+				</form>
 			</div>
-		</div>
-	{/if}
-	
-	{#if error}
-		<div class="mt-4 p-4 bg-destructive/20 text-destructive rounded-md">
-			{error}
 		</div>
 	{/if}
 </div> 

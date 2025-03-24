@@ -1,34 +1,34 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { propertyStore } from '$lib/stores/properties';
-	import { setSelectedProperty } from '$lib/stores/properties';
+	import { getProperties, setSelectedProperty } from '$lib/stores/properties.svelte';
 	import { formatCurrency } from '$lib/utils';
 	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Separator } from '$lib/components/ui/separator';
 
-	// Local state
-	let properties = $state<UnifiedProperty[]>([]);
+	// Create a derived property from the store properties
+	let properties = $derived(getProperties());
 	
-	// Check if we have properties on mount
-	onMount(() => {
-		const storeData = get(propertyStore);
-		if (storeData.properties.length === 0) {
+	// Check if we have properties on mount and redirect if not
+	$effect(() => {
+		if (properties.length === 0) {
 			// If no properties, redirect to search
 			goto('/search');
-		} else {
-			properties = storeData.properties;
 		}
 	});
 	
 	// Handle property selection
 	function selectProperty(property: UnifiedProperty) {
-		setSelectedProperty(property);
-		goto('/booking');
+		try {
+			console.log("Selecting property:", property.id);
+			setSelectedProperty(property);
+			goto('/booking');
+		} catch (error) {
+			console.error("Error selecting property:", error);
+		}
 	}
 </script>
 

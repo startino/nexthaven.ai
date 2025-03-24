@@ -6,10 +6,12 @@ export const propertyStore = writable<{
 	properties: UnifiedProperty[];
 	selectedProperty: UnifiedProperty | null;
 	searchQuery: string;
+	errorMessage: string | null;
 }>({
 	properties: [],
 	selectedProperty: null,
-	searchQuery: ''
+	searchQuery: '',
+	errorMessage: null
 });
 
 // Function to set the properties in the store
@@ -27,11 +29,17 @@ export function setSearchQuery(searchQuery: string) {
 	propertyStore.update((state) => ({ ...state, searchQuery }));
 }
 
+// Function to set an error message in the store
+export function setError(errorMessage: string | null) {
+	propertyStore.update((state) => ({ ...state, errorMessage }));
+}
+
 // Function to clear the store
 export function clearStore() {
 	propertyStore.set({
 		properties: [],
 		selectedProperty: null,
-		searchQuery: ''
+		searchQuery: '',
+		errorMessage: null
 	});
 }

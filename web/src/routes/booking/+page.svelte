@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { propertyStore } from '$lib/stores/properties';
 	import { goto } from '$app/navigation';
 	import { formatCurrency } from '$lib/utils';
-	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
 	import { Button } from '$lib/components/ui/button';
@@ -12,9 +10,10 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Separator } from '$lib/components/ui/separator';
+	import { getSelectedProperty } from '$lib/stores/properties.svelte';
 	
-	// Local state
-	let selectedProperty = $state<UnifiedProperty | null>(null);
+	// Local state - get property using Svelte 5 runes
+	let property = $derived(getSelectedProperty());
 	let formData = $state({
 		firstName: '',
 		lastName: '',
@@ -25,19 +24,17 @@
 	let isSubmitting = $state(false);
 	let bookingComplete = $state(false);
 	
-	// Get selected property on mount
-	onMount(() => {
-		const storeData = get(propertyStore);
-		if (!storeData.selectedProperty) {
+	// Redirect if no property is selected
+	$effect(() => {
+		if (!property) {
 			// If no property selected, redirect to compare
 			goto('/compare');
-		} else {
-			selectedProperty = storeData.selectedProperty;
 		}
 	});
 	
 	// Handle form submission
-	async function handleSubmit() {
+	async function handleSubmit(e: Event) {
+		e.preventDefault();
 		isSubmitting = true;
 		
 		// Simulate API call
@@ -73,41 +70,41 @@
 				</Button>
 			</CardContent>
 		</Card>
-	{:else if selectedProperty}
+	{:else if property}
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 			<!-- Property Details -->
 			<Card>
 				<div class="h-64 overflow-hidden">
 					<img 
-						src={selectedProperty.media.main_image || 'https://via.placeholder.com/800x400?text=No+Image'} 
-						alt={selectedProperty.name}
+						src={property.media.main_image || 'https://via.placeholder.com/800x400?text=No+Image'} 
+						alt={property.name}
 						class="w-full h-full object-cover"
 					/>
 				</div>
 				
 				<CardHeader class="space-y-1 pb-2">
 					<div class="flex justify-between items-start">
-						<CardTitle class="text-2xl">{selectedProperty.name}</CardTitle>
-						<Badge>{selectedProperty.score}</Badge>
+						<CardTitle class="text-2xl">{property.name}</CardTitle>
+						<Badge>{property.score}</Badge>
 					</div>
-					<CardDescription>{selectedProperty.location}</CardDescription>
+					<CardDescription>{property.location}</CardDescription>
 				</CardHeader>
 				
 				<CardContent class="space-y-4 pb-0">
 					<div class="flex items-center gap-3 text-sm text-muted-foreground">
-						<span>{selectedProperty.capacity.bedrooms} bedrooms</span>
+						<span>{property.capacity.bedrooms} bedrooms</span>
 						<span>•</span>
-						<span>{selectedProperty.capacity.beds} beds</span>
-						{#if selectedProperty.features.size}
+						<span>{property.capacity.beds} beds</span>
+						{#if property.features.size}
 							<span>•</span>
-							<span>{selectedProperty.features.size} m²</span>
+							<span>{property.features.size} m²</span>
 						{/if}
 					</div>
 					
 					<div>
 						<h3 class="font-medium mb-2">Amenities</h3>
 						<div class="flex flex-wrap gap-2">
-							{#each selectedProperty.features.amenities as amenity}
+							{#each property.features.amenities as amenity}
 								<Badge variant="outline">{amenity}</Badge>
 							{/each}
 						</div>
@@ -117,10 +114,10 @@
 					
 					<div class="flex justify-between items-center pt-2">
 						<div>
-							<div class="text-2xl font-bold">{formatCurrency(selectedProperty.pricing.total)}</div>
+							<div class="text-2xl font-bold">{formatCurrency(property.pricing.total)}</div>
 							<div class="text-sm text-muted-foreground">total price</div>
 						</div>
-						<Badge variant="secondary">{selectedProperty.source}</Badge>
+						<Badge variant="secondary">{property.source}</Badge>
 					</div>
 				</CardContent>
 			</Card>
@@ -132,13 +129,20 @@
 					<CardDescription>Please fill in your information to complete the booking</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+					<form 
+						onsubmit={(e) => {
+							e.preventDefault();
+							handleSubmit(e);
+						}} 
+						class="space-y-4"
+					>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div class="space-y-2">
 								<Label for="firstName">First Name</Label>
 								<Input 
 									id="firstName" 
-									bind:value={formData.firstName} 
+									value={formData.firstName}
+									oninput={(e: Event) => formData.firstName = (e.target as HTMLInputElement).value}
 									required
 								/>
 							</div>
@@ -147,7 +151,8 @@
 								<Label for="lastName">Last Name</Label>
 								<Input 
 									id="lastName" 
-									bind:value={formData.lastName} 
+									value={formData.lastName}
+									oninput={(e: Event) => formData.lastName = (e.target as HTMLInputElement).value}
 									required
 								/>
 							</div>
@@ -158,7 +163,8 @@
 							<Input 
 								id="email" 
 								type="email"
-								bind:value={formData.email} 
+								value={formData.email}
+								oninput={(e: Event) => formData.email = (e.target as HTMLInputElement).value}
 								required
 							/>
 						</div>
@@ -168,7 +174,8 @@
 							<Input 
 								id="phone" 
 								type="tel"
-								bind:value={formData.phone} 
+								value={formData.phone}
+								oninput={(e: Event) => formData.phone = (e.target as HTMLInputElement).value}
 								required
 							/>
 						</div>
@@ -177,7 +184,8 @@
 							<Label for="specialRequests">Special Requests</Label>
 							<Textarea 
 								id="specialRequests" 
-								bind:value={formData.specialRequests} 
+								value={formData.specialRequests}
+								oninput={(e: Event) => formData.specialRequests = (e.target as HTMLTextAreaElement).value}
 								rows={3}
 							/>
 						</div>
