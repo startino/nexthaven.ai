@@ -256,9 +256,9 @@ Literally any other preferences:
 </script>
 
 <div class="max-w-4xl mx-auto py-8 px-4">
-	<div class="flex justify-between items-center mb-8">
-		<h1 class="text-3xl font-serif font-bold">Find your perfect stay</h1>
-		<Button variant="outline" onclick={() => window.location.href = '/'}>
+	<div class="flex justify-start items-center mb-8">
+		<Button variant="outline" class="flex items-center gap-2" onclick={() => window.location.href = '/'}>
+			<ArrowLeft class="h-5 w-5" />
 			Back to Home
 		</Button>
 	</div>
@@ -283,8 +283,8 @@ Literally any other preferences:
 		<!-- Destination Step -->
 		<div class="w-full max-w-lg bg-card p-6 rounded-lg border border-border mx-auto">
 			<div class="text-left mb-8">
-				<h2 class="text-3xl font-bold">Find your perfect stay</h2>
-				<p class="text-muted-foreground mt-1">Tell us what you're looking for</p>
+				<h1 class="text-3xl font-serif font-bold mb-2">Find your perfect stay</h1>
+				<p class="text-muted-foreground">Tell us what you're looking for</p>
 			</div>
 			
 			<div class="mb-8">
@@ -379,8 +379,8 @@ Literally any other preferences:
 		<!-- Budget Step -->
 		<div class="w-full max-w-lg bg-card p-6 rounded-lg border border-border mx-auto">
 			<div class="text-left mb-8">
-				<h2 class="text-3xl font-bold">Find your perfect stay</h2>
-				<p class="text-muted-foreground mt-1">Tell us what you're looking for</p>
+				<h1 class="text-3xl font-serif font-bold mb-2">Find your perfect stay</h1>
+				<p class="text-muted-foreground">Tell us what you're looking for</p>
 			</div>
 			
 			<div class="mb-8">
@@ -443,8 +443,8 @@ Literally any other preferences:
 		<!-- Preferences Step -->
 		<div class="w-full max-w-lg bg-card p-6 rounded-lg border border-border mx-auto">
 			<div class="text-left mb-6">
-				<h2 class="text-3xl font-bold">Find your perfect stay</h2>
-				<p class="text-muted-foreground mt-1">Tell us what you're looking for</p>
+				<h1 class="text-3xl font-serif font-bold mb-2">Find your perfect stay</h1>
+				<p class="text-muted-foreground">Tell us what you're looking for</p>
 			</div>
 			
 			<div class="mb-6">

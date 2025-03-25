@@ -363,7 +363,7 @@
 			
 			<!-- Thumbnail navigation -->
 			<ScrollArea orientation="horizontal" class="border-t border-white/10 py-4 bg-black h-24">
-				<div class="flex gap-3 px-4 min-w-min mx-auto max-w-full">
+				<div class="flex gap-3 px-4 min-w-min mx-auto max-w-full justify-center">
 					{#each getAllImages() as image, index}
 						<button 
 							onclick={() => expandedImageIndex = index}

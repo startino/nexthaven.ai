@@ -33,7 +33,7 @@
 
 <div class="min-h-screen bg-black dark text-foreground">
 	<!-- Navigation -->
-	<NavigationBar />
+	<!-- <NavigationBar /> -->
 
 	<!-- Page content -->
 	<main>
