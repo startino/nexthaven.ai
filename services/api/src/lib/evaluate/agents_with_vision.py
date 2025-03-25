@@ -136,20 +136,16 @@ class EvaluateAgent:
         # Use return_exceptions=True to handle errors without failing the entire process
         logging.info(f"Starting parallel evaluation of {len(properties)} properties")
         
-        try:
-            results = await parallel_chain.ainvoke({}, return_exceptions=True)
-            logging.info(f"Completed parallel evaluation, processing results")
-        except Exception as e:
-            # This should never happen with return_exceptions=True, but just in case
-            error_msg = str(e)
-            logging.error(f"Unexpected error in parallel evaluation: {error_msg}")
-            
-            # Create an empty results dictionary that we can still process
-            results = {}
-            for i in range(len(properties)):
-                results[f"property_{i}"] = Exception(f"Parallel evaluation failed: {error_msg}")
-                
-            logging.warning("Created default error results for all properties to allow processing to continue")
+        # results = await parallel_chain.abatch({}, return_exceptions=True)
+        
+        async for result in parallel_chain.astream({}):
+            try:
+                logging.info(f"Received result: {result}")
+                results += result
+            except Exception as e:
+                logging.error(f"Error processing result in astream: {e}")
+        
+        logging.info(f"Completed parallel evaluation, processing results")
 
         # Count successful and failed evaluations
         success_count = 0
