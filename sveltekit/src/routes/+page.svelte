@@ -5,10 +5,11 @@
 	// Import other screens as we create them 
 	import { propertyService } from '$lib/services/api';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
-	import { navigating } from '$app/stores';
+	import { navigating, page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { ArrowRight, LogIn, Search } from 'lucide-svelte';
 
 	// Define the AppState interface
 	interface AppState {
@@ -156,27 +157,48 @@
 	
 	<!-- Search Button -->
 	<div class="w-full max-w-md">
-		<Button 
-			variant="default" 
-			class="w-full h-14 button-gradient text-white text-lg font-semibold flex items-center justify-between group rounded-2xl shadow-lg p-4"
-			onclick={navigateToSearch}
-		>
-			<div class="flex items-center">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-				Start New Search
-			</div>
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform group-hover:translate-x-1"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-		</Button>
-		
-		<div class="mt-20 text-center text-sm">
-			<p class="text-muted-foreground text-xs sm:text-sm">
-				Interested in partnering with us?
-			</p>
-			<p class="mt-1 text-xs sm:text-sm">
-				Contact:
-				<a href="mailto:jorge.lewis@startin.no" class="text-primary hover:text-primary/80 hover:underline">jorge.lewis@startin.no</a>
-			</p>
-		</div>
+		{#if $page.data.session}
+			<Button 
+				variant="default" 
+				class="w-full h-14 button-gradient text-white text-lg font-semibold flex items-center justify-between group rounded-2xl shadow-lg p-4"
+				href="/search"
+			>
+				<div class="flex items-center">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					Start New Search
+				</div>
+				<ArrowRight class="transition-transform group-hover:translate-x-1" />
+			</Button>
+		{:else}
+			<a href="/login" class="block w-full">
+				<div class="group bg-gradient-to-r from-purple-800/90 to-pink-600/90 rounded-xl overflow-hidden">
+					<div class="flex items-center justify-between px-6 py-5 bg-black/60 backdrop-blur-md rounded-xl">
+						<div class="flex items-center gap-4">
+							<div class="text-white">
+								<LogIn size={24} />
+							</div>
+							<div class="text-left">
+								<div class="text-xl font-bold">Sign In to Search</div>
+								<div class="text-sm text-gray-300/90">Unlock personalized accommodation search</div>
+							</div>
+						</div>
+						<div class="text-white">
+							<ArrowRight size={24} />
+						</div>
+					</div>
+				</div>
+			</a>
+		{/if}
+	</div>
+	
+	<div class="mt-20 text-center text-sm">
+		<p class="text-muted-foreground text-xs sm:text-sm">
+			Interested in partnering with us?
+		</p>
+		<p class="mt-1 text-xs sm:text-sm">
+			Contact:
+			<a href="mailto:jorge.lewis@startin.no" class="text-primary hover:text-primary/80 hover:underline">jorge.lewis@startin.no</a>
+		</p>
 	</div>
 	
 	<!-- Footer -->
@@ -184,3 +206,4 @@
 		<p class="text-xs sm:text-sm">Made by the <a href="https://startino.no" target="_blank" rel="noopener noreferrer" class="text-purple-400 hover:text-purple-300 hover:underline">Startino Team</a></p>
 	</div>
 </div>
+

@@ -17,7 +17,7 @@
 		
 		<div class="flex items-center gap-4">
 			<!-- Navigation buttons -->
-			{#if $page.url.pathname !== '/search'}
+			{#if $page.data.session && $page.url.pathname !== '/search'}
 				<Button 
 					variant="ghost" 
 					size="sm"
@@ -29,15 +29,17 @@
 				</Button>
 			{/if}
 			
-			<Button 
-				variant="ghost" 
-				size="sm"
-				class="flex items-center gap-1 text-sm"
-				href="/history"
-			>
-				<History size={16} />
-				<span class="hidden sm:inline">History</span>
-			</Button>
+			{#if $page.data.session}
+				<Button 
+					variant="ghost" 
+					size="sm"
+					class="flex items-center gap-1 text-sm"
+					href="/history"
+				>
+					<History size={16} />
+					<span class="hidden sm:inline">History</span>
+				</Button>
+			{/if}
 			
 			<!-- Auth buttons - only shown when logged in -->
 			{#if $page.data.session}
@@ -76,7 +78,6 @@
 					<Button
 						variant="ghost"
 						size="icon"
-						class="bg-gray-800/80 hover:bg-gray-800 text-gray-200"
 						title="Sign Out"
 						type="submit"
 					>
