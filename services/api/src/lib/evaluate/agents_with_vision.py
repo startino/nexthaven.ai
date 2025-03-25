@@ -135,8 +135,21 @@ class EvaluateAgent:
         # Run all evaluations in parallel
         # Use return_exceptions=True to handle errors without failing the entire process
         logging.info(f"Starting parallel evaluation of {len(properties)} properties")
-        results = await parallel_chain.ainvoke({}, return_exceptions=True)
-        logging.info(f"Completed parallel evaluation, processing results")
+        
+        try:
+            results = await parallel_chain.ainvoke({}, return_exceptions=True)
+            logging.info(f"Completed parallel evaluation, processing results")
+        except Exception as e:
+            # This should never happen with return_exceptions=True, but just in case
+            error_msg = str(e)
+            logging.error(f"Unexpected error in parallel evaluation: {error_msg}")
+            
+            # Create an empty results dictionary that we can still process
+            results = {}
+            for i in range(len(properties)):
+                results[f"property_{i}"] = Exception(f"Parallel evaluation failed: {error_msg}")
+                
+            logging.warning("Created default error results for all properties to allow processing to continue")
 
         # Count successful and failed evaluations
         success_count = 0
@@ -146,19 +159,39 @@ class EvaluateAgent:
         processed_results: list[UnifiedProperty] = []
         for i, prop in enumerate(properties):
             try:
-                # Check if the result is an exception
-                if isinstance(results.get(f"property_{i}"), Exception):
-                    error_message = str(results.get(f"property_{i}"))
+                # Check if the result is an exception or missing
+                if i >= len(properties) or f"property_{i}" not in results:
+                    logging.error(f"Missing result for property {i}")
                     error_count += 1
-                    logging.error(f"Error evaluating property {i}: {error_message}")
-                    # Skip this property - don't add it to processed_results
                     continue
                 
-                result = results[f"property_{i}"][0]["args"]
+                result = results.get(f"property_{i}")
+                
+                # Check if the result is an exception
+                if isinstance(result, Exception):
+                    error_count += 1
+                    logging.error(f"Error evaluating property {i}: {str(result)}")
+                    continue
+                
+                # Check if result has error field (from dict-like errors)
+                if isinstance(result, dict) and "error" in result:
+                    error_count += 1
+                    error_message = str(result.get("error", "Unknown error"))
+                    logging.error(f"Error evaluating property {i}: {error_message}")
+                    continue
+                
+                # Extra safety check to ensure result has expected structure
+                if not isinstance(result, list) or not result or not isinstance(result[0], dict) or "args" not in result[0]:
+                    error_count += 1
+                    logging.error(f"Unexpected result structure for property {i}: {result}")
+                    continue
+                
+                # Extract the result arguments
+                result_args = result[0]["args"]
                 success_count += 1
                 
                 # Create a UnifiedProperty object
-                unified_prop = self._create_unified_property(prop, result)
+                unified_prop = self._create_unified_property(prop, result_args)
                 processed_results.append(unified_prop)
                 
                 logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
