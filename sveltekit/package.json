@@ -33,6 +33,7 @@
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.10",
 		"shadcn-svelte": "^0.14.0",
+		"supabase": "^2.20.3",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
 		"sveltekit-superforms": "^2.24.0",
@@ -51,6 +52,8 @@
 		]
 	},
 	"dependencies": {
+		"@supabase/ssr": "^0.6.1",
+		"@supabase/supabase-js": "^2.49.3",
 		"lucide-svelte": "^0.483.0"
 	}
 }
