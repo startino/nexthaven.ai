@@ -96,7 +96,7 @@ export const stripeService = {
 		}
 
 		const { url } = await response.json();
-		window.location.href = url;
+		window.open(url, '_blank');
 	},
 
 	/**

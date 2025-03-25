@@ -45,8 +45,8 @@
 			await stripeService.createPortalSession();
 		} catch (error) {
 			console.error('Error creating portal session:', error);
-			isLoading = false;
 		}
+		isLoading = false;
 	}
 </script>
 

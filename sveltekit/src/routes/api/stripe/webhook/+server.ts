@@ -27,61 +27,25 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const { type, data } = event;
 		console.log(`Processing webhook event: ${type}`);
 
+		// Since we're using Stripe directly for subscription data, we just log the events
+		// and don't need to update our database for subscription changes
 		switch (type) {
 			case 'customer.subscription.created':
-			case 'customer.subscription.updated': {
-				const subscription = data.object as Stripe.Subscription;
-
-				// Get the customer ID from the subscription
-				const { customer: stripeCustomerId } = subscription;
-
-				// Find the user ID from the customer ID
-				const { data: customerData, error: customerError } = await locals.supabase
-					.from('customers')
-					.select('user_id')
-					.eq('stripe_customer_id', stripeCustomerId as string)
-					.single();
-
-				if (customerError || !customerData?.user_id) {
-					console.error('Customer not found for subscription update:', stripeCustomerId);
-					return json({ received: true });
-				}
-
-				// Update or insert the subscription
-				const { error: upsertError } = await locals.supabase.from('subscriptions').upsert({
-					user_id: customerData.user_id,
-					stripe_subscription_id: subscription.id,
-					stripe_customer_id: stripeCustomerId as string,
-					status: subscription.status,
-					price_id: subscription.items.data[0].price.id,
-					quantity: subscription.items.data[0].quantity || 1,
-					cancel_at_period_end: subscription.cancel_at_period_end,
-					current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-					current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-					created_at: new Date(subscription.created * 1000).toISOString(),
-					updated_at: new Date().toISOString()
-				});
-
-				if (upsertError) {
-					console.error('Error updating subscription:', upsertError);
-				}
+				console.log('New subscription created:', (data.object as Stripe.Subscription).id);
 				break;
-			}
-
-			case 'customer.subscription.deleted': {
-				const subscription = data.object as Stripe.Subscription;
-
-				// Delete the subscription from the database
-				const { error: deleteError } = await locals.supabase
-					.from('subscriptions')
-					.delete()
-					.eq('stripe_subscription_id', subscription.id);
-
-				if (deleteError) {
-					console.error('Error deleting subscription:', deleteError);
-				}
+			case 'customer.subscription.updated':
+				console.log('Subscription updated:', (data.object as Stripe.Subscription).id);
 				break;
-			}
+			case 'customer.subscription.deleted':
+				console.log('Subscription deleted:', (data.object as Stripe.Subscription).id);
+				break;
+			// Add other events as needed
+			case 'customer.created':
+				console.log('Customer created:', (data.object as Stripe.Customer).id);
+				break;
+			case 'customer.updated':
+				console.log('Customer updated:', (data.object as Stripe.Customer).id);
+				break;
 		}
 
 		return json({ received: true });
