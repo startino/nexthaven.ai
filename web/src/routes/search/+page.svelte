@@ -3,7 +3,8 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Badge } from '$lib/components/ui/badge';
-	import { MapPin, Calendar, DollarSign, Layers, Sparkles, ArrowLeft, ArrowRight, Search, Clock } from 'lucide-svelte';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import { MapPin, Calendar, DollarSign, Layers, Sparkles, ChevronDown, ArrowLeft, ArrowRight, Search, Clock } from 'lucide-svelte';
 	import { onMount } from 'svelte';
 	import { cubicOut } from 'svelte/easing';
 	import { slide } from 'svelte/transition';
@@ -257,9 +258,12 @@ Literally any other preferences:
 
 <div class="max-w-4xl mx-auto py-8 px-4">
 	<div class="flex justify-start items-center mb-8">
-		<Button variant="outline" class="flex items-center gap-2" onclick={() => window.location.href = '/'}>
-			<ArrowLeft class="h-5 w-5" />
-			Back to Home
+		<Button 
+			variant="outline" 
+			class="flex items-center gap-2" 
+			href="/">
+			<ArrowLeft class="h-4 w-4" />
+			<span>Back to Home</span>
 		</Button>
 	</div>
 	
@@ -283,14 +287,14 @@ Literally any other preferences:
 		<!-- Destination Step -->
 		<div class="w-full max-w-lg bg-card p-6 rounded-lg border border-border mx-auto">
 			<div class="text-left mb-8">
-				<h1 class="text-3xl font-serif font-bold mb-2">Find your perfect stay</h1>
+				<h1 class="text-3xl font-serif font-bold mb-2 text-foreground">Find your perfect stay</h1>
 				<p class="text-muted-foreground">Tell us what you're looking for</p>
 			</div>
 			
 			<div class="mb-8">
 				<div class="flex items-center gap-2 mb-3">
-					<MapPin class="h-5 w-5" />
-					<label class="text-lg font-medium">Where would you like to stay?</label>
+					<MapPin class="h-5 w-5 text-foreground" />
+					<label class="text-lg font-medium text-foreground">Where would you like to stay?</label>
 				</div>
 				
 				<Input 
@@ -298,7 +302,7 @@ Literally any other preferences:
 					placeholder="e.g. Chiang Mai, Thailand"
 					value={destination}
 					oninput={(e: Event) => destination = (e.target as HTMLInputElement).value}
-					class="h-12 bg-black/40 border-border"
+					class="h-12 bg-input/10 border-border"
 				/>
 				
 				<div class="mt-4">
@@ -306,8 +310,7 @@ Literally any other preferences:
 					<div class="flex flex-wrap gap-2">
 						{#each popularDestinations as dest}
 							<Badge 
-								variant={destination === dest ? 'default' : 'secondary'}
-								class={`cursor-pointer ${destination === dest ? 'bg-primary text-primary-foreground' : 'bg-black/40'}`}
+								class={`cursor-pointer ${destination === dest ? 'bg-primary text-primary-foreground' : 'bg-background text-background-foreground'}`}
 								onclick={() => selectDestination(dest)}
 							>
 								{dest}
@@ -319,19 +322,18 @@ Literally any other preferences:
 			
 			<div class="mb-8">
 				<div class="flex items-center gap-2 mb-3">
-					<Calendar class="h-5 w-5" />
-					<label class="text-lg font-medium">When?</label>
+					<Calendar class="h-5 w-5 text-foreground" />
+					<label class="text-lg font-medium text-foreground">When?</label>
 				</div>
 				
 				<p class="text-sm text-muted-foreground mb-3">Use the buttons or type your own dates in the field below.</p>
 				
 				<div class="mb-4">
-					<p class="text-sm mb-2">When:</p>
+					<p class="text-sm mb-2 text-foreground">When:</p>
 					<div class="flex flex-wrap gap-2">
 						{#each timeFrames as time}
 							<Badge 
-								variant={selectedTimeFrame === time ? 'default' : 'secondary'}
-								class={`cursor-pointer ${selectedTimeFrame === time ? 'bg-primary text-primary-foreground' : 'bg-black/40'}`}
+								class={`cursor-pointer ${selectedTimeFrame === time ? 'bg-primary text-primary-foreground' : 'bg-background text-background-foreground'}`}
 								onclick={() => selectTimeFrame(time)}
 							>
 								{time}
@@ -341,12 +343,11 @@ Literally any other preferences:
 				</div>
 				
 				<div class="mb-4">
-					<p class="text-sm mb-2">Period:</p>
+					<p class="text-sm mb-2 text-foreground">Period:</p>
 					<div class="flex flex-wrap gap-2">
 						{#each durations as period}
 							<Badge 
-								variant={duration === period ? 'default' : 'secondary'}
-								class={`cursor-pointer ${duration === period ? 'bg-primary text-primary-foreground' : 'bg-black/40'}`}
+								class={`cursor-pointer ${duration === period ? 'bg-primary text-primary-foreground' : 'bg-background text-background-foreground'}`}
 								onclick={() => selectDuration(period)}
 							>
 								{period}
@@ -361,7 +362,7 @@ Literally any other preferences:
 					value={dateRange}
 					oninput={(e: Event) => dateRange = (e.target as HTMLInputElement).value}
 					onblur={parseDateRange}
-					class="h-12 bg-black/40 border-border"
+					class="h-12 bg-input/10 border-border"
 				/>
 			</div>
 			
@@ -379,14 +380,14 @@ Literally any other preferences:
 		<!-- Budget Step -->
 		<div class="w-full max-w-lg bg-card p-6 rounded-lg border border-border mx-auto">
 			<div class="text-left mb-8">
-				<h1 class="text-3xl font-serif font-bold mb-2">Find your perfect stay</h1>
+				<h1 class="text-3xl font-serif font-bold mb-2 text-foreground">Find your perfect stay</h1>
 				<p class="text-muted-foreground">Tell us what you're looking for</p>
 			</div>
 			
 			<div class="mb-8">
 				<div class="flex items-center gap-2 mb-3">
-					<DollarSign class="h-5 w-5" />
-					<label class="text-lg font-medium">Total Budget for Stay</label>
+					<DollarSign class="h-5 w-5 text-foreground" />
+					<label class="text-lg font-medium text-foreground">Total Budget for Stay</label>
 				</div>
 				
 				<div class="flex items-center">
@@ -394,22 +395,21 @@ Literally any other preferences:
 						type="number" 
 						value={budget}
 						oninput={(e: Event) => budget = (e.target as HTMLInputElement).value}
-						class="h-12 bg-black/40 border-border"
+						class="h-12 bg-input/10 border-border"
 					/>
 				</div>
 			</div>
 			
 			<div class="mb-8">
 				<div class="flex items-center gap-2 mb-3">
-					<Layers class="h-5 w-5" />
-					<label class="text-lg font-medium">Number of Rooms</label>
+					<Layers class="h-5 w-5 text-foreground" />
+					<label class="text-lg font-medium text-foreground">Number of Rooms</label>
 				</div>
 				
 				<div class="grid grid-cols-4 gap-3">
 					{#each roomOptions as rooms}
 						<Button 
-							variant={selectedRooms === rooms ? 'default' : 'secondary'}
-							class={`h-14 ${selectedRooms === rooms ? 'bg-primary text-primary-foreground' : 'bg-black/40'}`}
+							class={`h-14 ${selectedRooms === rooms ? 'bg-primary text-primary-foreground' : 'bg-background text-background-foreground'}`}
 							onclick={() => selectedRooms = rooms}
 						>
 							{rooms} {rooms === 1 ? 'Room' : 'Rooms'}
@@ -443,14 +443,14 @@ Literally any other preferences:
 		<!-- Preferences Step -->
 		<div class="w-full max-w-lg bg-card p-6 rounded-lg border border-border mx-auto">
 			<div class="text-left mb-6">
-				<h1 class="text-3xl font-serif font-bold mb-2">Find your perfect stay</h1>
+				<h1 class="text-3xl font-serif font-bold mb-2 text-foreground">Find your perfect stay</h1>
 				<p class="text-muted-foreground">Tell us what you're looking for</p>
 			</div>
 			
 			<div class="mb-6">
 				<div class="flex items-center gap-2 mb-3">
-					<Sparkles class="h-5 w-5" />
-					<label class="text-lg font-medium">Your Preferences</label>
+					<Sparkles class="h-5 w-5 text-foreground" />
+					<label class="text-lg font-medium text-foreground">Your Preferences</label>
 				</div>
 				
 				<div class="mb-4 flex items-center justify-between">
@@ -463,48 +463,36 @@ Literally any other preferences:
 						>
 							<Clock class="h-5 w-5 mr-1" /> 
 							Previous Preferences
-							<svg 
-								xmlns="http://www.w3.org/2000/svg" 
-								width="24" 
-								height="24" 
-								viewBox="0 0 24 24" 
-								fill="none" 
-								stroke="currentColor" 
-								stroke-width="2" 
-								stroke-linecap="round" 
-								stroke-linejoin="round" 
-								class={`w-4 h-4 ml-1 transition-transform ${showPreviousPreferences ? 'rotate-180' : ''}`}
-							>
-								<polyline points="6 9 12 15 18 9"></polyline>
-							</svg>
+							<ChevronDown class={`w-4 h-4 ml-1 transition-transform ${showPreviousPreferences ? 'rotate-180' : ''}`} />
 						</Button>
 					{/if}
 				</div>
 				
 				{#if showPreviousPreferences}
-					<div 
-						class="mb-4 p-3 border border-border rounded-lg bg-black/20 overflow-hidden transition-all duration-300 ease-in-out" 
-						transition:slide={{ duration: 300, easing: cubicOut }}
-					>
-						<p class="text-sm font-medium mb-2">Select a previous preference:</p>
-						<div class="space-y-2">
-							{#each previousPreferences as pref}
-								<div 
-									class="p-2 border border-border rounded cursor-pointer hover:bg-black/40 transition-colors"
-									onclick={() => selectPreviousPreference(pref.preferences)}
-								>
-									<p class="text-xs text-muted-foreground">{pref.date}</p>
-									<p class="text-sm line-clamp-2">{pref.preferences}</p>
+					<div transition:slide={{ duration: 300, easing: cubicOut }}>
+						<Card class="mb-4 border-border overflow-hidden bg-card">
+							<CardContent class="p-4">
+								<p class="text-sm font-medium mb-2 text-foreground">Select a previous preference:</p>
+								<div class="space-y-2">
+									{#each previousPreferences as pref}
+										<button 
+											class="p-2 text-left border border-border rounded cursor-pointer hover:bg-primary/20 transition-colors"
+											onclick={() => selectPreviousPreference(pref.preferences)}
+										>
+											<p class="text-xs text-muted-foreground">{pref.date}</p>
+											<p class="text-sm line-clamp-2 text-foreground">{pref.preferences}</p>
+										</button>
+									{/each}
 								</div>
-							{/each}
-						</div>
+							</CardContent>
+						</Card>
 					</div>
 				{/if}
 				
 				<textarea 
 					value={preferences}
 					oninput={(e: Event) => preferences = (e.target as HTMLTextAreaElement).value}
-					class="w-full h-[300px] bg-black/40 border-border rounded-lg p-4 focus:border-primary focus:ring-primary"
+					class="w-full h-[300px] bg-input/10 border-border rounded-lg p-4 focus:border-primary focus:ring-primary text-foreground"
 				></textarea>
 				
 				<p class="text-xs text-muted-foreground mt-2">Your preferences help us find the perfect property for you.</p>
@@ -557,13 +545,13 @@ Literally any other preferences:
 					<input type="hidden" name="destination" value={destination} />
 					<input type="hidden" name="date" value={dateRange} />
 					
-					<button 
+					<Button 
 						type="submit"
-						class="w-full h-12 button-gradient bg-primary text-primary-foreground rounded-md font-medium flex items-center justify-center"
+						class="flex-1 h-12 button-gradient"
 					>
 						<Search class="h-5 w-5 mr-1" />
 						Discover Properties
-					</button>
+					</Button>
 				</form>
 			</div>
 		</div>

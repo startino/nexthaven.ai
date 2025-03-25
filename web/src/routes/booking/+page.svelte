@@ -8,6 +8,7 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { ArrowLeft, ExternalLink } from 'lucide-svelte';
 	import { getSelectedProperty } from '$lib/stores/properties.svelte';
+	import { onMount } from 'svelte';
 	
 	// Local state - get property using Svelte 5 runes
 	let property = $derived(getSelectedProperty());
@@ -26,13 +27,13 @@
 		{#if property}
 			<div class="max-w-7xl mx-auto px-4 py-6 space-y-8">
 				<!-- Back button -->
-				<button
-					onclick={() => goto('/compare')}
-					class="flex items-center gap-2 text-white/80 hover:text-white"
-				>
-					<ArrowLeft size={20} />
+				<Button
+					variant="outline" 
+					class="flex items-center gap-2"
+					href="/compare">
+					<ArrowLeft class="h-4 w-4" />
 					<span>Back to compare</span>
-				</button>
+				</Button>
 			
 				<h1 class="text-xl md:text-3xl font-serif italic text-white">Complete Your Booking</h1>
 				

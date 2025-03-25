@@ -5,8 +5,9 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { getSearchQuery, setProperties, setError } from '$lib/stores/properties.svelte';
 	import { Progress } from '$lib/components/ui/progress';
-	import { Search, Home, Building2, MapPin, Database, Brain, Star, CheckCircle } from 'lucide-svelte';
+	import { Search, Home, Building2, MapPin, Database, Brain, Star, CheckCircle, ArrowLeft, X } from 'lucide-svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
+	import Button from '$lib/components/ui/button/button.svelte';
 	
 	// API endpoints
 	const API_BASE_URL = PUBLIC_API_URL || 'http://localhost:8000';
@@ -37,6 +38,35 @@
 	let statusInterval: ReturnType<typeof setInterval> | undefined = $state(undefined);
 	let sessionId = $state<string | null>(null);
 	let redirectTimeout: ReturnType<typeof setTimeout> | undefined = $state(undefined);
+	let lastProgressUpdate = $state(Date.now());
+	let targetProgress = $state(20); // Target progress value for smooth animation
+	
+	// Define step ranges for more consistent progress per step
+	// Each step gets roughly the same progress range (12-13%)
+	const stepProgressRanges = [
+		{ min: 0, max: 13 },    // Step 1: 0-13%
+		{ min: 13, max: 25 },   // Step 2: 13-25%
+		{ min: 25, max: 38 },   // Step 3: 25-38%
+		{ min: 38, max: 50 },   // Step 4: 38-50%
+		{ min: 50, max: 63 },   // Step 5: 50-63%
+		{ min: 63, max: 75 },   // Step 6: 63-75%
+		{ min: 75, max: 88 },   // Step 7: 75-88%
+		{ min: 88, max: 100 }   // Step 8: 88-100%
+	];
+	
+	// Define accelerated times for completing each step
+	// Front-loaded time distribution to make early steps feel faster
+	const stepTimeDistribution = [
+		{ threshold: 0, progress: 0 },     // Starting point
+		{ threshold: 8, progress: 13 },    // Step 1 completes faster (8s → 13%)
+		{ threshold: 18, progress: 25 },   // Step 2 completes in 10s (18s → 25%)
+		{ threshold: 35, progress: 38 },   // Step 3 completes in 17s (35s → 38%)
+		{ threshold: 50, progress: 50 },   // Step 4 completes in 15s (50s → 50%)
+		{ threshold: 70, progress: 63 },   // Step 5 completes in 20s (70s → 63%)
+		{ threshold: 90, progress: 75 },   // Step 6 completes in 20s (90s → 75%)
+		{ threshold: 115, progress: 88 },  // Step 7 completes in 25s (115s → 88%)
+		{ threshold: 135, progress: 100 }  // Step 8 completes in 20s (135s → 100%)
+	];
 	
 	// Get search query using the getter function
 	let query = $derived(getSearchQuery());
@@ -63,10 +93,7 @@
 		error = errorMessage;
 		isProcessing = false;
 		
-		// Show error message for 3 seconds, then redirect
-		redirectTimeout = setTimeout(() => {
-			goto('/search');
-		}, 3000);
+		// Don't automatically redirect - let the user click the button instead
 	}
 	
 	// Custom API functions that match React's implementation
@@ -304,6 +331,10 @@
 			}
 		}, maxPollingTime);
 		
+		// Set initial target progress - start at the beginning of step 2
+		targetProgress = stepProgressRanges[1].min; // 13%
+		currentStep = 1; // Explicitly set to step 2
+		
 		// Poll the status endpoint every 3 seconds
 		statusInterval = setInterval(async () => {
 			try {
@@ -322,9 +353,64 @@
 				
 				// Update progress based on properties count (if available)
 				if (statusResponse.properties_count && statusResponse.properties_count > 0) {
-					// Set progress to show at least 50% for finding properties
-					progress = Math.min(50, 20 + (statusResponse.properties_count / 20) * 30);
-					console.log(`Updated progress to ${progress}% based on ${statusResponse.properties_count} properties`);
+					const propertyCount = statusResponse.properties_count;
+					let propertyBasedProgress;
+					
+					// Map property count to progress within steps 2-4 (13%-50%)
+					// Distribute property finding progress across these steps
+					if (propertyCount <= 5) {
+						// First 5 properties advance through step 2 (13-25%)
+						propertyBasedProgress = stepProgressRanges[1].min + 
+							(propertyCount / 5) * (stepProgressRanges[1].max - stepProgressRanges[1].min);
+					} else if (propertyCount <= 15) {
+						// Next 10 properties advance through step 3 (25-38%)
+						propertyBasedProgress = stepProgressRanges[2].min + 
+							((propertyCount - 5) / 10) * (stepProgressRanges[2].max - stepProgressRanges[2].min);
+					} else {
+						// Additional properties advance through step 4 (38-50%)
+						const extraProperties = Math.min(propertyCount - 15, 20); // Cap at 20 more properties
+						propertyBasedProgress = stepProgressRanges[3].min + 
+							(extraProperties / 20) * (stepProgressRanges[3].max - stepProgressRanges[3].min);
+					}
+					
+					targetProgress = Math.max(targetProgress, propertyBasedProgress);
+					
+					// Update current step based on progress
+					for (let i = 0; i < stepProgressRanges.length; i++) {
+						if (targetProgress >= stepProgressRanges[i].min && targetProgress < stepProgressRanges[i].max) {
+							currentStep = i;
+							break;
+						}
+					}
+					
+					console.log(`Updated target progress to ${targetProgress}% based on ${propertyCount} properties (Step ${currentStep + 1})`);
+				} else {
+					// If no properties count but still processing, gradually increase progress within current step
+					const timeInPolling = (Date.now() - lastProgressUpdate) / 1000;
+					
+					if (timeInPolling > 3) {
+						// Find current step based on progress
+						let currentStepIndex = 0;
+						for (let i = 0; i < stepProgressRanges.length; i++) {
+							if (targetProgress >= stepProgressRanges[i].min && targetProgress < stepProgressRanges[i].max) {
+								currentStepIndex = i;
+								break;
+							}
+						}
+						
+						// Calculate how far we are through the current step (0-1)
+						const stepRange = stepProgressRanges[currentStepIndex];
+						const progressInStep = (targetProgress - stepRange.min) / (stepRange.max - stepRange.min);
+						
+						// Increase more at the beginning of a step, less near the end
+						const incrementFactor = Math.max(0.05, 0.3 * (1 - progressInStep));
+						const stepSize = (stepRange.max - stepRange.min) * incrementFactor;
+						const newProgress = Math.min(stepRange.max - 0.1, targetProgress + stepSize);
+						
+						targetProgress = newProgress;
+						lastProgressUpdate = Date.now();
+						console.log(`Gradually increased target progress to ${targetProgress}% within step ${currentStepIndex + 1}`);
+					}
 				}
 				
 				if (statusResponse.status === 'completed' && statusResponse.completed) {
@@ -332,6 +418,10 @@
 					console.log("Property search completed, proceeding to evaluation");
 					if (statusInterval) clearInterval(statusInterval);
 					clearTimeout(pollingTimeout);
+					
+					// Jump target progress to show completion of this phase - start of step 5
+					targetProgress = stepProgressRanges[4].min; // 50%
+					currentStep = 4; // Step 5 (0-indexed)
 					
 					// Continue to evaluation
 					await evaluateProperties(sessionId, preferences);
@@ -366,15 +456,50 @@
 				throw new Error('Missing preferences for property evaluation');
 			}
 			
-			// Update progress to show we're evaluating
-			progress = 60;
-			currentStep = 4; // "Running AI matching algorithms" step
+			// Update target progress to step 5 (50-63%)
+			targetProgress = stepProgressRanges[4].min; // 50%
+			currentStep = 4; // Fifth step (0-indexed)
 			
 			console.log("Evaluating properties with session ID:", sessionId);
+			console.log(`Starting evaluation at ${new Date().toISOString()}`);
+			
+			// Simulate continuous progress during evaluation spreading across steps 5-7
+			const evaluationProgressInterval = setInterval(() => {
+				// Find current step based on progress
+				let currentStepIndex = 0;
+				for (let i = 0; i < stepProgressRanges.length; i++) {
+					if (targetProgress >= stepProgressRanges[i].min && targetProgress < stepProgressRanges[i].max) {
+						currentStepIndex = i;
+						break;
+					}
+				}
+				
+				// Only advance up to step 7 (max 88%)
+				if (currentStepIndex < 7) {
+					// Calculate small increment within current step
+					const stepRange = stepProgressRanges[currentStepIndex];
+					const stepProgress = (targetProgress - stepRange.min) / (stepRange.max - stepRange.min);
+					
+					// Move to next step if we're near the end of current step
+					if (stepProgress > 0.95) {
+						// Move to beginning of next step
+						targetProgress = stepProgressRanges[currentStepIndex + 1].min;
+						currentStep = currentStepIndex + 1;
+					} else {
+						// Small increment within current step
+						const increment = (stepRange.max - stepRange.min) * 0.01; // 1% of step range
+						targetProgress = Math.min(stepRange.max - 0.1, targetProgress + increment);
+					}
+				}
+			}, 800);
 			
 			try {
-				// Call the evaluate endpoint - using direct API call to match React implementation
+				// Call the evaluate endpoint
+				console.log("Calling evaluation API...");
 				const properties = await evaluateWithPrefs(sessionId, preferences);
+				
+				// Clear the evaluation progress interval
+				clearInterval(evaluationProgressInterval);
 				
 				// Validate the results
 				if (!properties) {
@@ -383,16 +508,23 @@
 				
 				// Store the results
 				if (properties && properties.length > 0) {
-					console.log("Properties evaluated successfully, found:", properties.length);
+					console.log(`Properties evaluated successfully, found: ${properties.length} at ${new Date().toISOString()}`);
 					setProperties(properties);
 					
-					// Set progress to 100%
-					progress = 100;
-					currentStep = steps.length - 1;
+					// Final step progress (88-100%)
+					targetProgress = stepProgressRanges[7].min; // 88%
+					currentStep = 7; // Last step (0-indexed)
 					
-					// Navigate to the results page after a short delay
+					// Final step progress and navigation
 					setTimeout(() => {
-						goto('/compare');
+						// Force progress to 100%
+						progress = 100;
+						targetProgress = 100;
+						
+						// Then navigate after a short moment
+						setTimeout(() => {
+							goto('/compare');
+						}, 500);
 					}, 1000);
 				} else {
 					// If no properties found, show a specific message
@@ -400,6 +532,7 @@
 					redirectToSearchWithError("No properties found matching your criteria. Please try with different preferences.");
 				}
 			} catch (evaluationError) {
+				clearInterval(evaluationProgressInterval);
 				console.error("Property evaluation error:", evaluationError);
 				throw evaluationError;
 			}
@@ -413,12 +546,17 @@
 	// Update the progress animation for visual feedback
 	onMount(() => {
 		let animationInterval: ReturnType<typeof setInterval>;
+		let progressInterval: ReturnType<typeof setInterval>;
 		
 		try {
 			// Start the search process
 			processSearch();
 			
-			// Set up the animation - match React implementation behavior
+			// Initialize the target progress based on the first step
+			targetProgress = 0;
+			currentStep = 0;
+			
+			// Set up the animation for steps
 			animationInterval = setInterval(() => {
 				if (!isProcessing) {
 					clearInterval(animationInterval);
@@ -427,29 +565,69 @@
 				
 				timeElapsed += 1;
 				
-				// Calculate overall progress based on time (like React)
-				// Only update if not already set by API response
+				// Use step time distribution for initial progress (before session ID)
 				if (!sessionId) {
-					const newProgress = Math.min(20, (timeElapsed / totalDuration) * 100);
-					progress = newProgress;
-				}
-				
-				// Determine which step we should be on based on elapsed time - like React
-				let durationSum = 0;
-				for (let i = 0; i < steps.length; i++) {
-					durationSum += steps[i].duration;
-					if (timeElapsed <= durationSum) {
-						currentStep = i;
-						break;
+					for (let i = 1; i < stepTimeDistribution.length; i++) {
+						const prevThreshold = stepTimeDistribution[i-1].threshold;
+						const nextThreshold = stepTimeDistribution[i].threshold;
+						
+						if (timeElapsed >= prevThreshold && timeElapsed < nextThreshold) {
+							// Calculate progress within this time range
+							const timeProgress = (timeElapsed - prevThreshold) / (nextThreshold - prevThreshold);
+							const rangeStart = stepTimeDistribution[i-1].progress;
+							const rangeEnd = stepTimeDistribution[i].progress;
+							const calculatedProgress = rangeStart + timeProgress * (rangeEnd - rangeStart);
+							
+							targetProgress = calculatedProgress;
+							
+							// Update current step based on progress
+							for (let j = 0; j < stepProgressRanges.length; j++) {
+								if (targetProgress >= stepProgressRanges[j].min && targetProgress < stepProgressRanges[j].max) {
+									currentStep = j;
+									break;
+								}
+							}
+							
+							break;
+						}
 					}
 				}
 				
-				// Add timeout safety - if taking too long without session ID, consider it an error
+				// Add timeout safety
 				if (timeElapsed > 20 && !sessionId) {
 					clearInterval(animationInterval);
 					redirectToSearchWithError("Search timed out. Please try again.");
 				}
 			}, 1000);
+			
+			// Separate interval for smooth progress updates
+			progressInterval = setInterval(() => {
+				if (!isProcessing) {
+					clearInterval(progressInterval);
+					return;
+				}
+				
+				// Smoothly animate progress toward target
+				if (progress < targetProgress) {
+					// Calculate distance to target
+					const distance = targetProgress - progress;
+					
+					// Speed based on distance and which step we're in
+					let step;
+					if (distance > 10) {
+						step = 0.7; // Move quickly when far from target
+					} else if (distance < 1) {
+						step = 0.05; // Move very slowly when approaching target
+					} else {
+						// Scale between 0.05 and 0.7 based on distance
+						step = 0.05 + (distance / 10) * 0.65;
+					}
+					
+					// Apply the step with slight randomization for more natural movement
+					const randomFactor = 0.8 + Math.random() * 0.4; // Random between 0.8-1.2
+					progress = Math.min(targetProgress, progress + (step * randomFactor));
+				}
+			}, 50);
 		} catch (err) {
 			console.error("Error in loading page:", err);
 			const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
@@ -458,18 +636,53 @@
 		
 		return () => {
 			if (animationInterval) clearInterval(animationInterval);
+			if (progressInterval) clearInterval(progressInterval);
 			if (statusInterval) clearInterval(statusInterval);
 			if (redirectTimeout) clearTimeout(redirectTimeout);
 		};
 	});
 </script>
 
-<div class="min-h-screen bg-black flex items-center justify-center">
+<div class="min-h-screen bg-background flex items-center justify-center">
 	<div class="w-full max-w-md px-4 py-6 space-y-8">
+
 		<div class="text-center space-y-4">
-			<h1 class="text-4xl font-serif text-white">nexthaven.ai</h1>
-			<p class="text-lg text-white/70">Our AI agents are working their magic</p>
-			<p class="text-sm text-white/50">This may take a few minutes</p>
+			<h1 class="text-4xl font-serif text-gradient">nexthaven.ai</h1>
+			<p class="text-lg text-foreground/70">Our AI agents are working their magic</p>
+			<p class="text-sm text-foreground/50">This may take a few minutes</p>
+			
+			{#if error}
+				<div class="mt-6 p-4 bg-destructive/20 rounded-md w-full mb-6">
+					<div class="flex items-start gap-3">
+						<div class="mt-1">⚠️</div>
+						<div class="flex-1">
+							<h3 class="font-medium mb-1 text-foreground">We hit a snag</h3>
+							<p class="text-sm text-foreground/80">{error}</p>
+							<div class="mt-4 flex space-x-3">
+								<Button 
+									variant="outline"
+									size="default"
+									class="flex items-center gap-2"
+									href="/search">
+									<ArrowLeft class="h-4 w-4" />
+									<span>Back to Search</span>
+								</Button>
+							</div>
+						</div>
+					</div>
+				</div>
+			{:else}
+				<!-- Cancel button -->
+				<Button 
+					variant="ghost"
+					size="sm"
+					class="mt-2 flex items-center gap-1.5"
+					href="/search">
+					<X class="h-3.5 w-3.5" />
+					<span>Cancel search</span>
+				</Button>
+			{/if}
+			
 		</div>
 		
 		<!-- Steps - match React styling and animations -->
@@ -481,60 +694,57 @@
 						   transition: all 0.3s ease-in-out;">
 					<div class={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300
 						${index === currentStep 
-							? 'bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/20' 
-							: (index < currentStep ? 'bg-purple-500/50' : 'bg-white/10')}`}>
+							? 'bg-gradient-to-r gradient-primary shadow-lg shadow-primary/20' 
+							: (index < currentStep ? 'bg-primary/50' : 'bg-foreground/10')}`}>
 						<svelte:component 
 							this={step.icon} 
-							class="text-white" 
+							class="text-foreground" 
 							size={index === currentStep ? 22 : 20}
 							style={index === currentStep ? 'animation: spin 2s infinite;' : ''}
 						/>
 					</div>
 					<span class={`truncate ${
-						index === currentStep ? 'text-white font-medium' : (index < currentStep ? 'text-white/70' : 'text-white/40')
+						index === currentStep ? 'text-foreground font-medium' : (index < currentStep ? 'text-foreground/70' : 'text-foreground/40')
 					}`}>
 						{step.text}
 					</span>
-				</div>
+						</div>
 			{/each}
 		</div>
 		
 		<!-- Progress Bar - match React styling -->
 		<div class="space-y-2 mt-6 w-full">
-			<div class="flex justify-between text-sm text-gray-500 w-full">
+			<div class="flex justify-between text-sm text-foreground/70 w-full">
 				<span>Progress: {Math.round(progress)}%</span>
 				<span>Est. time remaining: {formatTime(timeRemaining)}</span>
 			</div>
-			<div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+			<div class="w-full h-3 bg-foreground/10 rounded-full overflow-hidden">
 				<div 
-					class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
-					style="width: {Math.min(progress, 100)}%; box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);"
-				></div>
-			</div>
-		</div>
-		
-		<!-- Error Display -->
-		{#if error}
-			<div class="mt-8 p-4 bg-red-500/20 text-red-300 rounded-md w-full">
-				<div class="flex items-start gap-3">
-					<div class="mt-1">⚠️</div>
-					<div>
-						<h3 class="font-medium mb-1">Error</h3>
-						<p class="text-sm">{error}</p>
-						<p class="mt-2 text-xs text-red-400/80">
-							Redirecting to search page in 3 seconds...
-						</p>
-					</div>
+					class="h-full bg-gradient-to-r gradient-primary rounded-full transition-all duration-300 relative"
+					style="width: {Math.min(progress, 100)}%; box-shadow: 0 0 10px hsl(var(--ring)/50%);"
+				>
+					<!-- Animated pulse effect to show activity -->
+					<div class="absolute inset-0 bg-foreground/20 animate-pulse-subtle"></div>
 				</div>
 			</div>
-		{/if}
+		</div>
 	</div>
-</div>
+	</div>
 
 <style>
 	@keyframes spin {
 		0% { transform: scale(1) rotate(0deg); }
 		50% { transform: scale(1.2) rotate(180deg); }
 		100% { transform: scale(1) rotate(360deg); }
+	}
+	
+	@keyframes pulse-subtle {
+		0% { opacity: 0; }
+		50% { opacity: 0.3; }
+		100% { opacity: 0; }
+	}
+	
+	.animate-pulse-subtle {
+		animation: pulse-subtle 1.5s ease-in-out infinite;
 	}
 </style> 

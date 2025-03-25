@@ -122,17 +122,17 @@
 	});
 </script>
 
-<div class="min-h-screen bg-black text-white">
+<div class="min-h-screen bg-background text-foreground">
 	<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 		<div class="flex justify-between items-center">
 			<button 
 				onclick={() => goto('/search')}
-				class="flex items-center gap-2 text-white/80 hover:text-white"
+				class="flex items-center gap-2 text-muted-foreground hover:text-foreground"
 			>
 				<ArrowLeft size={20} />
 				<span>Back</span>
 			</button>
-			<h1 class="text-xl md:text-3xl font-serif italic text-white">Your Perfect Matches</h1>
+			<h1 class="text-xl md:text-3xl font-serif italic text-foreground">Your Perfect Matches</h1>
 		</div>
 		
 		{#if properties.length > 0}
@@ -142,7 +142,7 @@
 						class="relative cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
 						onclick={() => openGallery(property)}
 					>
-						<Card class="overflow-hidden bg-zinc-900 border-zinc-800 text-white hover:shadow-xl hover:shadow-purple-500/20 transition-all h-[450px] flex flex-col">
+						<Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-accent/20 transition-all h-[450px] flex flex-col">
 							<div class="relative h-56 overflow-hidden">
 								<img 
 									src={property.media.main_image || 'https://via.placeholder.com/400x200?text=No+Image'} 
@@ -150,13 +150,13 @@
 									class="w-full h-full object-cover"
 								/>
 								<div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-								<div class="absolute bottom-4 left-4 text-white text-2xl font-bold">
+								<div class="absolute bottom-4 left-4 text-foreground text-2xl font-bold">
 									${Math.round(property.pricing.total)}
 								</div>
 							</div>
 							
 							<div class="absolute top-3 right-3">
-								<div class="w-16 h-16 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm border-2 border-white/10 text-white font-bold text-xl shadow-lg shadow-black/20 relative">
+								<div class="w-16 h-16 rounded-full flex items-center justify-center bg-background/50 backdrop-blur-sm border-2 border-border text-foreground font-bold text-xl shadow-lg shadow-black/20 relative">
 									<svg viewBox="0 0 36 36" class="absolute inset-0 w-full h-full">
 										<path 
 											d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -180,17 +180,17 @@
 											</linearGradient>
 										</defs>
 									</svg>
-									<span class="absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 {property.score >= 80 ? 'text-purple-300' : property.score >= 70 ? 'text-yellow-300' : 'text-orange-300'}">{property.score}</span>
+									<span class="absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 {getScoreColor(property.score)}">{property.score}</span>
 								</div>
 							</div>
 							
 							<CardContent class="p-4 space-y-3 flex-1 flex flex-col">
 								<div class="space-y-1 text-left">
 									<h3 class="font-bold text-lg line-clamp-1">{property.name}</h3>
-									<p class="text-sm text-white/60 line-clamp-1">{property.location}</p>
+									<p class="text-sm text-muted-foreground line-clamp-1">{property.location}</p>
 								</div>
 								
-								<div class="text-xs text-white/70 space-y-1 text-left">
+								<div class="text-xs text-muted-foreground space-y-1 text-left">
 									{#if property.capacity.bedrooms || property.capacity.beds}
 										<div class="flex items-center gap-2">
 											{#if property.capacity.bedrooms}
@@ -208,20 +208,16 @@
 								
 								<div class="flex flex-wrap gap-2 my-2">
 									{#each property.features.amenities.slice(0, 3) as amenity}
-										<Badge variant="secondary" class="bg-zinc-800 text-white/80">{amenity}</Badge>
+										<Badge variant="outline">{amenity}</Badge>
 									{/each}
 									{#if property.features.amenities.length > 3}
 										<Badge variant="outline" class="text-xs">+{property.features.amenities.length - 3}</Badge>
 									{/if}
 								</div>
 								
-								<div class="out-of-100 text-xs text-white/60 text-right">
-									out of 100
-								</div>
-								
 								<div class="pt-2 text-sm text-green-400 mt-auto text-left flex gap-2">
 									<Check size={20} class="inline-block" />
-									<span class="text-white/90 line-clamp-2">{getPriceExplanation(property)}</span>
+									<span class="text-foreground/90 line-clamp-2">{getPriceExplanation(property)}</span>
 								</div>
 							</CardContent>
 						</Card>
@@ -232,7 +228,7 @@
 			<div class="flex justify-center items-center h-[60vh]">
 				<div class="text-center">
 					<div class="text-2xl font-bold mb-2">Loading properties...</div>
-					<div class="text-white/60">Please wait while we find your perfect match</div>
+					<div class="text-muted-foreground">Please wait while we find your perfect match</div>
 				</div>
 			</div>
 		{/if}
@@ -241,12 +237,12 @@
 
 <!-- Gallery Modal -->
 {#if showGallery && selectedProperty}
-	<div class="fixed inset-0 bg-black z-50 flex flex-col">
+	<div class="fixed inset-0 bg-background z-50 flex flex-col">
 		<!-- Header - Fixed at the top -->
-		<div class="bg-black/90 backdrop-blur-sm z-10 p-4 flex justify-between items-center border-b border-white/10">
+		<div class="bg-background/90 backdrop-blur-sm z-10 p-4 flex justify-between items-center border-b border-border">
 			<button 
 				onclick={closeGallery}
-				class="flex items-center gap-2 text-white/80 hover:text-white"
+				class="flex items-center gap-2 text-muted-foreground hover:text-foreground"
 			>
 				<ArrowLeft size={20} />
 				<span>Back</span>
@@ -258,7 +254,7 @@
 						selectProperty(selectedProperty)
 					}
 				}}
-				class="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-6"
+				class="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6"
 			>
 				<Crown size={18} class="mr-2" />
 				Select as Winner
@@ -270,25 +266,25 @@
 			<div class="px-4 py-8 md:px-8 max-w-6xl mx-auto">
 				<div class="mb-8">
 					<h2 class="text-3xl font-serif">Gallery</h2>
-					<p class="text-white/60 mt-2">Browse through the available images of {selectedProperty.name}</p>
+					<p class="text-muted-foreground mt-2">Browse through the available images of {selectedProperty.name}</p>
 				</div>
 
 					<!-- Property Details -->
-				<div class="mb-8 border-b border-white/10 pb-8">
+				<div class="mb-8 border-b border-border pb-8">
 					<div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
 						<div>
 							<h3 class="text-xl font-medium">{selectedProperty.name}</h3>
-							<p class="text-white/60 mt-1">{selectedProperty.location}</p>
+							<p class="text-muted-foreground mt-1">{selectedProperty.location}</p>
 							
 							<div class="flex gap-4 mt-4">
 								{#if selectedProperty.capacity.bedrooms}
-									<div class="px-4 py-2 rounded-full bg-white/10">
-										<span class="text-white/90">{selectedProperty.capacity.bedrooms} {selectedProperty.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span>
+									<div class="px-4 py-2 rounded-full bg-secondary/20">
+										<span class="text-foreground/90">{selectedProperty.capacity.bedrooms} {selectedProperty.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span>
 									</div>
 								{/if}
 								{#if selectedProperty.capacity.beds}
-									<div class="px-4 py-2 rounded-full bg-white/10">
-										<span class="text-white/90">{selectedProperty.capacity.beds} {selectedProperty.capacity.beds === 1 ? 'bed' : 'beds'}</span>
+									<div class="px-4 py-2 rounded-full bg-secondary/20">
+										<span class="text-foreground/90">{selectedProperty.capacity.beds} {selectedProperty.capacity.beds === 1 ? 'bed' : 'beds'}</span>
 									</div>
 								{/if}
 							</div>
@@ -304,7 +300,7 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
 					{#each getAllImages() as image, index}
 						<button 
-							class="relative aspect-video rounded-xl overflow-hidden bg-zinc-900 cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-purple-500/20"
+							class="relative aspect-video rounded-xl overflow-hidden bg-card cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/20"
 							onclick={() => expandImage(index)}
 						>
 							<img 
@@ -321,15 +317,15 @@
 	
 	<!-- Expanded Image View -->
 	{#if expandedImageIndex !== null}
-		<div class="fixed inset-0 bg-black/95 z-[60] flex flex-col">
-			<div class="bg-black p-4 flex justify-between items-center border-b border-white/10">
+		<div class="fixed inset-0 bg-background/95 z-[60] flex flex-col">
+			<div class="bg-background p-4 flex justify-between items-center border-b border-border">
 				<button
 					onclick={closeExpandedImage}
-					class="text-white p-2 rounded-full hover:bg-white/10"
+					class="text-foreground p-2 rounded-full hover:bg-secondary/20"
 				>
 					<X size={24} />
 				</button>
-				<p class="text-white">
+				<p class="text-foreground">
 					{expandedImageIndex + 1} / {getAllImages().length}
 				</p>
 			</div>
@@ -345,7 +341,7 @@
 				{#if expandedImageIndex > 0}
 					<button
 						onclick={prevImage}
-						class="absolute left-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
+						class="absolute left-4 p-2 rounded-full bg-background/50 text-foreground hover:bg-background/70"
 					>
 						<ChevronLeft size={24} />
 					</button>
@@ -354,7 +350,7 @@
 				{#if expandedImageIndex < getAllImages().length - 1}
 					<button
 						onclick={nextImage}
-						class="absolute right-4 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
+						class="absolute right-4 p-2 rounded-full bg-background/50 text-foreground hover:bg-background/70"
 					>
 						<ChevronRight size={24} />
 					</button>
@@ -362,12 +358,12 @@
 			</div>
 			
 			<!-- Thumbnail navigation -->
-			<ScrollArea orientation="horizontal" class="border-t border-white/10 py-4 bg-black h-24">
+			<ScrollArea orientation="horizontal" class="border-t border-border py-4 bg-background h-24">
 				<div class="flex gap-3 px-4 min-w-min mx-auto max-w-full justify-center">
 					{#each getAllImages() as image, index}
 						<button 
 							onclick={() => expandedImageIndex = index}
-							class="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-md overflow-hidden transition-all duration-200 hover:scale-105 hover:shadow-md hover:shadow-purple-500/30 {index === expandedImageIndex ? 'ring-2 ring-purple-500 scale-105 shadow-lg shadow-purple-500/40' : 'border border-white/10'}"
+							class="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-md overflow-hidden transition-all duration-200 hover:scale-105 hover:shadow-md hover:shadow-accent/30 {index === expandedImageIndex ? 'ring-2 ring-primary scale-105 shadow-lg shadow-primary/40' : 'border border-border'}"
 						>
 							<img src={image} alt={`Thumbnail ${index + 1}`} class="w-full h-full object-cover" />
 						</button>

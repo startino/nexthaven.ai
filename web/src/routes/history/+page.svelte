@@ -3,13 +3,18 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
+	import { ArrowLeft } from 'lucide-svelte';
 </script>
 
 <div class="space-y-6">
 	<div class="flex justify-between items-center">
 		<h1 class="text-3xl font-bold">Search History</h1>
-		<Button variant="outline" onclick={() => goto('/')}>
-			Back to Home
+		<Button 
+			variant="outline" 
+			class="flex items-center gap-2"
+			href="/">
+			<ArrowLeft class="h-4 w-4" />
+			<span>Back to Home</span>
 		</Button>
 	</div>
 	
