@@ -2,14 +2,13 @@
 	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button';
 	import { LogOut, User, CreditCard, Crown, Search, History, Home } from 'lucide-svelte';
-	import { getContext } from 'svelte';
 </script>
 
 <header class="w-full bg-black/60 backdrop-blur-md py-3 px-6 border-b border-gray-800 fixed top-0 z-50">
 	<div class="container mx-auto flex justify-between items-center">
 		<div class="flex items-center">
 			<a href="/" class="text-2xl font-bold tracking-tight">
-				<span class="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary font-serif">
+				<span class="font-serif">
 					nexthaven.ai
 				</span>
 			</a>
