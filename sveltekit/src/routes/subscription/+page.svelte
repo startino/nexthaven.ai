@@ -5,7 +5,6 @@
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { CheckCircle, AlertCircle, Crown } from 'lucide-svelte';
 	import { Separator } from '$lib/components/ui/separator';
-	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 
 	// Get data from server
 	let { data } = $props();
@@ -56,7 +55,7 @@
 
 <div class="container mx-auto py-12 px-4">
 	<div class="max-w-4xl mx-auto">
-		<h1 class="text-3xl font-bold text-gradient mb-8">Premium Subscription</h1>
+		<h1 class="text-3xl font-bold mb-8">Premium Subscription</h1>
 		
 		{#if isSuccess}
 			<div class="bg-green-100 p-4 rounded-md flex items-center space-x-2 mb-8 text-green-800">
@@ -98,23 +97,29 @@
 				</div>
 			</div>
 		{:else}
-			<!-- Billing Period Selector -->
+			<!-- Custom Billing Period Selector -->
 			<div class="mb-8 flex items-center justify-center">
-				<Tabs value={billingPeriod} class="w-full max-w-md">
-					<TabsList class="w-full">
-						<TabsTrigger value="monthly" onclick={() => billingPeriod = 'monthly'} class="flex-1">
+				<div class="w-full max-w-md">
+					<div class="flex rounded-md overflow-hidden border border-border">
+						<button 
+							class="flex-1 py-2.5 px-4 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background {billingPeriod === 'monthly' ? 'button-gradient text-white font-semibold shadow-sm' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
+							onclick={() => billingPeriod = 'monthly'}
+						>
 							Monthly
-						</TabsTrigger>
-						<TabsTrigger value="yearly" onclick={() => billingPeriod = 'yearly'} class="flex-1">
+						</button>
+						<button 
+							class="flex-1 py-2.5 px-4 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center gap-2 {billingPeriod === 'yearly' ? 'button-gradient text-white font-semibold shadow-sm' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
+							onclick={() => billingPeriod = 'yearly'}
+						>
 							Yearly
 							{#if PRICING_TIER.options.length > 1 && PRICING_TIER.options[1]?.savingsAmount && PRICING_TIER.options[1].savingsAmount > 0}
-								<span class="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+								<span class="ml-1 text-xs {billingPeriod === 'yearly' ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'} px-2 py-0.5 rounded-full">
 									Save ${PRICING_TIER.options[1].savingsAmount}
 								</span>
 							{/if}
-						</TabsTrigger>
-					</TabsList>
-				</Tabs>
+						</button>
+					</div>
+				</div>
 			</div>
 
 			<div class="grid gap-8 md:grid-cols-2">
@@ -186,7 +191,7 @@
 					<Button 
 						class="w-full button-gradient" 
 						disabled={isLoading}
-						on:click={handleSubscribe}
+						onclick={handleSubscribe}
 					>
 						{isLoading ? 'Processing...' : `Upgrade to ${billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'} Plan`}
 					</Button>
