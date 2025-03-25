@@ -13,18 +13,12 @@ import {
   Plus,
   Bed,
   Home,
-<<<<<<< HEAD
-=======
   LogIn,
->>>>>>> 9f04840 (feat(auth): implement authentication)
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { propertyService } from "../services/api";
 import LoadingScreen from "./LoadingScreen";
-<<<<<<< HEAD
-=======
 import { useAuth } from "../context/AuthContext";
->>>>>>> 9f04840 (feat(auth): implement authentication)
 
 interface SearchScreenProps {
   onSearch: (query: string) => void;
@@ -133,9 +127,6 @@ interface Preference {
   preferences: string;
 }
 
-<<<<<<< HEAD
-function SearchScreen({ onSearch, onBack, error }: SearchScreenProps) {
-=======
 function SearchScreen({
   onSearch,
   onBack,
@@ -143,7 +134,6 @@ function SearchScreen({
   error,
 }: SearchScreenProps) {
   const { user, loading: authLoading } = useAuth();
->>>>>>> 9f04840 (feat(auth): implement authentication)
   const [currentStep, setCurrentStep] = useState<SearchStep>("location");
   const [form, setForm] = useState<SearchForm>(DEFAULT_FORM_VALUES);
   const [isLoading, setIsLoading] = useState(false);
@@ -154,8 +144,6 @@ function SearchScreen({
     getPreviousPreferences()
   );
 
-<<<<<<< HEAD
-=======
   // If user is not authenticated, show authentication prompt
   if (authLoading) {
     return <LoadingScreen />;
@@ -190,7 +178,6 @@ function SearchScreen({
     );
   }
 
->>>>>>> 9f04840 (feat(auth): implement authentication)
   // Ensure budget is properly initialized
   useEffect(() => {
     if (!form.budget.max || form.budget.max === 0) {
@@ -312,13 +299,8 @@ function SearchScreen({
       // Save to local storage
       const updatedPreferences = [
         newPreference,
-<<<<<<< HEAD
-        ...previousPreferences.slice(0, 5),
-      ]; // Keep only the 6 most recent
-=======
         ...previousPreferences.slice(0, 4),
       ]; // Keep only the 5 most recent
->>>>>>> 9f04840 (feat(auth): implement authentication)
       localStorage.setItem(
         "previousPreferences",
         JSON.stringify(updatedPreferences)
@@ -777,7 +759,7 @@ function SearchScreen({
           whileTap={{ scale: 0.98 }}
           type="submit"
           id="btn-discover-properties"
-          className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 to-pink-700 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
+          className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-4 px-6 rounded-full transition-all hover:from-purple-600 hover:to-pink-600"
           disabled={isLoading}
         >
           {isLoading ? (
