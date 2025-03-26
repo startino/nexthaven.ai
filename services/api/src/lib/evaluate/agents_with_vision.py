@@ -231,34 +231,6 @@ class EvaluateAgent:
                     )
                 ]
             )
-            # prompt = ChatPromptTemplate(
-            #     [
-            #         SystemMessage(
-            #             content=f"""You are a professional property analyst.
-            #     Evaluate this property against the requirements and provide a score and analysis.
-                
-            #     Analyze the property based on these criteria:
-            #     - Price: Does it match the budget?
-            #     - Location: Is it in the desired location?
-            #     - Rooms: Does it have the required number of rooms?
-            #     - Amenities: Does it have the requested amenities?
-            #     - Reviews: Are the reviews positive?
-                
-            #     Property details: {property_data}
-            #     Image information: {image_analysis}
-                
-            #     Return a property match with a score between 0-100 where 100 is a perfect match.
-            #     Your score output should be just the number.
-                
-            #     Provide objective reasoning for your score, explaining how well the property matches each criterion.
-            #     Format your reasoning as a clear list with checkmark emojis as appropriate.
-            #     """
-            #         ),
-            #         HumanMessage(
-            #             content=f"""Please evaluate this property based on these requirements: {str(user_request)}"""
-            #         )
-            #     ]
-            # )
             
             # Create the evaluation chain
             chain = (
@@ -271,7 +243,7 @@ class EvaluateAgent:
             try:
                 result = await asyncio.wait_for(
                     chain.ainvoke({}), 
-                    timeout=90 # With too many request errors, LLM retries after 60 seconds
+                    timeout=40 # With too many request errors, LLM retries after 60 seconds
                 )
                 
                 logging.info(f"Successfully evaluated property {property_index}")

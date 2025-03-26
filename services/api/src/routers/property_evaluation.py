@@ -182,41 +182,40 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
             logging.error(f"Session not found: {request.session_id}")
             raise HTTPException(status_code=404, detail="Session not found")
 
-        # If query is still in progress, wait for it to complete (with timeout)
+        # If query is still in progress, wait for it to complete (without timeout)
         if status.get("status") == "in_progress":
-            logging.info(
-                f"Query still in progress for session {request.session_id}, waiting..."
-            )
-
-            # Wait for completion with timeout
-            max_wait_time = 180  # 3 minutes max wait
-            wait_interval = 2  # Check every 2 seconds
+            logging.info(f"Query still in progress for session {request.session_id}, waiting...")
+            
+            # Wait for completion without a maximum time limit
+            wait_interval = 5  # Check every 5 seconds
             total_waited = 0
-
-            while (
-                status.get("status") == "in_progress" and total_waited < max_wait_time
-            ):
+            
+            # Keep waiting as long as the query is in progress
+            while status.get("status") == "in_progress":
                 await asyncio.sleep(wait_interval)
                 total_waited += wait_interval
                 status = await get_query_status(request.session_id)
-
+                
                 if not status:
                     logging.error(f"Session expired during wait: {request.session_id}")
                     raise HTTPException(status_code=404, detail="Session expired")
-
-            logging.info(f"Waited {total_waited} seconds for query to complete")
-
+                
+                # Log progress occasionally
+                if total_waited % 30 == 0:  # Log every 30 seconds
+                    logging.info(f"Still waiting for query to complete. Waited {total_waited} seconds so far. Current status: {status.get('message', 'No message')}")
+            
+            logging.info(f"Waited {total_waited} seconds for query to complete. Final status: {status.get('status')}")
+        
         # Check if query completed successfully
         if status.get("status") == "error":
             error_message = status.get("error", "Unknown error")
             logging.error(f"Property query failed: {error_message}")
-            raise HTTPException(
-                status_code=500, detail=f"Property query failed: {error_message}"
-            )
-
+            raise HTTPException(status_code=500, detail=f"Property query failed: {error_message}")
+        
+        # We don't need to check for timeout anymore since we wait indefinitely
         if status.get("status") != "completed":
-            logging.error("Property query timed out or failed")
-            raise HTTPException(status_code=408, detail="Property query timed out")
+            logging.error(f"Property query failed with unexpected status: {status.get('status')}")
+            raise HTTPException(status_code=500, detail=f"Property query failed with unexpected status: {status.get('status')}")
 
         timings["status_check"] = time.time() - status_check_start
         # endregion
