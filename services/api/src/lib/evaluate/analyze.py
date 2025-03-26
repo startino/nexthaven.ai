@@ -8,7 +8,7 @@ from src.models.requirement import (
     Budget,
     DateRange,
 )
-from src.interfaces.llm import gpt_4o_mini
+from src.interfaces.llm import gpt_4o_mini, ministral_8b
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputToolsParser
@@ -18,7 +18,7 @@ from datetime import datetime
 class AnalyzeUserRequirement:
 
     def __init__(self):
-        self.llm = gpt_4o_mini()
+        self.llm = ministral_8b()
         self.today_date = datetime.now().strftime("%Y-%m-%d")
 
     def analyze_user_requirement(
