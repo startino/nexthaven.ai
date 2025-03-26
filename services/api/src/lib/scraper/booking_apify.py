@@ -88,17 +88,27 @@ class BookingApifyAgent:
 
         # Run in a thread to avoid blocking the event loop
         loop = asyncio.get_event_loop()
-        tasks = [
-            loop.run_in_executor(
-                None,
-                lambda: self.client.actor("oeiQgfg5fsmIJB7Cn").call(
-                    run_input=run_input,
-                    memory_mbytes=4096,
-                    max_items=request.maxItems / CONCURRENT_APIFY_API_CALLS,
-                ),
+        sortBy = ["bayesian_review_score", "class_and_price", "distance_from_search"]
+
+        tasks = []
+        for i in range(CONCURRENT_APIFY_API_CALLS):
+            # Create a copy of run_input for each task
+            task_input = run_input.copy()
+            # Set different sortBy for each task
+            task_input["sortBy"] = sortBy[i % len(sortBy)]
+
+            tasks.append(
+                loop.run_in_executor(
+                    None,
+                    lambda input=task_input: self.client.actor(
+                        "oeiQgfg5fsmIJB7Cn"
+                    ).call(
+                        run_input=input,
+                        memory_mbytes=8192,
+                        max_items=request.maxItems / CONCURRENT_APIFY_API_CALLS,
+                    ),
+                )
             )
-            for _ in range(CONCURRENT_APIFY_API_CALLS)
-        ]
         results = await asyncio.gather(*tasks)
 
         properties: list[BookingApifyResponse] = []
