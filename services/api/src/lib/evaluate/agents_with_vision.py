@@ -5,6 +5,7 @@ import base64
 import httpx
 from io import BytesIO
 from typing import List, Dict, Any, Union
+import openai  # Import for exception handling
 
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -29,7 +30,7 @@ class EvaluateAgent:
 
     async def evaluate(self, user_request: GeneratedRequirement, properties: list[BookingApifyResponse | AirbnbApifyResponse], include_images: bool = True):
         """
-        Evaluate properties in parallel using RunnableParallel
+        Evaluate properties in parallel using asyncio tasks
         
         Args:
             user_request: The user's requirements
@@ -70,127 +71,67 @@ class EvaluateAgent:
                     result_index += 1
                 else:
                     image_analyses[f"property_{i}"] = "No images available for analysis."
-            
-        property_chains = {}
+
+        # Create evaluation tasks for each property
+        evaluation_tasks = []
         for i, prop in enumerate(properties):
-            property = self._simplify_property(prop)
+            property_data = self._simplify_property(prop)
             image_analysis = image_analyses.get(f"property_{i}", "")
 
             # Remove properties not needed by LLM (to save tokens)
-            property["gallery"] = []
-            property["image"] = ""
-            property["source"] = ""
+            property_data["gallery"] = []
+            property_data["image"] = ""
+            property_data["source"] = ""
     
-        # Create the evaluation prompt template
-            prompt = ChatPromptTemplate(
-                [
-                    SystemMessage(
-                        content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
-                Evaluate this property against the my requirements and return a match score and analysis.
-                
-                Analyze the property based on the following criteria:
-                - Price:
-                  - Does it match the user's budget? (Don't focus too much on nightly price, focus on the total price.)
-                  - The price is a big factor in the score, if the price is too high, the score should be quite low, unless everything else is perfect.
-                  - If the price is below the user's budget, the score can still be high.
-                - Location: Is it in the desired location?
-                - Rooms: Does it have the required number of rooms?
-                - Amenities: Does it have the requested amenities?
-                - Reviews: Are the reviews positive?
-                - Style and Vibe: Does the property match the user's style preferences?
-                
-                Property: {property}
-                Image Analysis: {image_analysis}
-                
-                Return a property match with a score between 0-100 where 100 is a perfect match.
-                Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
-                Your score output should be just the number, no other text.
-                
-                You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
-                This reasoning will be shown to the user to help them understand why this property received its score.
-                Be specific about which preferences were met and which weren't.
-                Format this as a list of sentences, with emojis for each item. E.g. ✅, 🏆, 👌, 👎. Make the emojis relevant to the item and scoring of that attribute, but don't overdo them.
-                Don't use "-" or "•" or "*" or any other bullet point. Use a colon ":" to separate the item and the score.
-                """
-                    ),
-                    HumanMessage(
-                        content=f"""Hey man! I'm excited to be here with you! I can't wait for you to help me find the perfect short-term rental for me! Here are my imaginary requirements: {str(user_request)}"""
-                    )
-                ]
+            # Create the task for this property
+            task = self._evaluate_single_property(
+                property_index=i,
+                property_data=property_data,
+                image_analysis=image_analysis,
+                user_request=user_request
             )
-            
-            chain = (
-                prompt 
-                | self.llm.bind_tools([Result], tool_choice="any") 
-                | JsonOutputToolsParser(return_id=True)
-            )
-            
-            property_chains[f"property_{i}"] = chain.with_config(
-                {"run_name": f"evaluate_property_{i}"}
-            )
-
-        # Create the parallel runner
-        parallel_chain = RunnableParallel(**property_chains)
-
-        # Run all evaluations in parallel
-        # Use return_exceptions=True to handle errors without failing the entire process
-        logging.info(f"Starting parallel evaluation of {len(properties)} properties")
+            evaluation_tasks.append(task)
         
-        # results = await parallel_chain.abatch({}, return_exceptions=True)
-        
-        async for result in parallel_chain.astream({}):
-            try:
-                logging.info(f"Received result: {result}")
-                results += result
-            except Exception as e:
-                logging.error(f"Error processing result in astream: {e}")
-        
-        logging.info(f"Completed parallel evaluation, processing results")
-
-        # Count successful and failed evaluations
-        success_count = 0
-        error_count = 0
+        # Run all evaluation tasks concurrently with a timeout
+        logging.info(f"Starting parallel evaluation of {len(properties)} properties using asyncio.gather")
+        start_time = time.time()
+        results = await asyncio.gather(*evaluation_tasks, return_exceptions=True)
+        end_time = time.time()
+        logging.info(f"Completed parallel evaluation in {end_time - start_time:.2f} seconds")
         
         # Process results
         processed_results: list[UnifiedProperty] = []
-        for i, prop in enumerate(properties):
+        success_count = 0
+        error_count = 0
+        
+        for i, (result, prop) in enumerate(zip(results, properties)):
             try:
-                # Check if the result is an exception or missing
-                if i >= len(properties) or f"property_{i}" not in results:
-                    logging.error(f"Missing result for property {i}")
-                    error_count += 1
-                    continue
-                
-                result = results.get(f"property_{i}")
-                
                 # Check if the result is an exception
                 if isinstance(result, Exception):
                     error_count += 1
-                    logging.error(f"Error evaluating property {i}: {str(result)}")
+                    error_message = str(result)
+                    
+                    # Log different types of errors differently
+                    if "Invalid prompt" in error_message or "usage policy" in error_message:
+                        logging.warning(f"Content policy violation for property {i}: {error_message[:100]}...")
+                    else:
+                        logging.error(f"Error evaluating property {i}: {error_message[:100]}...")
                     continue
                 
-                # Check if result has error field (from dict-like errors)
-                if isinstance(result, dict) and "error" in result:
+                # Check if result is None (skipped)
+                if result is None:
                     error_count += 1
-                    error_message = str(result.get("error", "Unknown error"))
-                    logging.error(f"Error evaluating property {i}: {error_message}")
+                    logging.warning(f"Property {i} was skipped due to potential issues")
                     continue
                 
-                # Extra safety check to ensure result has expected structure
-                if not isinstance(result, list) or not result or not isinstance(result[0], dict) or "args" not in result[0]:
-                    error_count += 1
-                    logging.error(f"Unexpected result structure for property {i}: {result}")
-                    continue
-                
-                # Extract the result arguments
-                result_args = result[0]["args"]
+                # Process the valid result
                 success_count += 1
                 
                 # Create a UnifiedProperty object
-                unified_prop = self._create_unified_property(prop, result_args)
+                unified_prop = self._create_unified_property(prop, result)
                 processed_results.append(unified_prop)
                 
-                logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
+                logging.info(f"Successfully processed property: {unified_prop.name} with score: {unified_prop.score}")
             except Exception as e:
                 error_count += 1
                 logging.error(f"Error processing property {i}: {str(e)}")
@@ -210,7 +151,139 @@ class EvaluateAgent:
         else:
             logging.warning("No properties were successfully processed")
             return []
+    
+    async def _evaluate_single_property(self, property_index: int, property_data: dict, image_analysis: str, user_request: GeneratedRequirement) -> dict:
+        """
+        Evaluate a single property using LLM
         
+        Args:
+            property_index: Index of the property
+            property_data: Simplified property data
+            image_analysis: Analysis of property images
+            user_request: User requirements
+            
+        Returns:
+            Evaluation result dict or None if evaluation fails
+        """
+        try:
+            # Create the evaluation prompt with neutral language to avoid policy violations
+            prompt = ChatPromptTemplate(
+                [
+                    SystemMessage(
+                        content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
+                Evaluate this property against the my requirements and return a match score and analysis.
+                
+                Analyze the property based on the following criteria:
+                - Price:
+                  - Does it match the user's budget? (Don't focus too much on nightly price, focus on the total price.)
+                  - The price is a big factor in the score, if the price is too high, the score should be quite low, unless everything else is perfect.
+                  - If the price is below the user's budget, the score can still be high.
+                - Location: Is it in the desired location?
+                - Rooms: Does it have the required number of rooms?
+                - Amenities: Does it have the requested amenities?
+                - Reviews: Are the reviews positive?
+                - Style and Vibe: Does the property match the user's style preferences?
+                
+                Property: {property_data}
+                Image Analysis: {image_analysis}
+                
+                Return a property match with a score between 0-100 where 100 is a perfect match.
+                Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
+                Your score output should be just the number, no other text.
+                
+                You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
+                This reasoning will be shown to the user to help them understand why this property received its score.
+                Be specific about which preferences were met and which weren't.
+                Format this as a list of sentences, with emojis for each item. E.g. ✅, 🏆, 👌, 👎. Make the emojis relevant to the item and scoring of that attribute, but don't overdo them.
+                Don't use "-" or "•" or "*" or any other bullet point. Use a colon ":" to separate the item and the score.
+                """
+                    ),
+                    HumanMessage(
+                        content=f"""Hey man! I'm excited to be here with you! I can't wait for you to help me find the perfect short-term rental for me! Here are my imaginary requirements: {str(user_request)}"""
+                    )
+                ]
+            )
+            # prompt = ChatPromptTemplate(
+            #     [
+            #         SystemMessage(
+            #             content=f"""You are a professional property analyst.
+            #     Evaluate this property against the requirements and provide a score and analysis.
+                
+            #     Analyze the property based on these criteria:
+            #     - Price: Does it match the budget?
+            #     - Location: Is it in the desired location?
+            #     - Rooms: Does it have the required number of rooms?
+            #     - Amenities: Does it have the requested amenities?
+            #     - Reviews: Are the reviews positive?
+                
+            #     Property details: {property_data}
+            #     Image information: {image_analysis}
+                
+            #     Return a property match with a score between 0-100 where 100 is a perfect match.
+            #     Your score output should be just the number.
+                
+            #     Provide objective reasoning for your score, explaining how well the property matches each criterion.
+            #     Format your reasoning as a clear list with checkmark emojis as appropriate.
+            #     """
+            #         ),
+            #         HumanMessage(
+            #             content=f"""Please evaluate this property based on these requirements: {str(user_request)}"""
+            #         )
+            #     ]
+            # )
+            
+            # Create the evaluation chain
+            chain = (
+                prompt 
+                | self.llm.bind_tools([Result], tool_choice="any") 
+                | JsonOutputToolsParser(return_id=True)
+            )
+            
+            # Execute with timeout to avoid hanging
+            try:
+                result = await asyncio.wait_for(
+                    chain.ainvoke({}), 
+                    timeout=90 # With too many request errors, LLM retries after 60 seconds
+                )
+                
+                logging.info(f"Successfully evaluated property {property_index}")
+                
+                # Extract the result args
+                if not result or not isinstance(result, list) or not result[0].get("args"):
+                    logging.error(f"Unexpected result format for property {property_index}: {result}")
+                    return None
+                
+                return result[0]["args"]
+                
+            except asyncio.TimeoutError:
+                logging.warning(f"Evaluation of property {property_index} timed out")
+                return None
+                
+        except openai.BadRequestError as e:
+            # Handle content policy violations
+            error_message = str(e)
+            content_policy_patterns = [
+                "invalid prompt", 
+                "usage policy", 
+                "content policy", 
+                "violating", 
+                "error code: 400",
+                "invalid_request_error"
+            ]
+            
+            # Check if any content policy pattern is in the error message (case insensitive)
+            if any(pattern.lower() in error_message.lower() for pattern in content_policy_patterns):
+                logging.warning(f"Content policy violation detected for property {property_index}, skipping")
+                return None  # Return None to skip this property instead of raising
+            
+            # For other OpenAI API errors, log and return None to continue with other properties
+            logging.error(f"OpenAI API error for property {property_index}: {error_message}")
+            return None
+                
+        except Exception as e:
+            # Log any other exception but don't halt the entire process
+            logging.error(f"Unexpected error evaluating property {property_index}: {str(e)}")
+            return None
     
     async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
         """Analyze property images using vision model"""
@@ -482,7 +555,7 @@ if __name__ == "__main__":
     # Combine properties from both sources
     all_properties = booking_properties + airbnb_properties
     
-    # Use the RunnableParallel version
+    # Use the asyncio version
     start_time = time.time()
     evaluate_agent = EvaluateAgent()
     response = asyncio.run(evaluate_agent.evaluate(generate_requirement, all_properties))
