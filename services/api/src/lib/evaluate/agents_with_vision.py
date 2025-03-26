@@ -46,7 +46,7 @@ from src.models.unified_property import (
 
 class EvaluateAgent:
     def __init__(self):
-        self.llm = gpt_4o_mini()
+        self.llm = o3_mini()
         self.vision_llm = gemini_flash_2()
 
     async def evaluate(
