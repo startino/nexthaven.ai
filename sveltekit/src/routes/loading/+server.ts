@@ -91,41 +91,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				}
 			}
 
-			// Prepare property data for insertion
-			const searchResults = validProperties.map((property) => ({
+			const { error: insertError } = await supabase.from('search_results').insert({
 				search_id: searchId,
-				property_name: property.name || 'Unnamed Property',
-				property_url: property.url || null,
-				price: typeof property.price === 'number' ? property.price : null,
-				location: property.location || null,
-				rooms: typeof property.rooms === 'number' ? property.rooms : null,
-				baths: typeof property.baths === 'number' ? property.baths : null,
-				amenities: Array.isArray(property.amenities) ? property.amenities : null,
-				score: typeof property.score === 'number' ? property.score : null,
-				image_url: property.image || null,
-				gallery: Array.isArray(property.gallery) ? property.gallery : null,
-				property_data: property
-			}));
+				data: validProperties
+			});
 
-			// Insert property data in batches to avoid request size limits
-			const BATCH_SIZE = 50;
-			for (let i = 0; i < searchResults.length; i += BATCH_SIZE) {
-				const batch = searchResults.slice(i, i + BATCH_SIZE);
-				const { error: insertError } = await supabase.from('search_results').insert(batch);
-
-				if (insertError) {
-					console.error(
-						`Error inserting search results batch ${i}/${searchResults.length}:`,
-						insertError
-					);
-					// Continue with other batches even if one fails
-				}
+			if (insertError) {
+				console.error(`Error inserting search:`, insertError);
+				// Continue with other batches even if one fails
 			}
 
 			return json({
 				success: true,
 				data: updatedHistory,
-				savedProperties: searchResults.length
+				savedProperties: validProperties.length
 			});
 		}
 
