@@ -10,12 +10,15 @@
 	const { supabase, session } = data;
 	
 	let email = $state(session?.user?.email || "");
+	let name = $state(session?.user?.user_metadata?.name || "");
 	let currentPassword = $state("");
 	let newPassword = $state("");
 	let confirmPassword = $state("");
 	let isLoading = $state(false);
 	let successMessage = $state("");
 	let errorMessage = $state("");
+	let profileUpdateSuccess = $state("");
+	let profileUpdateError = $state("");
 	
 	async function handlePasswordChange() {
 		isLoading = true;
@@ -53,6 +56,25 @@
 		confirmPassword = "";
 		isLoading = false;
 	}
+	
+	async function updateProfile() {
+		isLoading = true;
+		profileUpdateError = "";
+		profileUpdateSuccess = "";
+		
+		const { data, error } = await supabase.auth.updateUser({
+			data: { name }
+		});
+		
+		if (error) {
+			profileUpdateError = error.message;
+			isLoading = false;
+			return;
+		}
+		
+		profileUpdateSuccess = "Profile updated successfully";
+		isLoading = false;
+	}
 </script>
 
 <div class="container mx-auto py-8 px-4">
@@ -70,17 +92,35 @@
 					<CardDescription>View and manage your profile details</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div class="space-y-4">
+					<form class="space-y-4" on:submit|preventDefault={updateProfile}>
+						<div class="space-y-2">
+							<Label for="name">Name</Label>
+							<Input id="name" type="text" bind:value={name} placeholder="Your name" />
+							<p class="text-xs text-muted-foreground">
+								This is how we'll address you in the app.
+							</p>
+						</div>
+						
 						<div class="space-y-2">
 							<Label for="email">Email</Label>
-							<div class="flex">
-								<Input id="email" type="email" value={email} disabled class="bg-muted" />
-							</div>
+							<Input id="email" type="email" value={email} disabled class="bg-muted" />
 							<p class="text-xs text-muted-foreground">
 								This is the email address associated with your account.
 							</p>
 						</div>
-					</div>
+						
+						{#if profileUpdateError}
+							<p class="text-sm text-red-500">{profileUpdateError}</p>
+						{/if}
+						
+						{#if profileUpdateSuccess}
+							<p class="text-sm text-green-500">{profileUpdateSuccess}</p>
+						{/if}
+						
+						<Button type="submit" variant="outline" disabled={isLoading}>
+							{isLoading ? 'Updating...' : 'Update Profile'}
+						</Button>
+					</form>
 				</CardContent>
 			</Card>
 			
@@ -94,7 +134,7 @@
 					<CardDescription>Update your account password</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); handlePasswordChange(); }}>
+					<form class="space-y-4" on:submit|preventDefault={handlePasswordChange}>
 						<div class="space-y-2">
 							<Label for="newPassword">New Password</Label>
 							<Input id="newPassword" type="password" bind:value={newPassword} required />
@@ -119,30 +159,6 @@
 							{isLoading ? 'Updating...' : 'Update Password'}
 						</Button>
 					</form>
-				</CardContent>
-			</Card>
-			
-			<!-- Danger Zone -->
-			<Card class="border-destructive/20">
-				<CardHeader>
-					<CardTitle class="text-destructive">Danger Zone</CardTitle>
-					<CardDescription>Irreversible account actions</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<div class="space-y-4">
-						<p class="text-sm text-muted-foreground">
-							If you want to delete your account, please contact support. This action cannot be undone.
-						</p>
-						<form action="/logout" method="POST">
-							<Button 
-								type="submit" 
-								variant="destructive" 
-								class="w-full"
-							>
-								Sign Out
-							</Button>
-						</form>
-					</div>
 				</CardContent>
 			</Card>
 		</div>

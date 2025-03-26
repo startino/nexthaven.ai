@@ -8,19 +8,22 @@
 	} from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 	import { User, LogOut, Settings, CreditCard } from 'lucide-svelte';
-	import { getToastStore } from '@skeletonlabs/skeleton';
 	import { goto } from '$app/navigation';
-	import { signOut } from '$lib/services/auth';
+	import { page } from '$app/stores';
 
-	const toastStore = getToastStore();
+	// Get user information from session
+	let userName = $derived(
+		$page.data.session?.user?.user_metadata?.name || 
+		$page.data.session?.user?.email?.split('@')[0] || 
+		'User'
+	);
+	
+	let userEmail = $derived($page.data.session?.user?.email || '');
 
 	async function handleSignOut() {
-		await signOut();
-		toastStore.trigger({
-			message: 'You have been signed out',
-			background: 'variant-filled-success'
-		});
-		goto('/login');
+		const { supabase } = $page.data;
+		await supabase.auth.signOut();
+		goto('/auth/login');
 	}
 </script>
 
@@ -34,7 +37,10 @@
 	<DropdownMenuContent align="end">
 		<div class="flex items-center justify-start gap-2 p-2">
 			<div class="flex flex-col space-y-1 leading-none">
-				<p class="font-medium">My Account</p>
+				<p class="font-medium">{userName}</p>
+				{#if userEmail}
+					<p class="text-xs text-muted-foreground">{userEmail}</p>
+				{/if}
 			</div>
 		</div>
 		<DropdownMenuSeparator />
