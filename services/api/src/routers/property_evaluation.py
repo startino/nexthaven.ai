@@ -5,9 +5,18 @@ from typing import List, Optional
 import logging
 import time
 import asyncio
+import os
+import json
+from pathlib import Path
 
-from src.models.apify import BookingApifyRequest, BookingApifyResponse
-from src.models.airbnb_apify import AirbnbApifyResponse
+from dotenv import load_dotenv, find_dotenv
+from src.models.apify import (
+    BookingApifyRequest,
+    BookingApifyResponse,
+    Location,
+    Address,
+)
+from src.models.airbnb_apify import AirbnbApifyResponse, Price, SubDescription
 from src.models.requirement import (
     GeneratedRequirement,
     UserRequirement,
@@ -22,7 +31,13 @@ from src.lib.evaluate.analyze import AnalyzeUserRequirement
 from src.lib.scraper.booking_apify import BookingApifyAgent
 from src.lib.scraper.airbnb_apify import AirbnbApifyAgent
 from src.models.result import Result
-from src.models.unified_property import UnifiedProperty
+from src.models.unified_property import (
+    UnifiedProperty,
+    PricingModel,
+    CapacityModel,
+    FeaturesModel,
+    MediaModel,
+)
 from src.lib.cache.property_cache import (
     generate_unique_id,
     store_query_status,
@@ -31,7 +46,11 @@ from src.lib.cache.property_cache import (
     retrieve_properties,
 )
 
+_: bool = load_dotenv(find_dotenv())
 router = APIRouter(prefix="/properties")
+
+ENVIRONMENT = os.getenv("ENVIRONMENT")
+APIFY_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
 
 
 @router.post("/query")
@@ -141,7 +160,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
     This endpoint is called after step 3 of the form (when user preferences are known).
     It waits for the property search to complete if necessary, then evaluates the properties
     based on the user's preferences. This separation from the property search allows the
-    search to start earlier in the user flow, reducing the overall response time.
+    search to start earlier in the user flow, reducing the overall response time for the user.
 
     Cursor Edit count: 2
     """
@@ -204,7 +223,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
 
         # region Retrieve and validate properties
         property_retrieval_start = time.time()
-        # Retrieve properties and basic requirements
+
+        # Retrieve properties and basic requirements from cache
         all_properties, basic_req_obj = await retrieve_properties(request.session_id)
 
         # Ensure basic_req_obj is a GeneratedRequirement object
@@ -303,7 +323,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
     except Exception as e:
         logging.error(f"Error evaluating properties (global catch): {str(e)}")
         logging.exception("Global exception details:")
-        
+
         # Return a user-friendly error response
         return JSONResponse(
             content={
@@ -312,7 +332,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                 "count": 0,
                 "results": [],
             },
-            status_code=500
+            status_code=500,
         )
 
 
@@ -407,41 +427,246 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
         )
         # endregion
 
-        # region Query Apify
-        # Query Apify
+        # region Fetch Properties
         api_prep_start = time.time()
-        booking_agent = BookingApifyAgent()
-        airbnb_agent = AirbnbApifyAgent()
+        all_properties = []
+        booking_properties = []
+        airbnb_properties = []
 
-        # Run both request generations concurrently
-        booking_request, airbnb_request = await asyncio.gather(
-            asyncio.to_thread(booking_agent.generate_request, generated_req_obj),
-            asyncio.to_thread(airbnb_agent.generate_request, generated_req_obj),
-        )
-        timings["api_prep"] = time.time() - api_prep_start
+        # In non-production, use dummy data
+        if ENVIRONMENT != "production":
+            logging.info("Using dummy data for non-production environment")
+            logging.info(
+                f"Will limit to exactly {APIFY_MAX_ITEMS} properties per source"
+            )
 
-        # Update status with progress
-        await store_query_status(
-            session_id,
-            {
-                "status": "in_progress",
-                "started_at": time.time(),
-                "completed": False,
-                "properties_count": 0,
-                "message": "Querying Booking.com and Airbnb",
-            },
-        )
+            # Load Airbnb dummy data
+            airbnb_path = Path("airbnb.json")
+            if airbnb_path.exists():
+                try:
+                    with open(airbnb_path, "r") as f:
+                        airbnb_data = json.load(f)
+                        # Take first APIFY_MAX_ITEMS properties and convert to AirbnbApifyResponse objects
+                        for prop in airbnb_data[:APIFY_MAX_ITEMS]:
+                            try:
+                                # Create AirbnbApifyResponse object
+                                airbnb_prop = AirbnbApifyResponse(
+                                    id=prop.get("id", f"airbnb-dummy-{i}"),
+                                    url=prop.get("url", ""),
+                                    title=prop.get("title", "Dummy Airbnb Property"),
+                                    description=prop.get("description", ""),
+                                    subDescription=SubDescription(
+                                        text=prop.get(
+                                            "subDescription",
+                                            "A lovely property in a great location",
+                                        ),
+                                        language="en",
+                                    ),
+                                    price=Price(
+                                        price=prop.get("price", {}).get("price", 0),
+                                        currency=prop.get("price", {}).get(
+                                            "currency", "USD"
+                                        ),
+                                    ),
+                                    coordinates=prop.get("coordinates", {}),
+                                    images=[{"imageUrl": prop.get("thumbnail", "")}],
+                                    rating=prop.get("rating", 0),
+                                    reviewsCount=prop.get("reviewsCount", 0),
+                                    amenities=prop.get("amenities", []),
+                                    host={
+                                        "id": f"host-dummy-{i}",
+                                        "name": "Dummy Host",
+                                        "isSuperhost": False,
+                                        "responseRate": 100,
+                                        "responseTime": "within an hour",
+                                        "languages": ["English"],
+                                        "memberSince": "2020-01-01",
+                                        "description": "A friendly host who loves to help guests",
+                                        "verifications": ["email", "phone"],
+                                    },
+                                    raw_data=prop,
+                                )
+                                airbnb_properties.append(airbnb_prop)
+                            except Exception as e:
+                                logging.error(
+                                    f"Error creating Airbnb property: {str(e)}"
+                                )
+                                continue
+                except Exception as e:
+                    logging.error(f"Error loading Airbnb dummy data: {str(e)}")
 
-        # Execute both scrapers concurrently
-        api_fetch_start = time.time()
-        booking_properties, airbnb_properties = await asyncio.gather(
-            booking_agent.get_properties(booking_request),
-            airbnb_agent.get_properties(airbnb_request),
-        )
-        timings["api_fetch"] = time.time() - api_fetch_start
+            # Load Booking.com dummy data
+            booking_path = Path("booking.com.json")
+            if booking_path.exists():
+                try:
+                    with open(booking_path, "r") as f:
+                        booking_data = json.load(f)
+                        # Take first APIFY_MAX_ITEMS properties and convert to BookingApifyResponse objects
+                        for prop in booking_data[:APIFY_MAX_ITEMS]:
+                            try:
+                                # Create BookingApifyResponse object
+                                booking_prop = BookingApifyResponse(
+                                    url=prop.get("url", ""),
+                                    name=prop.get("name", "Dummy Booking.com Property"),
+                                    type=prop.get("type", "Hotel"),
+                                    description=prop.get("description", ""),
+                                    price=prop.get("price", 0),
+                                    checkIn=prop.get("checkIn", ""),
+                                    checkOut=prop.get("checkOut", ""),
+                                    location=Location(
+                                        lat=prop.get("location", {}).get("lat", 0),
+                                        lng=prop.get("location", {}).get("lng", 0),
+                                    ),
+                                    address=Address(
+                                        full=prop.get("address", {}).get("full", ""),
+                                        postalCode=prop.get("address", {}).get(
+                                            "postalCode", ""
+                                        ),
+                                        street=prop.get("address", {}).get(
+                                            "street", ""
+                                        ),
+                                        country=prop.get("address", {}).get(
+                                            "country", ""
+                                        ),
+                                        region=prop.get("address", {}).get(
+                                            "region", ""
+                                        ),
+                                    ),
+                                    image=prop.get("image", ""),
+                                    gallery=prop.get("images", []),
+                                    rooms=[],  # Empty rooms for dummy data
+                                    categoryReviews=[],  # Empty reviews for dummy data
+                                    facilities=[],  # Empty facilities for dummy data
+                                )
+                                booking_properties.append(booking_prop)
+                            except Exception as e:
+                                logging.error(
+                                    f"Error creating Booking.com property: {str(e)}"
+                                )
+                                continue
+                except Exception as e:
+                    logging.error(f"Error loading Booking.com dummy data: {str(e)}")
 
-        # Combine properties from both sources
+            # If no properties were loaded, create some completely dummy properties
+            if not airbnb_properties and not booking_properties:
+                logging.warning(
+                    "No properties loaded from files, creating dummy properties"
+                )
+                # Create dummy properties for both Airbnb and Booking.com - exactly APIFY_MAX_ITEMS each
+                for i in range(APIFY_MAX_ITEMS):
+                    # Create dummy Airbnb property
+                    airbnb_properties.append(
+                        AirbnbApifyResponse(
+                            id=f"airbnb-dummy-{i}",
+                            url=f"https://example.com/airbnb/{i}",
+                            title=f"Airbnb Dummy Property {i}",
+                            description="This is a dummy Airbnb property for testing purposes.",
+                            subDescription=SubDescription(
+                                text="A lovely property in a great location",
+                                language="en",
+                            ),
+                            price=Price(price=100 + (i * 20), currency="USD"),
+                            coordinates={"lat": 51.5074, "lng": -0.1278},
+                            images=[
+                                {"imageUrl": "https://example.com/airbnb_image.jpg"}
+                            ],
+                            rating=4.5,
+                            reviewsCount=100,
+                            amenities=["WiFi", "Kitchen"],
+                            host={
+                                "id": f"host-dummy-{i}",
+                                "name": "Dummy Host",
+                                "isSuperhost": False,
+                                "responseRate": 100,
+                                "responseTime": "within an hour",
+                                "languages": ["English"],
+                                "memberSince": "2020-01-01",
+                                "description": "A friendly host who loves to help guests",
+                                "verifications": ["email", "phone"],
+                            },
+                            raw_data=None,
+                        )
+                    )
+
+                    # Create dummy Booking.com property
+                    booking_properties.append(
+                        BookingApifyResponse(
+                            url=f"https://example.com/booking/{i}",
+                            name=f"Booking.com Dummy Property {i}",
+                            type="Hotel",
+                            description="This is a dummy Booking.com property for testing purposes.",
+                            price=120 + (i * 25),
+                            checkIn="2025-02-28",
+                            checkOut="2025-03-13",
+                            location=Location(lat=51.5074, lng=-0.1278),
+                            address=Address(
+                                full="123 Test St, London, UK",
+                                postalCode="SW1A 1AA",
+                                street="123 Test St",
+                                country="UK",
+                                region="London",
+                            ),
+                            image="https://example.com/booking_image.jpg",
+                            gallery=["https://example.com/booking_image1.jpg"],
+                            rooms=[],
+                            categoryReviews=[],
+                            facilities=[],
+                        )
+                    )
+
+            # Log final counts
+            logging.info(
+                f"Final property counts - Airbnb: {len(airbnb_properties)}, Booking: {len(booking_properties)}"
+            )
+
+            timings["api_prep"] = time.time() - api_prep_start
+            timings["api_fetch"] = 0  # No actual API fetch in non-production
+
+        else:
+            # In production, use real API data
+            logging.info("Using production API data")
+
+            # Query Apify
+            booking_agent = BookingApifyAgent()
+            airbnb_agent = AirbnbApifyAgent()
+
+            # Run both request generations concurrently
+            booking_request, airbnb_request = await asyncio.gather(
+                asyncio.to_thread(booking_agent.generate_request, generated_req_obj),
+                asyncio.to_thread(airbnb_agent.generate_request, generated_req_obj),
+            )
+            timings["api_prep"] = time.time() - api_prep_start
+
+            # Update status with progress
+            await store_query_status(
+                session_id,
+                {
+                    "status": "in_progress",
+                    "started_at": time.time(),
+                    "completed": False,
+                    "properties_count": 0,
+                    "message": "Querying Booking.com and Airbnb",
+                },
+            )
+
+            # Execute both scrapers concurrently
+            api_fetch_start = time.time()
+            booking_properties, airbnb_properties = await asyncio.gather(
+                booking_agent.get_properties(booking_request),
+                airbnb_agent.get_properties(airbnb_request),
+            )
+            timings["api_fetch"] = time.time() - api_fetch_start
+
+            # Log final counts
+            logging.info(
+                f"Final total: {len(booking_properties)} Booking.com, {len(airbnb_properties)} Airbnb"
+            )
+
+        # Combine properties from both sources - no need to limit again since we limited at source
         all_properties = booking_properties + airbnb_properties
+        logging.info(
+            f"Final total: {len(all_properties)} properties ({len(booking_properties)} Booking.com, {len(airbnb_properties)} Airbnb)"
+        )
         # endregion
 
         # region Store results
@@ -466,8 +691,6 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
             f"3. Requirement Analysis: {timings['analysis']:.2f}s\n"
             f"4. API Preparation: {timings['api_prep']:.2f}s\n"
             f"5. Property Fetching: {timings['api_fetch']:.2f}s\n"
-            f"   - Booking.com: {len(booking_properties)} properties\n"
-            f"   - Airbnb: {len(airbnb_properties)} properties\n"
             f"6. Property Storage: {timings['storage']:.2f}s\n"
             f"------------------------------------------\n"
             f"OUTCOME: {len(all_properties)} total properties fetched and stored\n"
