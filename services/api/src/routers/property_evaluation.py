@@ -451,7 +451,9 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
                             try:
                                 # Create AirbnbApifyResponse object
                                 airbnb_prop = AirbnbApifyResponse(
-                                    id=prop.get("id", f"airbnb-dummy-{i}"),
+                                    id=prop.get(
+                                        "id", f"airbnb-dummy-{len(airbnb_properties)}"
+                                    ),
                                     url=prop.get("url", ""),
                                     title=prop.get("title", "Dummy Airbnb Property"),
                                     description=prop.get("description", ""),
@@ -474,7 +476,7 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
                                     reviewsCount=prop.get("reviewsCount", 0),
                                     amenities=prop.get("amenities", []),
                                     host={
-                                        "id": f"host-dummy-{i}",
+                                        "id": f"host-dummy-{len(airbnb_properties)}",
                                         "name": "Dummy Host",
                                         "isSuperhost": False,
                                         "responseRate": 100,
