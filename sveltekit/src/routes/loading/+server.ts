@@ -1,116 +1,119 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { requireSubscription } from '$lib/utils/subscription';
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async (event) => {
+	// Check subscription status and redirect if not subscribed
+	await requireSubscription(event);
+
+	const { request, locals } = event;
 	const { supabase } = locals;
 
-	// Check if the user is authenticated
-	const {
-		data: { session }
-	} = await supabase.auth.getSession();
-
-	if (!session) {
-		return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-			status: 401,
-			headers: {
-				'Content-Type': 'application/json'
-			}
-		});
-	}
-
 	try {
-		const { searchId, resultsCount, properties } = await request.json();
+		const requestData = await request.json();
+		const { searchId, resultsCount, properties } = requestData;
+
 		if (!searchId) {
-			return json({ error: 'Search ID is required' }, { status: 400 });
+			return json({ success: false, message: 'Search ID is required' }, { status: 400 });
 		}
 
-		// First verify that the search history record belongs to the user
-		const { data: searchHistory, error: searchError } = await supabase
-			.from('search_history')
-			.select('id')
-			.eq('id', searchId)
-			.eq('user_id', session.user.id)
-			.single();
+		// Check if the user is authenticated
+		const {
+			data: { session }
+		} = await supabase.auth.getSession();
 
-		if (searchError || !searchHistory) {
-			console.error('Error verifying search ownership:', searchError);
-			return json(
-				{ error: 'Search history record not found or not owned by user' },
-				{ status: 403 }
-			);
+		if (!session) {
+			return json({ success: false, message: 'Unauthorized' }, { status: 401 });
 		}
 
-		// Update the search history with the result count
-		const { data: updatedHistory, error: updateError } = await supabase
-			.from('search_history')
-			.update({
-				results_count: resultsCount,
-				updated_at: new Date().toISOString()
-			})
-			.eq('id', searchId)
-			.eq('user_id', session.user.id)
-			.select()
-			.single();
+		// First delete any existing search results for this search
+		const { error: deleteError } = await supabase
+			.from('search_results')
+			.delete()
+			.eq('search_id', searchId);
 
-		if (updateError) {
-			console.error('Error updating search history:', updateError);
-			return json({ error: 'Failed to update search history' }, { status: 500 });
+		if (deleteError) {
+			console.error('Error deleting existing search results:', deleteError);
+			// Continue anyway to insert new results
 		}
 
-		// If properties are provided, save them to the search_results table
-		if (properties && Array.isArray(properties) && properties.length > 0) {
-			// Delete any existing results for this search first to avoid duplicates
-			await supabase.from('search_results').delete().eq('search_id', searchId);
+		// If properties are provided, save them
+		if (properties && properties.length > 0) {
+			// Prepare property data for insertion
+			const propertyRecords = properties.map((property, index) => ({
+				search_id: searchId,
+				property_name: property.name || 'Unnamed property',
+				property_url: property.url || '',
+				price: property.pricing?.total || 0,
+				location: property.location || '',
+				rooms: property.capacity?.bedrooms || 0,
+				baths: property.capacity?.bathrooms || 0,
+				amenities: property.features?.amenities || [],
+				score: property.score || 0,
+				image_url: property.media?.main_image || '',
+				gallery: property.media?.gallery || [],
+				property_data: property, // Store the full property object as JSON
+				created_at: new Date().toISOString()
+			}));
 
-			// Filter out any invalid properties
-			const validProperties = properties.filter(
-				(property) => property && typeof property === 'object'
-			);
+			// Insert into search_results table
+			const { data: resultsData, error: resultsError } = await supabase
+				.from('search_results')
+				.insert(propertyRecords)
+				.select('id');
 
-			// Update the results count to match the actual number of valid properties
-			if (validProperties.length !== properties.length) {
-				console.warn(`Found ${properties.length - validProperties.length} invalid properties`);
-
-				// Update the results_count in the database to reflect the actual valid count
-				const { error: reUpdateError } = await supabase
-					.from('search_history')
-					.update({
-						results_count: validProperties.length,
-						updated_at: new Date().toISOString()
-					})
-					.eq('id', searchId)
-					.eq('user_id', session.user.id);
-
-				if (reUpdateError) {
-					console.error('Error updating search results count:', reUpdateError);
-				}
-
-				// Update the local object
-				if (updatedHistory) {
-					updatedHistory.results_count = validProperties.length;
-				}
+			if (resultsError) {
+				console.error('Error saving search results:', resultsError);
+				return json({ success: false, message: 'Failed to save search results' }, { status: 500 });
 			}
 
-			const { error: insertError } = await supabase.from('search_results').insert({
-				search_id: searchId,
-				data: validProperties
-			});
+			// Update the search_history with the count of results
+			const { error: updateError } = await supabase
+				.from('search_history')
+				.update({
+					results_count: resultsCount || properties.length,
+					updated_at: new Date().toISOString()
+				})
+				.eq('id', searchId);
 
-			if (insertError) {
-				console.error(`Error inserting search:`, insertError);
-				// Continue with other batches even if one fails
+			if (updateError) {
+				console.error('Error updating search history with results count:', updateError);
+				// Still report success if only the update failed
 			}
 
 			return json({
 				success: true,
-				data: updatedHistory,
-				savedProperties: validProperties.length
+				resultIds: resultsData.map((r) => r.id),
+				message: 'Search results saved successfully'
+			});
+		} else {
+			// Just update the results count
+			const { error: updateError } = await supabase
+				.from('search_history')
+				.update({
+					results_count: resultsCount || 0,
+					updated_at: new Date().toISOString()
+				})
+				.eq('id', searchId);
+
+			if (updateError) {
+				console.error('Error updating search history with results count:', updateError);
+				return json(
+					{ success: false, message: 'Failed to update search history' },
+					{ status: 500 }
+				);
+			}
+
+			return json({
+				success: true,
+				message: 'Search history updated with results count'
 			});
 		}
-
-		return json({ success: true, data: updatedHistory });
 	} catch (err) {
-		console.error('Error processing update:', err);
-		return json({ error: 'Server error' }, { status: 500 });
+		console.error('Error processing search results:', err);
+		return json(
+			{ success: false, message: 'An error occurred while processing results' },
+			{ status: 500 }
+		);
 	}
 };

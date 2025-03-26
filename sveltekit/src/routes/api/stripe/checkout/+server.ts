@@ -19,7 +19,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	try {
 		const body = await request.json();
-		const { priceId } = body;
+		const { priceId, returnUrl } = body;
 
 		// Validate price ID against the options in PRICING_TIER
 		const validPriceIds = PRICING_TIER.options.map((option) => option.id);
@@ -87,6 +87,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// Base URL for success and cancel
 		const baseUrl = PUBLIC_SITE_URL || 'http://localhost:5173';
 
+		// Use provided returnUrl or default to subscription page
+		const successUrl = returnUrl || `${baseUrl}/subscription?success=true`;
+		const cancelUrl = `${baseUrl}/subscription?canceled=true`;
+
 		// Create checkout session directly with the customer ID
 		const checkoutSession = await stripe.checkout.sessions.create({
 			customer: stripeCustomerId!,
@@ -98,8 +102,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				}
 			],
 			mode: 'subscription',
-			success_url: `${baseUrl}/subscription?success=true`,
-			cancel_url: `${baseUrl}/subscription?canceled=true`
+			success_url: successUrl,
+			cancel_url: cancelUrl
 		});
 
 		return json({ url: checkoutSession.url });

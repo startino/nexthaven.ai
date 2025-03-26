@@ -1,19 +1,25 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { requireSubscription } from '$lib/utils/subscription';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	const { supabase } = locals;
+export const load: PageServerLoad = async (event) => {
+	const { locals } = event;
 
-	// Check if the user is authenticated
-	const {
-		data: { session }
-	} = await supabase.auth.getSession();
+	// Check subscription status and redirect if not subscribed
+	// This will handle both authentication and subscription checks
+	const subscriptionStatus = await requireSubscription(event);
 
-	// If not authenticated, redirect to login
-	if (!session) {
-		redirect(303, '/login');
-	}
+	// Get popular destinations (could be from a database or hardcoded)
+	const popularDestinations = [
+		{ name: 'Kuala Lumpur', image: '/images/destinations/kuala-lumpur.jpg' },
+		{ name: 'Bali', image: '/images/destinations/bali.jpg' },
+		{ name: 'Da Nang', image: '/images/destinations/da-nang.jpg' },
+		{ name: 'Chiang Mai', image: '/images/destinations/chiang-mai.jpg' }
+	];
 
-	// Return empty object if authenticated
-	return {};
+	// Return data to the page
+	return {
+		popularDestinations,
+		subscriptionStatus
+	};
 };
