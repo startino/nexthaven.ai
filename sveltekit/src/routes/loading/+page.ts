@@ -9,23 +9,28 @@ export async function load({ url }) {
 	// Only run on the client side
 	if (browser) {
 		try {
-			// First check if there's already a search query in the store
+			// Check if there's already a search query in the store
 			let searchQueryData = getSearchQuery();
 
-			// If not, check URL parameters
+			// If not found, redirect back to search
 			if (!searchQueryData) {
 				// Redirect back to search, we don't have the data we need
-				console.log('No search query found in store or URL, redirecting to search');
+				console.log('No search query found in store, redirecting to search');
 				goto('/search');
 				return {};
 			}
 
 			console.log('Search query found:', searchQueryData);
 
+			// Get searchId from URL if present
+			const searchId = url.searchParams.get('searchId');
+
 			// Process will be handled by the +page.svelte component
 			return {
 				success: true,
-				message: 'Search query found'
+				message: 'Search query found',
+				searchQuery: searchQueryData,
+				searchId
 			};
 		} catch (error) {
 			console.error('Error in loading page loader:', error);
@@ -35,7 +40,11 @@ export async function load({ url }) {
 		}
 	}
 
+	// Pass any URL parameters to the server component
+	const searchId = url.searchParams.get('searchId');
+
 	return {
-		success: true
+		success: true,
+		searchId
 	};
 }

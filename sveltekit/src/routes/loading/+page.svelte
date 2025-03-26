@@ -8,6 +8,11 @@
 	import { Search, Home, Building2, MapPin, Database, Brain, Star, CheckCircle, ArrowLeft, X } from 'lucide-svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { page } from '$app/stores';
+	
+	// Get data passed from the server
+	let { data } = $props();
+	let searchId = $derived(data.searchId);
 	
 	// API endpoints
 	const API_BASE_URL = PUBLIC_API_URL || 'http://localhost:8000';
@@ -511,6 +516,9 @@
 					console.log(`Properties evaluated successfully, found: ${properties.length} at ${new Date().toISOString()}`);
 					setProperties(properties);
 					
+					// Update search history with the results count and property data
+					await updateSearchHistoryWithResults(properties.length, properties);
+					
 					// Final step progress (88-100%)
 					targetProgress = stepProgressRanges[7].min; // 88%
 					currentStep = 7; // Last step (0-indexed)
@@ -521,9 +529,12 @@
 						progress = 100;
 						targetProgress = 100;
 						
+						// Use the searchId from props to pass it along
+						const searchIdParam = searchId ? `?searchId=${searchId}` : '';
+						
 						// Then navigate after a short moment
 						setTimeout(() => {
-							goto('/compare');
+							goto('/compare' + searchIdParam);
 						}, 500);
 					}, 1000);
 				} else {
@@ -641,6 +652,61 @@
 			if (redirectTimeout) clearTimeout(redirectTimeout);
 		};
 	});
+	
+	// Update the search history with result count and property data
+	async function updateSearchHistoryWithResults(resultsCount: number, properties: any[]) {
+		console.log('updateSearchHistoryWithResults properties', properties);
+		try {
+			// Use the searchId from props directly
+			console.log('searchId from props:', searchId);
+			
+			if (!searchId) {
+				console.log('No search ID found in props, skipping history update');
+				return;
+			}
+			
+			// Ensure we're using the actual count of valid properties
+			const validProperties = properties.filter(p => p && typeof p === 'object');
+			const actualCount = validProperties.length;
+			
+			// If the counts don't match, log a warning
+			if (resultsCount !== actualCount) {
+				console.warn(`Results count mismatch: passed ${resultsCount}, but found ${actualCount} valid properties`);
+				resultsCount = actualCount;
+			}
+			
+			console.log(`Updating search history ID ${searchId} with ${resultsCount} results and saving property data`);
+			
+			// Call the API to update the search history and save property data
+			console.log('properties', properties);
+			const response = await fetch('/loading', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					searchId,
+					resultsCount,
+					properties
+				})
+			});
+			
+			const result = await response.json();
+			
+			if (!response.ok) {
+				console.error('Error updating search history:', result.error);
+			} else {
+				console.log(`Search history updated successfully with ${result.savedProperties || 0} properties saved`);
+				
+				// Verify that savedProperties matches resultsCount
+				if (result.savedProperties !== resultsCount) {
+					console.warn(`Count mismatch after save: expected ${resultsCount}, but server reported ${result.savedProperties} saved`);
+				}
+			}
+		} catch (error) {
+			console.error('Error updating search history:', error);
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-background flex items-center justify-center">

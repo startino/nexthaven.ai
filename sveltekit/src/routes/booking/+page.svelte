@@ -10,16 +10,27 @@
 	import { getSelectedProperty } from '$lib/stores/properties.svelte';
 	import { onMount } from 'svelte';
 	
+	// Get server data
+	let { data } = $props();
+	let searchId = $derived(data.searchId);
+	
 	// Local state - get property using Svelte 5 runes
 	let property = $derived(getSelectedProperty());
 	
 	// Redirect if no property is selected
 	$effect(() => {
 		if (!property) {
-			// If no property selected, redirect to compare
-			goto('/compare');
+			// If no property selected, redirect to compare with searchId if available
+			const searchIdParam = searchId ? `?searchId=${searchId}` : '';
+			goto('/compare' + searchIdParam);
 		}
 	});
+	
+	// Function to handle back button click with search ID preservation
+	function goBack() {
+		const searchIdParam = searchId ? `?searchId=${searchId}` : '';
+		goto('/compare' + searchIdParam);
+	}
 </script>
 
 <div class="min-h-screen h-screen bg-black text-white">
@@ -30,7 +41,7 @@
 				<Button
 					variant="outline" 
 					class="flex items-center gap-2"
-					href="/compare">
+					on:click={goBack}>
 					<ArrowLeft class="h-4 w-4" />
 					<span>Back to compare</span>
 				</Button>

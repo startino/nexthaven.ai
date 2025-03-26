@@ -9,6 +9,7 @@
 	import { cubicOut } from 'svelte/easing';
 	import { slide } from 'svelte/transition';
 	import { fade } from 'svelte/transition';
+	import { goto } from '$app/navigation';
 	
 	// Define interface for saved preferences
 	interface SavedPreference {
@@ -99,7 +100,7 @@ Literally any other preferences:
 	// Clear the store on mount
 	clearStore();
 	
-	function handleSearch() {
+	async function handleSearch() {
 		console.log("Discover Properties button clicked");
 		
 		// Save current preference
@@ -138,11 +139,45 @@ Literally any other preferences:
 			// Store the search query using the new reactive store
 			setSearchQuery(searchQueryJson);
 			
-			// Navigate to loading page using direct window location
-			console.log("Navigating to /loading");
-			window.location.href = '/loading';
+			// First save the search query to Supabase, then navigate
+			await saveSearchToSupabaseAndNavigate(searchQueryJson);
 		} catch (error) {
 			console.error('Error starting search:', error);
+		}
+	}
+	
+	// Function to save the search query to Supabase and then navigate
+	async function saveSearchToSupabaseAndNavigate(searchQueryJson: string) {
+		try {
+			// Use the API endpoint instead of form action
+			const response = await fetch('/search', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					searchQuery: searchQueryJson
+				})
+			});
+			
+			const result = await response.json();
+			console.log('saveSearch result:', result);
+			
+			if (!response.ok) {
+				console.error('Error saving search to Supabase:', result.message);
+			} else if (result.searchId) {
+				// Store the search ID for updating with results later
+				console.log('Search saved with ID:', result.searchId);
+			}
+			
+			// After saving to Supabase, navigate using goto which preserves state better
+			const searchIdParam = result.searchId ? `?searchId=${result.searchId}` : '';
+			console.log('Navigating to loading page with params:', searchIdParam);
+			goto('/loading' + searchIdParam);
+		} catch (error) {
+			console.error('Error calling search API:', error);
+			// Still attempt to navigate even if the save fails, but without searchId
+			goto('/loading');
 		}
 	}
 	
@@ -517,42 +552,13 @@ Literally any other preferences:
 					Back
 				</Button>
 				
-				<form 
-					action="/loading" 
-					method="GET" 
-					class="flex-1"
-					onsubmit={() => {
-						console.log("Form submitting to loading page");
-						// Save preference first
-						savePreference();
-						
-						// Store search data in our reactive store
-						setSearchQuery(JSON.stringify({
-							query: destination,
-							date: dateRange,
-							budget: {
-								min: parseInt(budget) || 200,
-								max: parseInt(budget) * 1.5 || 600
-							},
-							adults: 2,
-							children: 0,
-							number_of_rooms: selectedRooms,
-							preferences: preferences
-						}));
-					}}
+				<Button 
+					onclick={handleSearch}
+					class="flex-1 h-12 button-gradient"
 				>
-					<!-- Use hidden input fields to pass data via URL if needed -->
-					<input type="hidden" name="destination" value={destination} />
-					<input type="hidden" name="date" value={dateRange} />
-					
-					<Button 
-						type="submit"
-						class="flex-1 h-12 button-gradient"
-					>
-						<Search class="h-5 w-5 mr-1" />
-						Discover Properties
-					</Button>
-				</form>
+					<Search class="h-5 w-5 mr-1" />
+					Discover Properties
+				</Button>
 			</div>
 		</div>
 	{/if}

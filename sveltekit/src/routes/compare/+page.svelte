@@ -9,7 +9,12 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { ArrowLeft, Check, Crown, ChevronLeft, ChevronRight, X } from 'lucide-svelte';
+	import { page } from '$app/stores';
 
+	// Get data passed from the server
+	let { data } = $props();
+	let searchId = $derived(data.searchId);
+	
 	// Create a derived property from the store properties
 	let properties = $derived(getProperties());
 	let selectedProperty: UnifiedProperty | null = $state(null);
@@ -86,7 +91,9 @@
 		try {
 			console.log("Selecting property:", property.id);
 			setSelectedProperty(property);
-			goto('/booking');
+			// Include searchId in navigation if available
+			const searchIdParam = searchId ? `?searchId=${searchId}` : '';
+			goto('/booking' + searchIdParam);
 		} catch (error) {
 			console.error("Error selecting property:", error);
 		}
