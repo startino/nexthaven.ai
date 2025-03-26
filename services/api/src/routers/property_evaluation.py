@@ -336,6 +336,142 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         )
 
 
+def remove_duplicate_properties(properties):
+    """
+    Identify and remove duplicate properties from a list.
+
+    Args:
+        properties: List of property objects to deduplicate
+
+    Returns:
+        Tuple of (deduplicated_properties, duplicate_count)
+    """
+    if not properties or len(properties) < 2:
+        return properties, 0
+
+    # Track which indexes to keep (we'll keep the first occurrence of each duplicate)
+    indexes_to_keep = set(range(len(properties)))
+    processed_ids = set()
+
+    # Helper function to safely extract values from nested objects
+    def safe_get(obj, *keys, default=None):
+        """Safely navigate nested dictionaries/objects and return default if path doesn't exist"""
+        current = obj
+        for key in keys:
+            if isinstance(current, dict):
+                current = current.get(key, None)
+            else:
+                try:
+                    current = getattr(current, key, None)
+                except:
+                    return default
+            if current is None:
+                return default
+        return current
+
+    # First pass: mark duplicates for removal
+    for i, prop in enumerate(properties):
+        prop_id = safe_get(prop, "id") or safe_get(prop, "property_id")
+
+        # Skip if already processed
+        if prop_id in processed_ids:
+            continue
+
+        # For each unprocessed property, find its duplicates
+        for j in range(i + 1, len(properties)):
+            other_prop = properties[j]
+
+            # Skip if already marked for removal
+            if j not in indexes_to_keep:
+                continue
+
+            other_id = safe_get(other_prop, "id") or safe_get(other_prop, "property_id")
+
+            # Check for identity based on various criteria
+            is_identical = False
+
+            # 1. Check by ID
+            if prop_id and other_id and prop_id == other_id:
+                is_identical = True
+
+            # 2. Check by URL
+            if not is_identical:
+                prop_url = safe_get(prop, "url")
+                other_url = safe_get(other_prop, "url")
+                if prop_url and other_url and prop_url == other_url:
+                    is_identical = True
+
+            # 3. Check by exact location and name
+            if not is_identical:
+                prop_lat = safe_get(prop, "location", "lat") or safe_get(
+                    prop, "coordinates", "lat"
+                )
+                prop_lng = safe_get(prop, "location", "lng") or safe_get(
+                    prop, "coordinates", "lng"
+                )
+                other_lat = safe_get(other_prop, "location", "lat") or safe_get(
+                    other_prop, "coordinates", "lat"
+                )
+                other_lng = safe_get(other_prop, "location", "lng") or safe_get(
+                    other_prop, "coordinates", "lng"
+                )
+
+                prop_name = safe_get(prop, "name") or safe_get(prop, "title")
+                other_name = safe_get(other_prop, "name") or safe_get(
+                    other_prop, "title"
+                )
+
+                if (
+                    prop_lat
+                    and prop_lng
+                    and other_lat
+                    and other_lng
+                    and prop_lat == other_lat
+                    and prop_lng == other_lng
+                    and prop_name
+                    and other_name
+                    and prop_name == other_name
+                ):
+                    is_identical = True
+
+            # 4. Check by address and similar name
+            if not is_identical:
+                prop_address = safe_get(prop, "address", "full")
+                other_address = safe_get(other_prop, "address", "full")
+
+                if (
+                    prop_address
+                    and other_address
+                    and prop_address == other_address
+                    and prop_name
+                    and other_name
+                ):
+                    # Check if names are very similar
+                    if (
+                        prop_name.lower() in other_name.lower()
+                        or other_name.lower() in prop_name.lower()
+                    ):
+                        is_identical = True
+
+            # If identical, mark for removal and track processed IDs
+            if is_identical:
+                indexes_to_keep.remove(j)
+                if other_id:
+                    processed_ids.add(other_id)
+
+        # Mark this property as processed
+        if prop_id:
+            processed_ids.add(prop_id)
+
+    # Create new list with only properties to keep
+    deduplicated_properties = [
+        prop for i, prop in enumerate(properties) if i in indexes_to_keep
+    ]
+    duplicate_count = len(properties) - len(deduplicated_properties)
+
+    return deduplicated_properties, duplicate_count
+
+
 async def fetch_properties_background(session_id: str, request: PropertyQueryRequest):
     """
     Background task to fetch properties from Apify to separate property fetching from evaluation.
@@ -667,8 +803,33 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
         # Combine properties from both sources - no need to limit again since we limited at source
         all_properties = booking_properties + airbnb_properties
         logging.info(
-            f"Final total: {len(all_properties)} properties ({len(booking_properties)} Booking.com, {len(airbnb_properties)} Airbnb)"
+            f"Initial total: {len(all_properties)} properties ({len(booking_properties)} Booking.com, {len(airbnb_properties)} Airbnb)"
         )
+
+        # Remove duplicate properties
+        deduplication_start = time.time()
+        deduplicated_properties, duplicate_count = remove_duplicate_properties(
+            all_properties
+        )
+
+        # Calculate duplicate percentage
+        duplicate_percentage = (
+            (duplicate_count / len(all_properties)) * 100 if all_properties else 0
+        )
+
+        # Log duplicate removal results
+        logging.info(
+            f"Deduplication: Found {duplicate_count} duplicates out of {len(all_properties)} properties ({duplicate_percentage:.1f}%)"
+        )
+        logging.info(
+            f"Final total after deduplication: {len(deduplicated_properties)} unique properties"
+        )
+
+        # Use deduplicated properties
+        all_properties = deduplicated_properties
+
+        # Record deduplication time
+        timings["deduplication"] = time.time() - deduplication_start
         # endregion
 
         # region Store results
@@ -693,9 +854,11 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
             f"3. Requirement Analysis: {timings['analysis']:.2f}s\n"
             f"4. API Preparation: {timings['api_prep']:.2f}s\n"
             f"5. Property Fetching: {timings['api_fetch']:.2f}s\n"
-            f"6. Property Storage: {timings['storage']:.2f}s\n"
+            f"6. Deduplication: {timings['deduplication']:.2f}s\n"
+            f"   - Removed {duplicate_count} duplicates ({duplicate_percentage:.1f}%)\n"
+            f"7. Property Storage: {timings['storage']:.2f}s\n"
             f"------------------------------------------\n"
-            f"OUTCOME: {len(all_properties)} total properties fetched and stored\n"
+            f"OUTCOME: {len(all_properties)} unique properties fetched and stored\n"
             f"==========================================\n"
         )
 
@@ -707,15 +870,22 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
                 "completed": True,
                 "completed_at": time.time(),
                 "properties_count": len(all_properties),
-                "message": f"Found {len(all_properties)} properties",
+                "message": f"Found {len(all_properties)} unique properties (removed {duplicate_count} duplicates)",
                 "performance_metrics": {
                     "request_processing_time": f"{timings['request_processing']:.2f}s",
                     "requirement_creation_time": f"{timings['req_creation']:.2f}s",
                     "analysis_time": f"{timings['analysis']:.2f}s",
                     "api_preparation_time": f"{timings['api_prep']:.2f}s",
                     "api_fetch_time": f"{timings['api_fetch']:.2f}s",
+                    "deduplication_time": f"{timings['deduplication']:.2f}s",
                     "storage_time": f"{timings['storage']:.2f}s",
                     "total_time": f"{overall_time:.2f}s",
+                },
+                "duplicate_info": {
+                    "original_count": len(booking_properties) + len(airbnb_properties),
+                    "duplicates_removed": duplicate_count,
+                    "duplicate_percentage": f"{duplicate_percentage:.1f}%",
+                    "final_count": len(all_properties),
                 },
             },
         )
