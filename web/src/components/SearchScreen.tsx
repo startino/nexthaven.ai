@@ -50,9 +50,15 @@ interface SearchForm {
 
 // Default form values
 const DEFAULT_FORM_VALUES = {
+<<<<<<< HEAD
   query: "",
   date: "",
   budget: { min: 420, max: 600 }, // Set min to 70% of max
+=======
+  query: '',
+  date: '',
+  budget: { min: 700, max: 1000 }, // Set min to 70% of max
+>>>>>>> alpha
   adults: 2,
   number_of_rooms: 1,
   preferences: "",
@@ -208,8 +214,13 @@ function SearchScreen({
   // Validate details step
   const validateDetailsStep = () => {
     // Ensure budget is valid
+<<<<<<< HEAD
     if (!form.budget.max || form.budget.max < 100) {
       setAiMessage("Please enter a valid budget (minimum $100)");
+=======
+    if (!form.budget.max || form.budget.max < 75) {
+      setAiMessage('Please enter a valid budget (minimum $75)');
+>>>>>>> alpha
       // Set default budget if invalid
       setForm((prev) => ({
         ...prev,
@@ -543,9 +554,10 @@ function SearchScreen({
           <DollarSign size={20} />
           <span className="font-medium">Total Budget for Stay</span>
         </div>
-        <div className="pt-2">
-          {/* Single budget input field */}
+        <div className="pt-2 space-y-4">
+          {/* Budget slider */}
           <div className="relative">
+<<<<<<< HEAD
             <span className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-white/60">
               $
             </span>
@@ -561,6 +573,16 @@ function SearchScreen({
               onChange={(e) => {
                 const newMax =
                   parseInt(e.target.value) || DEFAULT_FORM_VALUES.budget.max; // Default to 600 if invalid
+=======
+            <input
+              type="range"
+              min="75"
+              max="4500"
+              step="10"
+              value={form.budget.max === 0 ? DEFAULT_FORM_VALUES.budget.max : form.budget.max}
+              onChange={(e) => {
+                const newMax = parseInt(e.target.value);
+>>>>>>> alpha
                 // Calculate minimum as 70% of maximum (can be adjusted)
                 const calculatedMin = Math.floor(newMax * 0.7);
                 setForm({
@@ -571,9 +593,24 @@ function SearchScreen({
                   },
                 });
               }}
-              className="w-full bg-white/5 text-white rounded-lg p-3 sm:p-4 pl-8 sm:pl-10 outline-none focus:ring-1 focus:ring-purple-500"
-              placeholder="Enter your maximum budget"
+              className="w-full appearance-none bg-white/5 rounded-lg h-2 cursor-pointer 
+              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 
+              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white 
+              [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:mt-[-8px]
+              [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6
+              [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white
+              [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-0
+              [&::-webkit-slider-runnable-track]:bg-white/5 [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-runnable-track]:h-2
+              [&::-moz-range-track]:bg-white/5 [&::-moz-range-track]:rounded-lg [&::-moz-range-track]:h-2"
+              style={{
+                background: `linear-gradient(to right, #a855f7 0%, #ec4899 ${((form.budget.max === 0 ? DEFAULT_FORM_VALUES.budget.max : form.budget.max) - 75) / (4500 - 75) * 100}%, rgba(255, 255, 255, 0.05) ${((form.budget.max === 0 ? DEFAULT_FORM_VALUES.budget.max : form.budget.max) - 75) / (4500 - 75) * 100}%, rgba(255, 255, 255, 0.05) 100%)`
+              }}
             />
+          </div>
+          
+          {/* Display current budget value */}
+          <div className="text-center text-white font-medium">
+            {formatPrice(form.budget.max === 0 ? DEFAULT_FORM_VALUES.budget.max : form.budget.max)}
           </div>
         </div>
       </motion.div>

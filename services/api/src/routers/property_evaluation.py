@@ -214,22 +214,52 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         #region Evaluate properties
         # Evaluate properties
         evaluate_agent = EvaluateAgent()
-        results = await evaluate_agent.evaluate(updated_req_obj, all_properties)
-        
-        # Limit to requested number of results
-        top_results = results[:30]
-        
-        # Convert UnifiedProperty objects to dictionaries for JSON response
-        formatted_results = []
-        for prop in top_results:
-            try:
-                # The prop is already a UnifiedProperty object, so we can directly use model_dump()
-                formatted_results.append(prop.model_dump(exclude={"raw_data"}))
-                logging.info(f"Evaluated property: {prop.name} with score: {prop.score}")
-            except Exception as e:
-                logging.error(f"Error formatting result: {str(e)}")
+        try:
+            results = await evaluate_agent.evaluate(updated_req_obj, all_properties)
+            
+            # Check if any properties were evaluated successfully
+            if not results:
+                logging.warning(f"No properties were successfully evaluated for session {request.session_id}")
+                return JSONResponse(
+                    content={
+                        "status": "partial_success",
+                        "message": "No properties could be evaluated due to content policy restrictions or other errors",
+                        "count": 0,
+                        "results": [],
+                        "processing_time": f"{time.time() - start_time:.2f} seconds"
+                    },
+                    status_code=206  # Partial Content
+                )
+            
+            # Limit to requested number of results
+            top_results = results[:30]
+            
+            # Convert UnifiedProperty objects to dictionaries for JSON response
+            formatted_results = []
+            for prop in top_results:
+                try:
+                    # The prop is already a UnifiedProperty object, so we can directly use model_dump()
+                    formatted_results.append(prop.model_dump(exclude={"raw_data"}))
+                    logging.info(f"Evaluated property: {prop.name} with score: {prop.score}")
+                except Exception as e:
+                    logging.error(f"Error formatting result: {str(e)}")
+        except Exception as e:
+            logging.error(f"Error in property evaluation process: {str(e)}")
+            logging.exception("Evaluation exception details:")
+            
+            return JSONResponse(
+                content={
+                    "status": "error",
+                    "message": f"An error occurred during property evaluation: {str(e)}",
+                    "count": 0,
+                    "results": [],
+                    "processing_time": f"{time.time() - start_time:.2f} seconds"
+                },
+                status_code=500
+            )
         #endregion
         
+        # Evaluate properties finished successfully with some results
         end_time = time.time()
         processing_time = end_time - start_time
         
@@ -246,9 +276,19 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         )
     
     except Exception as e:
-        logging.error(f"Error evaluating properties: {str(e)}")
-        logging.exception("Exception details:")
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error evaluating properties (global catch): {str(e)}")
+        logging.exception("Global exception details:")
+        
+        # Return a user-friendly error response
+        return JSONResponse(
+            content={
+                "status": "error",
+                "message": f"An unexpected error occurred: {str(e)}",
+                "count": 0,
+                "results": [],
+            },
+            status_code=500
+        )
 
 async def fetch_properties_background(session_id: str, request: PropertyQueryRequest):
     """

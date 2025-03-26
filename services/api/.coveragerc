@@ -1,0 +1,22 @@
+[run]
+source = src
+omit = 
+    */__pycache__/*
+    */tests/*
+    */.venv/*
+    */migrations/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    raise ValueError
+    except ImportError
+    except Exception as e:
+    
+[html]
+directory = coverage_html_report 

@@ -5,6 +5,7 @@ import base64
 import httpx
 from io import BytesIO
 from typing import List, Dict, Any, Union
+import openai  # Import for exception handling
 
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -29,7 +30,7 @@ class EvaluateAgent:
 
     async def evaluate(self, user_request: GeneratedRequirement, properties: list[BookingApifyResponse | AirbnbApifyResponse], include_images: bool = True):
         """
-        Evaluate properties in parallel using RunnableParallel
+        Evaluate properties in parallel using asyncio tasks
         
         Args:
             user_request: The user's requirements
@@ -70,18 +71,102 @@ class EvaluateAgent:
                     result_index += 1
                 else:
                     image_analyses[f"property_{i}"] = "No images available for analysis."
-            
-        property_chains = {}
+
+        # Create evaluation tasks for each property
+        evaluation_tasks = []
         for i, prop in enumerate(properties):
-            property = self._simplify_property(prop)
+            property_data = self._simplify_property(prop)
             image_analysis = image_analyses.get(f"property_{i}", "")
 
             # Remove properties not needed by LLM (to save tokens)
-            property["gallery"] = []
-            property["image"] = ""
-            property["source"] = ""
+            property_data["gallery"] = []
+            property_data["image"] = ""
+            property_data["source"] = ""
     
-        # Create the evaluation prompt template
+            # Create the task for this property
+            task = self._evaluate_single_property(
+                property_index=i,
+                property_data=property_data,
+                image_analysis=image_analysis,
+                user_request=user_request
+            )
+            evaluation_tasks.append(task)
+        
+        # Run all evaluation tasks concurrently with a timeout
+        logging.info(f"Starting parallel evaluation of {len(properties)} properties using asyncio.gather")
+        start_time = time.time()
+        results = await asyncio.gather(*evaluation_tasks, return_exceptions=True)
+        end_time = time.time()
+        logging.info(f"Completed parallel evaluation in {end_time - start_time:.2f} seconds")
+        
+        # Process results
+        processed_results: list[UnifiedProperty] = []
+        success_count = 0
+        error_count = 0
+        
+        for i, (result, prop) in enumerate(zip(results, properties)):
+            try:
+                # Check if the result is an exception
+                if isinstance(result, Exception):
+                    error_count += 1
+                    error_message = str(result)
+                    
+                    # Log different types of errors differently
+                    if "Invalid prompt" in error_message or "usage policy" in error_message:
+                        logging.warning(f"Content policy violation for property {i}: {error_message[:100]}...")
+                    else:
+                        logging.error(f"Error evaluating property {i}: {error_message[:100]}...")
+                    continue
+                
+                # Check if result is None (skipped)
+                if result is None:
+                    error_count += 1
+                    logging.warning(f"Property {i} was skipped due to potential issues")
+                    continue
+                
+                # Process the valid result
+                success_count += 1
+                
+                # Create a UnifiedProperty object
+                unified_prop = self._create_unified_property(prop, result)
+                processed_results.append(unified_prop)
+                
+                logging.info(f"Successfully processed property: {unified_prop.name} with score: {unified_prop.score}")
+            except Exception as e:
+                error_count += 1
+                logging.error(f"Error processing property {i}: {str(e)}")
+                # Skip this property - don't add it to processed_results
+
+        logging.info(f"Evaluation summary: {success_count} successful, {error_count} errors (skipped)")
+        
+        # Sort results by score (now using numeric values directly)
+        if processed_results:
+            sorted_results = sorted(
+                processed_results,
+                key=lambda x: x.score,
+                reverse=True
+            )
+
+            return sorted_results
+        else:
+            logging.warning("No properties were successfully processed")
+            return []
+    
+    async def _evaluate_single_property(self, property_index: int, property_data: dict, image_analysis: str, user_request: GeneratedRequirement) -> dict:
+        """
+        Evaluate a single property using LLM
+        
+        Args:
+            property_index: Index of the property
+            property_data: Simplified property data
+            image_analysis: Analysis of property images
+            user_request: User requirements
+            
+        Returns:
+            Evaluation result dict or None if evaluation fails
+        """
+        try:
+            # Create the evaluation prompt with neutral language to avoid policy violations
             prompt = ChatPromptTemplate(
                 [
                     SystemMessage(
@@ -99,7 +184,7 @@ class EvaluateAgent:
                 - Reviews: Are the reviews positive?
                 - Style and Vibe: Does the property match the user's style preferences?
                 
-                Property: {property}
+                Property: {property_data}
                 Image Analysis: {image_analysis}
                 
                 Return a property match with a score between 0-100 where 100 is a perfect match.
@@ -118,73 +203,87 @@ class EvaluateAgent:
                     )
                 ]
             )
+            # prompt = ChatPromptTemplate(
+            #     [
+            #         SystemMessage(
+            #             content=f"""You are a professional property analyst.
+            #     Evaluate this property against the requirements and provide a score and analysis.
+                
+            #     Analyze the property based on these criteria:
+            #     - Price: Does it match the budget?
+            #     - Location: Is it in the desired location?
+            #     - Rooms: Does it have the required number of rooms?
+            #     - Amenities: Does it have the requested amenities?
+            #     - Reviews: Are the reviews positive?
+                
+            #     Property details: {property_data}
+            #     Image information: {image_analysis}
+                
+            #     Return a property match with a score between 0-100 where 100 is a perfect match.
+            #     Your score output should be just the number.
+                
+            #     Provide objective reasoning for your score, explaining how well the property matches each criterion.
+            #     Format your reasoning as a clear list with checkmark emojis as appropriate.
+            #     """
+            #         ),
+            #         HumanMessage(
+            #             content=f"""Please evaluate this property based on these requirements: {str(user_request)}"""
+            #         )
+            #     ]
+            # )
             
+            # Create the evaluation chain
             chain = (
                 prompt 
                 | self.llm.bind_tools([Result], tool_choice="any") 
                 | JsonOutputToolsParser(return_id=True)
             )
             
-            def handle_evaluation_error(error):
-                
-                """Handles errors during property evaluation, returning a default UnifiedProperty."""
-                
-                logging.error(f"Evaluation failed for property {i}: {error}")
-                
-                # Return a default UnifiedProperty object indicating the error.  Crucially,
-                # you need to populate the properties that the rest of your code expects.
-                
-                return UnifiedProperty(
-                    property_id=f"property_{i}_error",
-                    name=f"Error evaluating property {i}",
-                    description=f"An error occurred during evaluation: {error}",
-                    url="",  # Or some default URL
-                    location="",
-                    pricing=PricingModel(total=0.0, nightly=0.0, currency="USD"),
-                    capacity=CapacityModel(guests=0, bedrooms=0, beds=0, bathrooms=0),
-                    features=FeaturesModel(amenities=[], safety_features=[]),
-                    media=MediaModel(main_image="", gallery=[]),
-                    score=-1,  # Indicate an error score
-                    review_summary="Error during evaluation"
+            # Execute with timeout to avoid hanging
+            try:
+                result = await asyncio.wait_for(
+                    chain.ainvoke({}), 
+                    timeout=90 # With too many request errors, LLM retries after 60 seconds
                 )
-            
-            property_chains[f"property_{i}"] = chain.with_config(
-                {"run_name": f"evaluate_property_{i}"}
-            ).with_fallbacks(
-                [RunnableLambda(handle_evaluation_error)]
-            )
-
-        # Create the parallel runner
-        parallel_chain = RunnableParallel(**property_chains)
-
-        # Run all evaluations in parallel
-        # The RunnableParallel will now handle exceptions for individual properties
-        results = await parallel_chain.ainvoke({}, return_exceptions=True)
-
-        # Process results
-        processed_results: list[UnifiedProperty] = []
-        for i, prop in enumerate(properties):
-            result = results[f"property_{i}"][0]["args"]
                 
-            # Create a UnifiedProperty object
-            unified_prop = self._create_unified_property(prop, result)
-            processed_results.append(unified_prop)
+                logging.info(f"Successfully evaluated property {property_index}")
+                
+                # Extract the result args
+                if not result or not isinstance(result, list) or not result[0].get("args"):
+                    logging.error(f"Unexpected result format for property {property_index}: {result}")
+                    return None
+                
+                return result[0]["args"]
+                
+            except asyncio.TimeoutError:
+                logging.warning(f"Evaluation of property {property_index} timed out")
+                return None
+                
+        except openai.BadRequestError as e:
+            # Handle content policy violations
+            error_message = str(e)
+            content_policy_patterns = [
+                "invalid prompt", 
+                "usage policy", 
+                "content policy", 
+                "violating", 
+                "error code: 400",
+                "invalid_request_error"
+            ]
             
-            logging.info(f"Evaluated property: {unified_prop.name} with score: {unified_prop.score}")
+            # Check if any content policy pattern is in the error message (case insensitive)
+            if any(pattern.lower() in error_message.lower() for pattern in content_policy_patterns):
+                logging.warning(f"Content policy violation detected for property {property_index}, skipping")
+                return None  # Return None to skip this property instead of raising
             
-        # Sort results by score (now using numeric values directly)
-        if processed_results:
-            sorted_results = sorted(
-                processed_results,
-                key=lambda x: x.score,
-                reverse=True
-            )
-
-            return sorted_results
-        else:
-            logging.warning("No properties were successfully processed")
-            return []
-        
+            # For other OpenAI API errors, log and return None to continue with other properties
+            logging.error(f"OpenAI API error for property {property_index}: {error_message}")
+            return None
+                
+        except Exception as e:
+            # Log any other exception but don't halt the entire process
+            logging.error(f"Unexpected error evaluating property {property_index}: {str(e)}")
+            return None
     
     async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
         """Analyze property images using vision model"""
@@ -456,7 +555,7 @@ if __name__ == "__main__":
     # Combine properties from both sources
     all_properties = booking_properties + airbnb_properties
     
-    # Use the RunnableParallel version
+    # Use the asyncio version
     start_time = time.time()
     evaluate_agent = EvaluateAgent()
     response = asyncio.run(evaluate_agent.evaluate(generate_requirement, all_properties))

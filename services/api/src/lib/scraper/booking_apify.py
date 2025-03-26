@@ -11,6 +11,9 @@ from src.models.requirement import GeneratedRequirement
 # Load environment variables
 load_dotenv()
 
+# Get the default max items from environment variable or use 10 as fallback
+APIFY_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
+
 class BookingApifyAgent:
     """
     This class is used to interact with the Apify API for Booking.com scraping.
@@ -64,13 +67,15 @@ class BookingApifyAgent:
         """
         run_input = request.model_dump()
         
+        max_items = int(os.getenv("APIFY_MAX_ITEMS", 10))
+        
         logging.info(f"Running Apify actor with input: {run_input}")
 
         # Run in a thread to avoid blocking the event loop
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None, 
-            lambda: self.client.actor("oeiQgfg5fsmIJB7Cn").call(run_input=run_input, memory_mbytes=8192)
+            lambda: self.client.actor("oeiQgfg5fsmIJB7Cn").call(run_input=run_input, memory_mbytes=4096, max_items=max_items)
         )
         
         properties: list[BookingApifyResponse] = []

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from src.models.requirement import Budget
 
 class PropertyQueryRequest(BaseModel):
@@ -9,9 +9,9 @@ class PropertyQueryRequest(BaseModel):
     query: str
     date: str
     budget: Budget
-    adults: int = 2
-    children: int = 0
-    number_of_rooms: int = 1
+    adults: int = Field(default=2, ge=1, description="Number of adults, must be at least 1")
+    children: int = Field(default=0, ge=0, description="Number of children, must be non-negative")
+    number_of_rooms: int = Field(default=1, ge=1, description="Number of rooms, must be at least 1")
 
 class PropertyEvaluationRequest(BaseModel):
     """
