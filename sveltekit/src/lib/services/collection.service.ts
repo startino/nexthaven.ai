@@ -200,7 +200,7 @@ export class CollectionService {
 				.from('collection_properties')
 				.delete()
 				.eq('collection_id', collectionId)
-				.eq('property.id', propertyId);
+				.eq('property ->> id', propertyId);
 
 			if (error) {
 				console.error('Error removing property from collection:', error);

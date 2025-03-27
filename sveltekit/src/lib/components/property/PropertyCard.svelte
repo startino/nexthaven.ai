@@ -54,9 +54,19 @@
       </div>
       
       {#if showCollectionButton}
-        <div class="absolute top-3 left-3 z-10" onclick={(e) => e.stopPropagation()}>
+        <button 
+          type="button" 
+          class="absolute top-3 left-3 z-10" 
+          onclick={(e) => e.stopPropagation()}
+          onkeydown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
           <AddToCollection {property} />
-        </div>
+        </button>
       {/if}
     </div>
     

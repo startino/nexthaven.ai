@@ -90,7 +90,7 @@
     <!-- Header - Fixed at the top -->
     <div class="bg-background/90 backdrop-blur-sm z-10 p-4 flex justify-between items-center border-b border-border">
       <button 
-        on:click={() => dispatch('close')}
+        onclick={() => dispatch('close')}
         class="flex items-center gap-2 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft size={20} />
@@ -99,7 +99,7 @@
       
       {#if property.url || primaryActionText !== 'View Property'}
         <Button
-          on:click={() => dispatch('primaryAction')}
+          onclick={() => dispatch('primaryAction')}
           class="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6"
         >
           <svelte:component this={primaryActionIcon} size={18} class="mr-2" />
@@ -148,7 +148,7 @@
           {#each getAllImages() as image, index}
             <button 
               class="relative aspect-video rounded-xl overflow-hidden bg-card cursor-pointer transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/20"
-              on:click={() => expandImage(index)}
+              onclick={() => expandImage(index)}
             >
               <img 
                 src={image} 
@@ -167,7 +167,7 @@
     <div class="fixed inset-0 bg-background/95 z-[60] flex flex-col">
       <div class="bg-background p-4 flex justify-between items-center border-b border-border">
         <button
-          on:click={closeExpandedImage}
+          onclick={closeExpandedImage}
           class="text-foreground p-2 rounded-full hover:bg-secondary/20"
         >
           <X size={24} />
@@ -187,7 +187,7 @@
         <!-- Navigation buttons -->
         {#if expandedImageIndex > 0}
           <button
-            on:click={prevImage}
+            onclick={prevImage}
             class="absolute left-4 p-2 rounded-full bg-background/50 text-foreground hover:bg-background/70"
           >
             <ChevronLeft size={24} />
@@ -196,7 +196,7 @@
         
         {#if expandedImageIndex < getAllImages().length - 1}
           <button
-            on:click={nextImage}
+            onclick={nextImage}
             class="absolute right-4 p-2 rounded-full bg-background/50 text-foreground hover:bg-background/70"
           >
             <ChevronRight size={24} />
@@ -209,7 +209,7 @@
         <div class="flex gap-3 px-4 min-w-min mx-auto max-w-full justify-center">
           {#each getAllImages() as image, index}
             <button 
-              on:click={() => expandedImageIndex = index}
+              onclick={() => expandedImageIndex = index}
               class="w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-md overflow-hidden transition-all duration-200 hover:scale-105 hover:shadow-md hover:shadow-accent/30 {index === expandedImageIndex ? 'ring-2 ring-primary scale-105 shadow-lg shadow-primary/40' : 'border border-border'}"
             >
               <img src={image} alt={`Thumbnail ${index + 1}`} class="w-full h-full object-cover" />
