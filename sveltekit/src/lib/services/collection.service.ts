@@ -159,7 +159,7 @@ export class CollectionService {
 				.from('collection_properties')
 				.select('*')
 				.eq('collection_id', collectionId)
-				.eq('property_id', property.id)
+				.eq('property.id', property.id)
 				.single();
 
 			if (existingRelation) {
@@ -170,7 +170,7 @@ export class CollectionService {
 			// Add property to collection
 			const { error } = await supabase.from('collection_properties').insert({
 				collection_id: collectionId,
-				property_id: property.id,
+				property,
 				created_at: new Date().toISOString()
 			});
 
@@ -200,7 +200,7 @@ export class CollectionService {
 				.from('collection_properties')
 				.delete()
 				.eq('collection_id', collectionId)
-				.eq('property_id', propertyId);
+				.eq('property.id', propertyId);
 
 			if (error) {
 				console.error('Error removing property from collection:', error);
@@ -215,7 +215,7 @@ export class CollectionService {
 	/**
 	 * Gets all properties in a collection
 	 */
-	static async getCollectionProperties(collectionId: string): Promise<string[]> {
+	static async getCollectionProperties(collectionId: string): Promise<UnifiedProperty[]> {
 		if (!browser) return [];
 
 		try {
@@ -223,7 +223,7 @@ export class CollectionService {
 
 			const { data, error } = await supabase
 				.from('collection_properties')
-				.select('property_id')
+				.select('property')
 				.eq('collection_id', collectionId);
 
 			if (error) {
@@ -231,7 +231,7 @@ export class CollectionService {
 				throw error;
 			}
 
-			return (data || []).map((item: { property_id: string }) => item.property_id);
+			return (data || []).map((item: { property: UnifiedProperty }) => item.property);
 		} catch (error) {
 			console.error('Failed to get collection properties:', error);
 			throw error;

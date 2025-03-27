@@ -20,13 +20,11 @@
 		PopoverTrigger
 	} from '$lib/components/ui/popover';
 	import type { PropertyCollection } from '$lib/stores/collections';
+	import type { UnifiedProperty } from '$lib/types/unified-property';
 	
 	// Props
 	let { property } = $props<{
-		property: {
-			id: string;
-			title: string;
-		}
+		property: UnifiedProperty
 	}>();
 	
 	// Local state
@@ -53,8 +51,20 @@
 				return;
 			}
 			
-			const propertySaved = await CollectionService.getPropertyCollections(property.id);
-			savedCollections = new Set(propertySaved.map(c => c.id));
+			// Get collections for this property
+			const userCollections = await CollectionService.getCollections($page.data.session.user.id);
+			const propertyCollections = await Promise.all(
+				userCollections.map(async (collection) => {
+					const propertyIds = await CollectionService.getCollectionProperties(collection.id);
+					return { collection, isSaved: propertyIds.includes(property.id) };
+				})
+			);
+			
+			savedCollections = new Set(
+				propertyCollections
+					.filter(item => item.isSaved)
+					.map(item => item.collection.id)
+			);
 		} catch (error) {
 			console.error('Failed to load saved status:', error);
 		} finally {
@@ -84,7 +94,7 @@
 			);
 			
 			// Add property to the new collection
-			await CollectionService.addPropertyToCollection(property.id, newCollection.id);
+			await CollectionService.addPropertyToCollection(newCollection.id, property);
 			
 			// Update saved state
 			savedCollections.add(newCollection.id);
@@ -110,11 +120,11 @@
 			
 			if (savedCollections.has(collection.id)) {
 				// Remove property from collection
-				await CollectionService.removePropertyFromCollection(property.id, collection.id);
+				await CollectionService.removePropertyFromCollection(collection.id, property.id);
 				savedCollections.delete(collection.id);
 			} else {
 				// Add property to collection
-				await CollectionService.addPropertyToCollection(property.id, collection.id);
+				await CollectionService.addPropertyToCollection(collection.id, property);
 				savedCollections.add(collection.id);
 			}
 			
@@ -129,7 +139,7 @@
 </script>
 
 <Popover onOpenChange={handlePopoverOpen}>
-	<PopoverTrigger asChild>
+	<PopoverTrigger>
 		<Button variant="outline" size="sm" class="h-8">
 			<Folder class="h-3.5 w-3.5 mr-2" />
 			Save

@@ -5,12 +5,12 @@
   import { Badge } from '$lib/components/ui/badge';
   import { Check } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
-  import { AddToFolder } from '$lib/components/folder';
+  import { AddToCollection } from '$lib/components/folder';
 
   // Props
-  let { property, showFolderButton = true } = $props<{ 
+  let { property, showCollectionButton = true } = $props<{ 
     property: UnifiedProperty;
-    showFolderButton?: boolean;
+    showCollectionButton?: boolean;
   }>();
   
   // Event dispatcher
@@ -53,9 +53,9 @@
         ${Math.round(property.pricing.total)}
       </div>
       
-      {#if showFolderButton}
+      {#if showCollectionButton}
         <div class="absolute top-3 left-3 z-10" onclick={(e) => e.stopPropagation()}>
-          <AddToFolder {property} />
+          <AddToCollection {property} />
         </div>
       {/if}
     </div>

@@ -40,26 +40,11 @@ export const POST: RequestHandler = async (event) => {
 		// If properties are provided, save them
 		if (properties && properties.length > 0) {
 			// Prepare property data for insertion
-			const propertyRecords = properties.map((property, index) => ({
-				search_id: searchId,
-				property_name: property.name || 'Unnamed property',
-				property_url: property.url || '',
-				price: property.pricing?.total || 0,
-				location: property.location || '',
-				rooms: property.capacity?.bedrooms || 0,
-				baths: property.capacity?.bathrooms || 0,
-				amenities: property.features?.amenities || [],
-				score: property.score || 0,
-				image_url: property.media?.main_image || '',
-				gallery: property.media?.gallery || [],
-				property_data: property, // Store the full property object as JSON
-				created_at: new Date().toISOString()
-			}));
 
 			// Insert into search_results table
 			const { data: resultsData, error: resultsError } = await supabase
 				.from('search_results')
-				.insert(propertyRecords)
+				.insert({ search_id: searchId, data: properties })
 				.select('id');
 
 			if (resultsError) {

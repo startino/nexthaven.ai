@@ -14,19 +14,19 @@ export type Database = {
           collection_id: string
           created_at: string | null
           id: string
-          property_id: string
+          property: Json
         }
         Insert: {
           collection_id: string
           created_at?: string | null
           id?: string
-          property_id: string
+          property: Json
         }
         Update: {
           collection_id?: string
           created_at?: string | null
           id?: string
-          property_id?: string
+          property?: Json
         }
         Relationships: [
           {
