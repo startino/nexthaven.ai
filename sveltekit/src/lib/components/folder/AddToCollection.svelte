@@ -53,10 +53,13 @@
 			
 			// Get collections for this property
 			const userCollections = await CollectionService.getCollections($page.data.session.user.id);
+			
+			// Check each collection to see if it contains this property
 			const propertyCollections = await Promise.all(
 				userCollections.map(async (collection) => {
-					const propertyIds = await CollectionService.getCollectionProperties(collection.id);
-					return { collection, isSaved: propertyIds.includes(property.id) };
+					const collectionProperties = await CollectionService.getCollectionProperties(collection.id);
+					const isSaved = collectionProperties.some(p => p.id === property.id);
+					return { collection, isSaved };
 				})
 			);
 			
@@ -123,8 +126,15 @@
 				await CollectionService.removePropertyFromCollection(collection.id, property.id);
 				savedCollections.delete(collection.id);
 			} else {
-				// Add property to collection
-				await CollectionService.addPropertyToCollection(collection.id, property);
+				// Check if property already exists in collection to avoid duplicates
+				const collectionProperties = await CollectionService.getCollectionProperties(collection.id);
+				const propertyExists = collectionProperties.some(p => p.id === property.id);
+				
+				if (!propertyExists) {
+					// Add property to collection
+					await CollectionService.addPropertyToCollection(collection.id, property);
+				}
+				
 				savedCollections.add(collection.id);
 			}
 			

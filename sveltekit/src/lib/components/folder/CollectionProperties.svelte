@@ -53,10 +53,10 @@
 		if (!$currentCollection) return;
 		
 		try {
-			await CollectionService.removePropertyFromCollection($currentCollection.id, propertyId);
-			
-			// Update the properties list
 			properties = properties.filter(p => p.id !== propertyId);
+			
+			await CollectionService.removePropertyFromCollection($currentCollection.id, propertyId);
+			// Update the properties list
 		} catch (error) {
 			console.error('Failed to remove property from collection:', error);
 		}
