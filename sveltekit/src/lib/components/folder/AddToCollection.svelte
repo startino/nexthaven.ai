@@ -202,11 +202,7 @@
 				Property: {property.title}
 			</div>
 		</div>
-	</PopoverContent>
-</Popover>
-
-<!-- Create Collection Dialog -->
-<Dialog bind:open={showCreateDialog}>
+		<Dialog bind:open={showCreateDialog}>
 	<DialogContent>
 		<DialogHeader>
 			<DialogTitle>Create New Collection</DialogTitle>
@@ -236,12 +232,13 @@
 		</div>
 		
 		<DialogFooter>
-			<DialogClose asChild>
-				<Button variant="outline">Cancel</Button>
-			</DialogClose>
 			<Button disabled={isLoading} onclick={createCollection}>
 				{#if isLoading}Creating...{:else}Create Collection{/if}
 			</Button>
 		</DialogFooter>
 	</DialogContent>
 </Dialog> 
+	</PopoverContent>
+</Popover>
+
+<!-- Create Collection Dialog -->
