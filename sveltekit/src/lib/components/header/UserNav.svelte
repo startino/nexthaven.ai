@@ -7,7 +7,7 @@
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
-	import { User, LogOut, Settings, CreditCard } from 'lucide-svelte';
+	import { User, LogOut, Settings, CreditCard, Folder } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
@@ -51,6 +51,10 @@
 		<DropdownMenuItem on:click={() => goto('/subscription')}>
 			<CreditCard class="mr-2 h-4 w-4" />
 			<span>Subscription</span>
+		</DropdownMenuItem>
+		<DropdownMenuItem on:click={() => goto('/collections')}>
+			<Folder class="mr-2 h-4 w-4" />
+			<span>My Saved Properties</span>
 		</DropdownMenuItem>
 		<DropdownMenuSeparator />
 		<DropdownMenuItem on:click={handleSignOut}>

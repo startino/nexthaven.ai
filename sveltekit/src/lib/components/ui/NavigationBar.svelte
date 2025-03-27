@@ -1,7 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
-	import { LogOut, User, CreditCard, Crown, Search, History, Home } from 'lucide-svelte';
+	import { LogOut, User, CreditCard, Crown, Search, History, Home, Folder } from 'lucide-svelte';
+	import { TrialBadge } from '$lib/components/trial-badge';
+
+	console.log("page.data", page.data);
 </script>
 
 <header class="w-full bg-black/60 backdrop-blur-md py-3 px-6 border-b border-gray-800 fixed top-0 z-50">
@@ -15,8 +18,8 @@
 		</div>
 		
 		<div class="flex items-center gap-4">
-			<!-- Navigation buttons -->
-			{#if $page.data.session && $page.url.pathname !== '/search'}
+			<!-- Navigation buttons - always shown when logged in -->
+			{#if page.data.session}
 				<Button 
 					variant="ghost" 
 					size="sm"
@@ -26,9 +29,7 @@
 					<Search size={16} />
 					<span class="hidden sm:inline">Search</span>
 				</Button>
-			{/if}
-			
-			{#if $page.data.session}
+				
 				<Button 
 					variant="ghost" 
 					size="sm"
@@ -38,25 +39,53 @@
 					<History size={16} />
 					<span class="hidden sm:inline">History</span>
 				</Button>
-			{/if}
-			
-			<!-- Auth buttons - only shown when logged in -->
-			{#if $page.data.session}
-				<!-- Subscription status badge -->
-				{#if false /* Replace with actual subscription check */}
-					<div class="flex items-center gap-1.5 px-3 py-1 bg-purple-900/40 rounded-full text-xs">
-						<Crown size={14} class="text-purple-300" />
-						<span class="text-purple-200">Premium</span>
+				
+				<Button 
+					variant="ghost" 
+					size="sm"
+					class="flex items-center gap-1 text-sm"
+					href="/collections"
+				>
+					<Folder size={16} />
+					<span class="hidden sm:inline">Collections</span>
+				</Button>
+				
+				<!-- Subscription badge - shows status if subscription data exists and is active -->
+				{#if page.data.subscriptionStatus?.isActive}
+					<!-- Show active subscription status -->
+					<div class="flex items-center gap-1.5 px-3 py-1 {page.data.subscriptionStatus.isInTrial ? 'bg-amber-900/40' : 'bg-purple-900/40'} rounded-full text-xs">
+						<Crown size={14} class="{page.data.subscriptionStatus.isInTrial ? 'text-amber-300' : 'text-purple-300'}" />
+						<span class="{page.data.subscriptionStatus.isInTrial ? 'text-amber-200' : 'text-purple-200'}">
+							{page.data.subscriptionStatus.isInTrial ? 'Trial' : 'Premium'}
+						</span>
+						{#if page.data.subscriptionStatus.isInTrial && page.data.subscriptionStatus.trialEnd}
+							<TrialBadge trialEndDate={page.data.subscriptionStatus.trialEnd} />
+						{/if}
 					</div>
+				{:else}
+					<!-- Show upgrade prompt when no active subscription -->
+					<a 
+						href="/subscription" 
+						class="flex items-center gap-1.5 px-3 py-1 bg-gray-800/40 hover:bg-gray-700/40 cursor-pointer rounded-full text-xs transition-colors"
+					>
+						<Crown size={14} class="text-gray-400" />
+						<span class="text-gray-300">Upgrade</span>
+					</a>
 				{/if}
 				
 				<!-- Subscription button - color based on status -->
 				<Button
 					variant="ghost"
 					size="icon"
-					class="bg-purple-900/60 hover:bg-purple-900/80 text-purple-200"
+					class={page.data.subscriptionStatus?.isActive 
+						? (page.data.subscriptionStatus.isInTrial 
+							? "bg-amber-900/60 hover:bg-amber-900/80 text-amber-200" 
+							: "bg-purple-900/60 hover:bg-purple-900/80 text-purple-200")
+						: "bg-gray-800/60 hover:bg-gray-800/80 text-gray-200"}
 					href="/subscription"
-					title="Get Premium"
+					title={page.data.subscriptionStatus?.isActive 
+						? (page.data.subscriptionStatus.isInTrial ? 'Upgrade from Trial' : 'Manage Subscription') 
+						: 'Get Premium'}
 				>
 					<CreditCard size={18} />
 				</Button>

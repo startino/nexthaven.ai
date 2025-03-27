@@ -6,6 +6,7 @@
 	import { CheckCircle, AlertCircle, Crown, ArrowRight } from 'lucide-svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import { goto } from '$app/navigation';
+	import { TrialBadge } from '$lib/components/trial-badge';
 
 	// Get data from server
 	let { data } = $props();
@@ -16,6 +17,11 @@
 	let currentPeriodEnd = $state(data.subscriptionStatus?.currentPeriodEnd
 		? new Date(data.subscriptionStatus.currentPeriodEnd).toLocaleDateString()
 		: '');
+	let isInTrial = $state(data.subscriptionStatus?.isInTrial || false);
+	let trialEnd = $state(data.subscriptionStatus?.trialEnd
+		? new Date(data.subscriptionStatus.trialEnd).toLocaleDateString()
+		: '');
+	let isTrialEligible = $state(data.isTrialEligible || false);
 	let isLoading = $state(false);
 	let billingPeriod = $state('monthly'); // Default to monthly
 	let isSuccess = $page.url.searchParams.get('success') === 'true';
@@ -123,19 +129,101 @@
 			</div>
 		{:else if isSubscribed}
 			<!-- Content for subscribed users -->
-			<div class="mx-auto max-w-3xl p-6 bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded-xl shadow-xl border border-indigo-500/20">
+			<div class="mx-auto max-w-3xl p-6 bg-gradient-to-br {isInTrial ? 'from-amber-900/50 to-amber-800/30' : 'from-indigo-900/50 to-purple-900/50'} rounded-xl shadow-xl border {isInTrial ? 'border-amber-500/30' : 'border-indigo-500/20'}">
 				<div class="text-center mb-6">
-					<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 mb-4">
+					{#if isInTrial}
+						<!-- Trial badge on top when in trial -->
+						<div class="inline-flex items-center px-3 py-1 mb-4 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-sm font-medium">
+							Free Trial Active
+						</div>
+					{/if}
+					
+					<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r {isInTrial ? 'from-amber-500 to-amber-600' : 'from-indigo-500 to-purple-500'} mb-4">
 						<Crown class="h-8 w-8 text-white" />
 					</div>
-					<h2 class="text-2xl font-bold mb-2">Premium Subscription Active</h2>
-					<p class="text-indigo-200 mb-2">You have access to all premium features!</p>
+					
+					<h2 class="text-2xl font-bold mb-2">{isInTrial ? 'Free Trial Active' : 'Premium Subscription Active'}</h2>
+					<p class="{isInTrial ? 'text-amber-200' : 'text-indigo-200'} mb-2">You have access to all premium features!</p>
+					
 					{#if planName}
-						<p class="text-sm text-indigo-300">Plan: {planName}</p>
+						<p class="text-sm {isInTrial ? 'text-amber-300' : 'text-indigo-300'}">Plan: {planName}</p>
 					{/if}
-					{#if currentPeriodEnd}
+					
+					{#if currentPeriodEnd && !isInTrial}
 						<p class="text-sm text-indigo-300 mb-4">Current period ends: {currentPeriodEnd}</p>
 					{/if}
+					
+					{#if isInTrial && trialEnd}
+						<!-- Enhanced trial information -->
+						<div class="mt-6 mb-6 w-full max-w-lg mx-auto">
+							<div class="text-center mb-2">
+								<p class="text-amber-300 font-semibold">Your free trial ends on {trialEnd}</p>
+								<div class="my-2">
+									<TrialBadge trialEndDate={data.subscriptionStatus?.trialEnd || ''} variant="large" />
+								</div>
+							</div>
+							
+							<!-- Trial period progress bar -->
+							<div class="mt-4 mb-6 w-full bg-amber-900/20 rounded-full h-2.5">
+								{#if data.subscriptionStatus?.trialEnd}
+									{@const totalDays = 14}
+									{@const now = new Date()}
+									{@const endDate = new Date(data.subscriptionStatus.trialEnd)}
+									
+									{@const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())}
+									{@const trialStartDate = new Date(endDate)}
+									{@const _ = trialStartDate.setDate(trialStartDate.getDate() - totalDays)}
+									
+									{@const elapsedTime = nowDate.getTime() - trialStartDate.getTime()}
+									{@const totalTime = endDate.getTime() - trialStartDate.getTime()}
+									{@const progressPercent = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100))}
+									
+									<div class="bg-amber-400 h-2.5 rounded-full" style="width: {progressPercent}%"></div>
+								{/if}
+							</div>
+							
+							<!-- What happens after trial -->
+							<div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-center">
+								<p class="text-amber-400 font-medium mb-1">What happens when your trial ends?</p>
+								<p class="text-sm text-amber-200">You'll need to subscribe to continue using premium features.</p>
+							</div>
+							
+							<!-- Billing period selector for trial users -->
+							<div class="mt-4">
+								<div class="text-center mb-2">
+									<p class="text-amber-300 font-medium">Choose a billing plan:</p>
+								</div>
+								<div class="flex rounded-md overflow-hidden border border-amber-500/30">
+									<button 
+										class="flex-1 py-2 px-4 text-sm font-medium transition-all focus:outline-none {billingPeriod === 'monthly' ? 'bg-amber-500/30 text-amber-300 font-semibold' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
+										on:click={() => billingPeriod = 'monthly'}
+									>
+										Monthly
+									</button>
+									<button 
+										class="flex-1 py-2 px-4 text-sm font-medium transition-all focus:outline-none flex items-center justify-center gap-2 {billingPeriod === 'yearly' ? 'bg-amber-500/30 text-amber-300 font-semibold' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
+										on:click={() => billingPeriod = 'yearly'}
+									>
+										Yearly
+										{#if PRICING_TIER.options.length > 1 && PRICING_TIER.options[1]?.savingsAmount && PRICING_TIER.options[1].savingsAmount > 0}
+											<span class="ml-1 text-xs {billingPeriod === 'yearly' ? 'bg-amber-600/30 text-amber-300' : 'bg-amber-500/10 text-amber-500/70'} px-2 py-0.5 rounded-full">
+												Save ${PRICING_TIER.options[1].savingsAmount}
+											</span>
+										{/if}
+									</button>
+								</div>
+								<p class="mt-2 text-center text-amber-200 text-sm">
+									${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'}
+									{#if billingPeriod === 'yearly' && yearlySavings > 0}
+										<span class="ml-1 text-xs text-green-400">
+											(Save ${yearlySavings})
+										</span>
+									{/if}
+								</p>
+							</div>
+						</div>
+					{/if}
+					
 					{#if isSuccess}
 						<div class="mt-4 p-3 bg-green-900/30 border border-green-500/30 rounded-lg text-green-300">
 							<p>🎉 Your subscription has been activated successfully!</p>
@@ -144,6 +232,7 @@
 				</div>
 				
 				<div class="flex flex-col sm:flex-row gap-4 justify-center">
+					{#if !isInTrial}
 					<button 
 						type="button"
 						class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-500 hover:to-purple-500 transition-all shadow-md"
@@ -152,6 +241,16 @@
 					>
 						{isLoading ? 'Loading...' : 'Manage Subscription'}
 					</button>
+					{:else}
+					<button 
+						type="button"
+						class="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:from-amber-500 hover:to-amber-600 transition-all shadow-md"
+						on:click={handleSubscribe}
+						disabled={isLoading}
+					>
+						{isLoading ? 'Loading...' : `Subscribe to ${billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'} Plan`}
+					</button>
+					{/if}
 					
 					<button 
 						type="button"
@@ -189,46 +288,15 @@
 				</div>
 			</div>
 
-			<div class="grid gap-8 md:grid-cols-2">
-				<div class="bg-black/20 border border-border p-6 rounded-lg">
-					<div class="flex items-center gap-3 mb-4">
-						<div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-							<Crown size={24} class="text-muted-foreground" />
-						</div>
-						<div>
-							<h2 class="text-xl font-semibold">Free Plan</h2>
-							<p class="text-muted-foreground text-sm">Current plan</p>
-						</div>
-					</div>
-					
-					<ul class="space-y-3 my-6">
-						<li class="flex items-center gap-2 text-sm">
-							<span class="text-muted-foreground">✓</span>
-							<span>Basic search functionality</span>
-						</li>
-						<li class="flex items-center gap-2 text-sm">
-							<span class="text-muted-foreground">✓</span>
-							<span>Limited results per search</span>
-						</li>
-						<li class="flex items-center gap-2 text-sm">
-							<span class="text-muted-foreground">✓</span>
-							<span>Standard search filters</span>
-						</li>
-					</ul>
-					
-					<p class="text-xl font-bold mb-6">$0<span class="text-sm text-muted-foreground font-normal">/month</span></p>
-					
-					<Button disabled variant="outline" class="w-full">Current Plan</Button>
-				</div>
-
+			<div class="max-w-xl mx-auto">
 				<div class="bg-primary/5 border border-primary/20 p-6 rounded-lg relative overflow-hidden">
 					<div class="absolute top-0 right-0 bg-primary/20 text-xs font-medium py-1 px-3 rounded-bl-lg">
-						RECOMMENDED
+						PREMIUM
 					</div>
 					
 					<div class="flex items-center gap-3 mb-4">
 						<div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-							<Crown size={24} class="text-gradient" />
+							<Crown size={24} class="text-primary" />
 						</div>
 						<div>
 							<h2 class="text-xl font-semibold">{PRICING_TIER.name}</h2>
@@ -260,8 +328,23 @@
 						disabled={isLoading}
 						on:click={handleSubscribe}
 					>
-						{isLoading ? 'Processing...' : `Upgrade to ${billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'} Plan`}
+						{#if isLoading}
+							Processing...
+						{:else if isInTrial}
+							Subscribe Now
+						{:else}
+							Subscribe Now
+						{/if}
 					</Button>
+					
+					<div class="mt-4 py-2 px-3 {isInTrial ? 'bg-amber-500/10 border-amber-500/20' : 'bg-primary/10 border-primary/20'} border rounded-lg text-sm text-center">
+						{#if isInTrial}
+							<span class="font-semibold text-amber-400">Your free trial ends on {trialEnd}</span><br>
+							${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'} after trial
+						{:else}
+							${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'}
+						{/if}
+					</div>
 				</div>
 			</div>
 		{/if}

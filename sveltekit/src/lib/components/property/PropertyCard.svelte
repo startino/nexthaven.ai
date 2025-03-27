@@ -5,9 +5,13 @@
   import { Badge } from '$lib/components/ui/badge';
   import { Check } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import { AddToFolder } from '$lib/components/folder';
 
   // Props
-  let { property } = $props<{ property: UnifiedProperty }>();
+  let { property, showFolderButton = true } = $props<{ 
+    property: UnifiedProperty;
+    showFolderButton?: boolean;
+  }>();
   
   // Event dispatcher
   const dispatch = createEventDispatcher<{
@@ -35,7 +39,7 @@
 
 <button 
   class="relative cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
-  on:click={() => dispatch('select', property)}
+  onclick={() => dispatch('select', property)}
 >
   <Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-accent/20 transition-all h-[450px] flex flex-col">
     <div class="relative h-56 overflow-hidden">
@@ -48,6 +52,12 @@
       <div class="absolute bottom-4 left-4 text-foreground text-2xl font-bold">
         ${Math.round(property.pricing.total)}
       </div>
+      
+      {#if showFolderButton}
+        <div class="absolute top-3 left-3 z-10" onclick={(e) => e.stopPropagation()}>
+          <AddToFolder {property} />
+        </div>
+      {/if}
     </div>
     
     <div class="absolute top-3 right-3">

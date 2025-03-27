@@ -55,7 +55,7 @@
 			return;
 		}
 		
-		const { error } = await supabase.auth.signUp({
+		const { data: authData, error } = await supabase.auth.signUp({
 			email,
 			password,
 			options: {

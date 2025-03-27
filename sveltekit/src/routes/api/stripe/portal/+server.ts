@@ -20,6 +20,21 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const body = await request.json();
 		const { returnUrl } = body;
 
+		// Check if user is in a trial by querying our user_trials table
+		const { data: trialData, error: trialError } = await locals.supabase
+			.from('user_trials')
+			.select('*')
+			.eq('user_id', userSession.user.id)
+			.eq('is_active', true)
+			.single();
+
+		// If user is in a trial, don't use the portal - redirect to checkout directly
+		if (!trialError && trialData) {
+			// For users in a trial, direct them to the subscription page instead of the portal
+			const baseUrl = PUBLIC_SITE_URL || 'http://localhost:5173';
+			return json({ url: `${baseUrl}/subscription` });
+		}
+
 		// Get customer ID from our database
 		const { data: customerData, error: customerError } = await locals.supabase
 			.from('customers')

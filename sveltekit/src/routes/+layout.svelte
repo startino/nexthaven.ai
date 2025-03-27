@@ -41,6 +41,12 @@
 				if (_session?.expires_at !== session?.expires_at) {
 					invalidate('supabase:auth');
 				}
+				
+				// Explicitly refresh subscription status on sign in events
+				if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+					console.log('Auth event detected, refreshing subscription status');
+					invalidate('subscription:status');
+				}
 			}
 		);
 

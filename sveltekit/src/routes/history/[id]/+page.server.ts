@@ -1,20 +1,18 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import type { UnifiedProperty } from '$lib/types/unified-property';
+import { requireSubscription } from '$lib/utils/subscription';
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async (event) => {
+	const { params, locals } = event;
 	const { supabase } = locals;
 	const { id } = params;
 
-	// Check if the user is authenticated
-	const {
-		data: { session }
-	} = await supabase.auth.getSession();
+	// Check subscription status and redirect if not active
+	const subscriptionStatus = await requireSubscription(event);
 
-	// If not authenticated, redirect to login
-	if (!session) {
-		redirect(303, '/login');
-	}
+	// Get the user session (will be valid since requireSubscription ensures it)
+	const session = await locals.getSession();
 
 	try {
 		// Fetch the specific search history item
@@ -22,7 +20,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.from('search_history')
 			.select('*')
 			.eq('id', id)
-			.eq('user_id', session.user.id)
+			.eq('user_id', session?.user.id || '')
 			.single();
 
 		if (historyError) {
@@ -42,7 +40,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			// Don't throw an error here, just return empty results
 			return {
 				searchHistory,
-				properties: []
+				properties: [],
+				subscriptionStatus
 			};
 		}
 
@@ -91,7 +90,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Return both the search history and its formatted results
 		return {
 			searchHistory,
-			properties: formattedResults
+			properties: formattedResults,
+			subscriptionStatus
 		};
 	} catch (err) {
 		console.error('Error loading search history:', err);

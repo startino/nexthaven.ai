@@ -1,32 +1,31 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { requireSubscription } from '$lib/utils/subscription';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async (event) => {
+	const { locals } = event;
 	const { supabase } = locals;
 
-	// Check if the user is authenticated
-	const {
-		data: { session }
-	} = await supabase.auth.getSession();
+	// Get the user session
+	const session = await locals.getSession();
 
-	// If not authenticated, redirect to login
-	if (!session) {
-		redirect(303, '/login');
-	}
+	// Check subscription status and redirect if not active
+	const subscriptionStatus = await requireSubscription(event);
 
 	// Fetch search history for the current user
 	const { data: searchHistory, error } = await supabase
 		.from('search_history')
 		.select('*')
-		.eq('user_id', session.user.id)
+		.eq('user_id', session?.user.id || '')
 		.order('created_at', { ascending: false });
 
 	if (error) {
 		console.error('Error fetching search history:', error);
 	}
 
-	// Return the search history
+	// Return the search history and subscription status
 	return {
-		searchHistory: searchHistory || []
+		searchHistory: searchHistory || [],
+		subscriptionStatus
 	};
 };

@@ -10,6 +10,8 @@
 	import { slide } from 'svelte/transition';
 	import { fade } from 'svelte/transition';
 	import { goto } from '$app/navigation';
+	import { TrialStatus } from '$lib/components/dashboard';
+	import type { SubscriptionStatus } from '$lib/utils/subscription';
 	
 	// Define interface for saved preferences
 	interface SavedPreference {
@@ -18,8 +20,16 @@
 		preferences: string;
 	}
 	
+	// Define interface for page data
+	interface PageData {
+		popularDestinations: Array<{ name: string; id?: string; image?: string }>;
+		subscriptionStatus?: SubscriptionStatus;
+		session?: any;
+		supabase?: any;
+	}
+	
 	// Get data from loader
-	let { data } = $props();
+	let { data } = $props<{ data: PageData }>();
 	
 	// Create a constant for the template text that can be reused
 	const TEMPLATE_TEXT = `Type of property: [apartment / hostel / co-living / etc.]
@@ -292,6 +302,7 @@ Literally any other preferences:
 </script>
 
 <div class="max-w-4xl mx-auto py-8 px-4">
+
 	<div class="flex justify-start items-center mb-8">
 		<Button 
 			variant="outline" 

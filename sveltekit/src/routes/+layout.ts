@@ -3,6 +3,7 @@ import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ data, depends }) => {
 	depends('supabase:auth');
+	depends('subscription:status');
 
 	const supabase = createSupabaseBrowserClient();
 
@@ -12,6 +13,7 @@ export const load: LayoutLoad = async ({ data, depends }) => {
 
 	return {
 		supabase,
-		session: session || data.session
+		session: session || data.session,
+		subscriptionStatus: data.subscriptionStatus
 	};
 };

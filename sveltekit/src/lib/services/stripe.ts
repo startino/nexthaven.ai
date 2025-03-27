@@ -14,33 +14,28 @@ export interface SubscriptionStatus {
 	planId?: string;
 	planName?: string;
 	currentPeriodEnd?: string;
+	isInTrial?: boolean;
+	trialEnd?: string;
 }
 
 // Pricing tiers - now using environment variables
 export const PRICING_TIER = {
 	name: 'Premium',
 	description: 'Everything you need to find your perfect accommodation',
-	features: [
-		'Unlimited searches',
-		'Advanced property comparison',
-		'Priority support',
-		'Booking assistance',
-		'Save favorite properties',
-		'Personalized recommendations'
-	],
+	features: ['Unlimited searches', 'Advanced property comparison'],
 	options: [
 		{
 			id: PUBLIC_STRIPE_PRICE_MONTHLY,
 			period: 'monthly',
-			price: 9.99,
+			price: 19.99,
 			description: 'Monthly subscription'
 		},
 		{
 			id: PUBLIC_STRIPE_PRICE_YEARLY,
 			period: 'yearly',
-			price: 99.99,
+			price: 49.99,
 			description: 'Annual subscription',
-			savingsAmount: 19.89 // (9.99*12) - 99.99 = 19.89
+			savingsAmount: 189.89
 		}
 	]
 };
