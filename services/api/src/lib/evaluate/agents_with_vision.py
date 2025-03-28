@@ -85,6 +85,8 @@ class EvaluateAgent:
                         image_tasks.append(None)
                 else:
                     image_tasks.append(None)
+                    
+            start_time = time.time()
 
             # Wait for all image analyses to complete
             image_results = await asyncio.gather(
@@ -99,7 +101,10 @@ class EvaluateAgent:
                     result_index += 1
                 else:
                     image_analyses[f"property_{i}"] = "No images available for analysis."
-
+                    
+            end_time = time.time()
+            logging.info(f"Image analysis completed in {end_time - start_time:.2f} seconds")
+            
         # Create evaluation tasks for each property
         evaluation_tasks = []
         for i, prop in enumerate(properties):
