@@ -38,6 +38,7 @@ from src.models.result import Result, Property
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
 from src.models.unified_property import (
     UnifiedProperty,
+    Coordinates,
     PricingModel,
     CapacityModel,
     FeaturesModel,
@@ -514,6 +515,7 @@ Please provide a detailed, thorough analysis of both aspects, clearly separating
             description = property_data.description
             url = property_data.url
             location = property_data.address.full if property_data.address else ""
+            coordinates = property_data.location if property_data.location else ""
 
             # Extract pricing
             if isinstance(property_data.price, str):
@@ -547,6 +549,7 @@ Please provide a detailed, thorough analysis of both aspects, clearly separating
             description = property_data.description if property_data.description else ""
             url = property_data.url
             location = property_data.location if property_data.location else ""
+            coordinates = property_data.coordinates if property_data.coordinates else ""
 
             # Extract pricing
             if isinstance(property_data.price, str):
@@ -582,6 +585,7 @@ Please provide a detailed, thorough analysis of both aspects, clearly separating
             name=name,
             description=description,
             location=location if location else "",  # Ensure location is never None
+            coordinates=Coordinates(lat=coordinates.lat, lng=coordinates.lng) if coordinates else "",
             pricing=PricingModel(
                 total=(
                     float(total.price.replace("$", "").replace(",", ""))

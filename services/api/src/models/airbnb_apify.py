@@ -32,8 +32,8 @@ class AirbnbApifyRequest(BaseModel):
     proxyConfiguration: Optional[Dict[str, Any]] = Field(default=None, description="Proxy configuration")
 
 class Coordinates(BaseModel):
-    latitude: float
-    longitude: float
+    latitude: float | None
+    longitude: float | None
 
 class Rating(BaseModel):
     accuracy: Optional[float] = None
