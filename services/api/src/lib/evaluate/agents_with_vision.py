@@ -339,8 +339,8 @@ class EvaluateAgent:
             
         # Extract user preferences for the prompt
         preferences_text = "Not specified"
-        if user_request and hasattr(user_request, 'preferences') and user_request.preferences:
-            preferences_text = user_request.preferences
+        if user_request and user_request['preferences']:
+            preferences_text = user_request['preferences']
             
         # Create a combined prompt that addresses both generic and preference-specific analysis
         combined_messages = [
