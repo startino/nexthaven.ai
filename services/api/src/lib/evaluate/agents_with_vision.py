@@ -120,10 +120,26 @@ class EvaluateAgent:
             )
             evaluation_tasks.append(task)
         
-        # Run all evaluation tasks concurrently with a timeout
-        logging.info(f"Starting parallel evaluation of {len(properties)} properties using asyncio.gather")
+        # Process in batches instead of all at once to prevent rate limiting
+        logging.info(f"Starting batch processing of {len(properties)} properties")
         start_time = time.time()
-        results = await asyncio.gather(*evaluation_tasks, return_exceptions=True)
+        
+        # Use a semaphore to limit the total number of concurrent evaluations
+        # This prevents overwhelming the API while still allowing parallel batch processing
+        max_concurrent_total = 15  # Maximum concurrent evaluations across all batches
+        semaphore = asyncio.Semaphore(max_concurrent_total)
+        
+        # Create a limited version of the evaluation function
+        async def limited_evaluation(task):
+            async with semaphore:
+                return await task
+        
+        # Process all properties in a more optimized parallel approach
+        # Instead of processing batches sequentially, we wrap each task with the semaphore
+        # and run all of them in parallel, but with a concurrency limit applied via semaphore
+        tasks = [limited_evaluation(task) for task in evaluation_tasks]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
         end_time = time.time()
         logging.info(f"Completed parallel evaluation in {end_time - start_time:.2f} seconds")
         
@@ -239,11 +255,11 @@ class EvaluateAgent:
                 | JsonOutputToolsParser(return_id=True)
             )
             
-            # Execute with timeout to avoid hanging
+            # Execute with 30 second timeout to meet our target
             try:
                 result = await asyncio.wait_for(
                     chain.ainvoke({}), 
-                    timeout=40 # With too many request errors, LLM retries after 60 seconds
+                    timeout=30 # Reduced to 30s target
                 )
                 
                 logging.info(f"Successfully evaluated property {property_index}")
@@ -256,7 +272,7 @@ class EvaluateAgent:
                 return result[0]["args"]
                 
             except asyncio.TimeoutError:
-                logging.warning(f"Evaluation of property {property_index} timed out")
+                logging.warning(f"Evaluation of property {property_index} timed out after 30 seconds")
                 return None
                 
         except openai.BadRequestError as e:
@@ -591,19 +607,25 @@ if __name__ == "__main__":
     all_properties = booking_properties + airbnb_properties
     
     # Use the asyncio version
-    start_time = time.time()
-    evaluate_agent = EvaluateAgent()
-    response = asyncio.run(
-        evaluate_agent.evaluate(generate_requirement, all_properties)
-    )
-    end_time = time.time()
+    async def main():
+        start_time = time.time()
+        evaluate_agent = EvaluateAgent()
+        try:
+            response = await evaluate_agent.evaluate(generate_requirement, all_properties)
+        finally:
+            # Ensure resources are cleaned up
+            await evaluate_agent.close()
+        end_time = time.time()
 
-    # Check if response is None before calling len()
-    if response:
-        print(
-            f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds"
-        )
-        for prop in response:
-            print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
-    else:
-        print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")
+        # Check if response is None before calling len()
+        if response:
+            print(
+                f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds"
+            )
+            for prop in response:
+                print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
+        else:
+            print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")
+    
+    # Run the async main function
+    asyncio.run(main())
