@@ -255,6 +255,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         # Analyze with preferences included
         analyzer = AnalyzeUserRequirement()
         updated_req_obj = analyzer.analyze_user_requirement(user_requirement)
+
         timings["req_update"] = time.time() - req_update_start
         # endregion
 

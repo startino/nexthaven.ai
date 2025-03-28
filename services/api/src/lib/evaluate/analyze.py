@@ -64,7 +64,7 @@ class AnalyzeUserRequirement:
 
         logging.info(f"Analyzed user requirement and generated requirements")
 
-        return response[0]["args"]
+        return GeneratedRequirement(**response[0]["args"])
 
 
 if __name__ == "__main__":

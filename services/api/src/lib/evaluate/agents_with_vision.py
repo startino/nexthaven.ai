@@ -203,7 +203,7 @@ class EvaluateAgent:
             logging.warning("No properties were successfully processed")
             return []
     
-    async def _evaluate_single_property(self, property_index: int, property_data: dict, image_analysis: str, user_request: GeneratedRequirement) -> dict:
+    async def _evaluate_single_property(self, property_index: int, property_data: dict, image_analysis: str, user_request: GeneratedRequirement) -> dict | None:
         """
         Evaluate a single property using LLM
         
@@ -310,7 +310,7 @@ class EvaluateAgent:
             logging.error(f"Unexpected error evaluating property {property_index}: {str(e)}")
             return None
     
-    async def _analyze_images(self, image_urls: List[str], user_request: GeneratedRequirement = None, max_images: int = 10) -> str:
+    async def _analyze_images(self, image_urls: List[str], user_request: GeneratedRequirement, max_images: int = 15) -> str:
         """
         Analyze property images using vision model - combined generic and preference analysis
         
@@ -326,6 +326,7 @@ class EvaluateAgent:
             return "No images available for analysis."
 
         # Randomly select images up to max_images
+        # We select them randomly as the order of images is likely to be grouped by things like room, bathroom, nearby attractions, etc.
         if len(image_urls) > max_images:
             selected_urls = random.sample(image_urls, max_images)
         else:
@@ -333,8 +334,8 @@ class EvaluateAgent:
             
         # Extract user preferences for the prompt
         preferences_text = "Not specified"
-        if user_request and user_request['preferences']:
-            preferences_text = user_request['preferences']
+        if user_request and user_request.preferences:
+            preferences_text = user_request.preferences
             
         # Create a combined prompt that addresses both generic and preference-specific analysis
         combined_messages = [
@@ -349,7 +350,9 @@ Describe the style, vibe, and aesthetic of the property. Focus on decor, design 
 
 PART 2 - USER PREFERENCE MATCH:
 The user has specified these preferences: '{preferences_text}'
-Analyze how well the property matches these specific preferences. Which visual elements align with or contradict the user's stated preferences?
+Analyze if the property matches these specific preferences. Which visual elements align with or contradict the user's stated preferences?
+Be highly descriptive and specifc about the details found in the images; it's like you're making the image come to life through your analysis.
+If the images don't contain the information to make a determination, say "Images don't contain information to make a determination for [insert preference here]"
 
 Please provide a detailed, thorough analysis of both aspects, clearly separating the two parts in your response.
 """,
@@ -578,7 +581,7 @@ Please provide a detailed, thorough analysis of both aspects, clearly separating
             name=name,
             description=description,
             location=location if location else "",  # Ensure location is never None
-            coordinates=Coordinates(lat=coordinates.lat, lng=coordinates.lng) if coordinates else "",
+            coordinates=Coordinates(lat=coordinates.lat, lng=coordinates.lng) if coordinates else Coordinates(lat=None, lng=None),
             pricing=PricingModel(
                 total=(
                     float(total.price.replace("$", "").replace(",", ""))
