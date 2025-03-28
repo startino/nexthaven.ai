@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { collections, setCollections, setCurrentCollection } from '$lib/stores/collections';
+	import { collectionState, setCurrentCollection, type PropertyCollection } from '$lib/stores/collections.svelte';
 	import { CollectionService } from '$lib/services/collection.service';
 	import { Trash2, Edit2, Plus, Folder, Package } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -19,7 +19,6 @@
 		DropdownMenuItem,
 		DropdownMenuTrigger
 	} from '$lib/components/ui/dropdown-menu';
-	import type { PropertyCollection } from '$lib/stores/collections';
 	
 	// Props
 	let { classname = '' } = $props<{
@@ -33,40 +32,6 @@
 	let collectionName = $state('');
 	let collectionDescription = $state('');
 	let selectedCollection: PropertyCollection | null = $state(null);
-	let isLoading = $state(false);
-	
-	// Load collections when component mounts
-	$effect(() => {
-		if ($page.data.session?.user) {
-			loadCollections();
-		}
-	});
-	
-	// Load collections for the current user
-	async function loadCollections() {
-		try {
-			isLoading = true;
-			if (!$page.data.session?.user?.id) {
-				return;
-			}
-			
-			const userCollections = await CollectionService.getCollections($page.data.session.user.id);
-			
-			// If no 'My Trip' collection exists, create it
-			if (!userCollections.some((collection) => collection.name === 'My Trip')) {
-				await CollectionService.ensureDefaultCollection($page.data.session.user.id);
-				// Reload collections after creating default
-				const updatedCollections = await CollectionService.getCollections($page.data.session.user.id);
-				setCollections(updatedCollections);
-			} else {
-				setCollections(userCollections);
-			}
-		} catch (error) {
-			console.error('Failed to load collections:', error);
-		} finally {
-			isLoading = false;
-		}
-	}
 	
 	// Create a new collection
 	async function createCollection() {
@@ -76,20 +41,19 @@
 		}
 		
 		try {
-			isLoading = true;
+			collectionState.isLoading = true;
 			if (!$page.data.session?.user?.id) {
 				console.error('You must be logged in to create collections');
 				return;
 			}
 			
-			await CollectionService.createCollection(
+			const collection = await CollectionService.createCollection(
 				collectionName, 
 				$page.data.session.user.id, 
 				collectionDescription
 			);
 			
-			// Reload collections after creating
-			await loadCollections();
+			collectionState.collections.push(collection);
 			
 			// Reset form
 			collectionName = '';
@@ -100,7 +64,7 @@
 		} catch (error) {
 			console.error('Failed to create collection:', error);
 		} finally {
-			isLoading = false;
+			collectionState.isLoading = false;
 		}
 	}
 	
@@ -121,15 +85,18 @@
 		}
 		
 		try {
-			isLoading = true;
+			collectionState.isLoading = true;
 			
 			await CollectionService.updateCollection(selectedCollection.id, {
 				name: collectionName,
 				description: collectionDescription
 			});
 			
-			// Reload collections after updating
-			await loadCollections();
+			collectionState.collections.splice(collectionState.collections.indexOf(selectedCollection), 1, {
+				...selectedCollection,
+				name: collectionName,
+				description: collectionDescription
+			});
 			
 			// Reset form
 			collectionName = '';
@@ -141,7 +108,7 @@
 		} catch (error) {
 			console.error('Failed to update collection:', error);
 		} finally {
-			isLoading = false;
+			collectionState.isLoading = false;
 		}
 	}
 	
@@ -156,12 +123,11 @@
 		if (!selectedCollection) return;
 		
 		try {
-			isLoading = true;
+			collectionState.isLoading = true;
 			
 			await CollectionService.deleteCollection(selectedCollection.id);
 			
-			// Reload collections after deletion
-			await loadCollections();
+			collectionState.collections.splice(collectionState.collections.indexOf(selectedCollection), 1);
 			
 			// Reset selection
 			selectedCollection = null;
@@ -171,7 +137,7 @@
 		} catch (error) {
 			console.error('Failed to delete collection:', error);
 		} finally {
-			isLoading = false;
+			collectionState.isLoading = false;
 		}
 	}
 	
@@ -191,13 +157,13 @@
 	</div>
 	
 	<div class="space-y-2">
-		{#if isLoading}
+		{#if collectionState.isLoading}
 			<div class="animate-pulse space-y-2">
 				<div class="h-10 bg-muted/50 rounded"></div>
 				<div class="h-10 bg-muted/50 rounded"></div>
 			</div>
-		{:else if $collections && $collections.length > 0}
-			{#each $collections as collection}
+		{:else if collectionState.collections && collectionState.collections.length > 0}
+			{#each collectionState.collections as collection}
 				<div 
 					class="group flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer"
 					onclick={() => selectCollection(collection)}
@@ -277,8 +243,8 @@
 			
 			<DialogFooter>
 		
-				<Button disabled={isLoading} onclick={createCollection}>
-					{#if isLoading}Creating...{:else}Create Collection{/if}
+				<Button disabled={collectionState.isLoading} onclick={createCollection}>
+					{#if collectionState.isLoading}Creating...{:else}Create Collection{/if}
 				</Button>
 			</DialogFooter>
 		</DialogContent>
@@ -315,8 +281,8 @@
 			</div>
 			
 			<DialogFooter>
-				<Button disabled={isLoading} onclick={updateCollection}>
-					{#if isLoading}Updating...{:else}Update Collection{/if}
+				<Button disabled={collectionState.isLoading} onclick={updateCollection}>
+					{#if collectionState.isLoading}Updating...{:else}Update Collection{/if}
 				</Button>
 			</DialogFooter>
 		</DialogContent>
@@ -337,8 +303,8 @@
 			{/if}
 			
 			<DialogFooter>
-				<Button variant="destructive" disabled={isLoading} onclick={deleteCollection}>
-					{#if isLoading}Deleting...{:else}Delete Collection{/if}
+				<Button variant="destructive" disabled={collectionState.isLoading} onclick={deleteCollection}>
+					{#if collectionState.isLoading}Deleting...{:else}Delete Collection{/if}
 				</Button>
 			</DialogFooter>
 		</DialogContent>

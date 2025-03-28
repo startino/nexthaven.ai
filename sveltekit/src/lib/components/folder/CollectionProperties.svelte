@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { currentCollection } from '$lib/stores/collections';
+	import { collectionState } from '$lib/stores/collections.svelte';
 	import { CollectionService } from '$lib/services/collection.service';
 	import { Package, Folder, Trash2, Crown, ArrowLeft } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -23,7 +23,7 @@
 	
 	// Load properties when the current collection changes
 	$effect(() => {
-		if ($currentCollection) {
+		if (collectionState.currentCollection) {
 			loadProperties();
 		} else {
 			properties = [];
@@ -32,11 +32,11 @@
 	
 	// Load properties for the current collection
 	async function loadProperties() {
-		if (!$currentCollection) return;
+		if (!collectionState.currentCollection) return;
 		
 		try {
 			isLoading = true;
-			const propertyIds = await CollectionService.getCollectionProperties($currentCollection.id);
+			const propertyIds = await CollectionService.getCollectionProperties(collectionState.currentCollection.id);
 			
 			// propertyIds is now actually UnifiedProperty[] from CollectionService
 			properties = propertyIds;
@@ -50,12 +50,12 @@
 	
 	// Remove a property from the collection
 	async function removeProperty(propertyId: string) {
-		if (!$currentCollection) return;
+		if (!collectionState.currentCollection) return;
 		
 		try {
 			properties = properties.filter(p => p.id !== propertyId);
 			
-			await CollectionService.removePropertyFromCollection($currentCollection.id, propertyId);
+			await CollectionService.removePropertyFromCollection(collectionState.currentCollection.id, propertyId);
 			// Update the properties list
 		} catch (error) {
 			console.error('Failed to remove property from collection:', error);
@@ -103,11 +103,11 @@
 
 {#if view === 'list'}
 <div class={`py-2 ${classname}`}>
-	{#if $currentCollection}
+	{#if collectionState.currentCollection}
 		<div class="mb-4">
-			<h2 class="text-xl font-semibold">{$currentCollection.name}</h2>
-			{#if $currentCollection.description}
-				<p class="text-sm text-muted-foreground">{$currentCollection.description}</p>
+			<h2 class="text-xl font-semibold">{collectionState.currentCollection.name}</h2>
+			{#if collectionState.currentCollection.description}
+				<p class="text-sm text-muted-foreground">{collectionState.currentCollection.description}</p>
 			{/if}
 		</div>
 		

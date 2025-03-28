@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { collections } from '$lib/stores/collections';
+	import { collectionState } from '$lib/stores/collections.svelte';
 	import { CollectionService } from '$lib/services/collection.service';
 	import { page } from '$app/stores';
 	import { Folder, Plus, X, Check } from 'lucide-svelte';
@@ -12,7 +12,6 @@
 		DialogHeader, 
 		DialogTitle, 
 		DialogFooter,
-		DialogClose
 	} from '$lib/components/ui/dialog';
 	import {
 		Popover,
@@ -34,7 +33,6 @@
 	let collectionDescription = $state('');
 	let isLoading = $state(false);
 	let savedCollections = $state(new Set<string>()); // IDs of collections this property is in
-	
 	// Load collections when popover opens
 	async function handlePopoverOpen(open: boolean) {
 		isOpen = open;
@@ -102,6 +100,7 @@
 			// Update saved state
 			savedCollections.add(newCollection.id);
 			savedCollections = new Set(savedCollections); // Force update
+			collectionState.collections.push(newCollection);
 			
 			// Reset form
 			collectionName = '';
@@ -170,9 +169,9 @@
 					<div class="h-10 bg-muted/50 rounded"></div>
 					<div class="h-10 bg-muted/50 rounded"></div>
 				</div>
-			{:else if $collections && $collections.length > 0}
+			{:else if collectionState.collections && collectionState.collections.length > 0}
 				<div class="max-h-[240px] overflow-y-auto space-y-2 pr-1">
-					{#each $collections as collection}
+					{#each collectionState.collections as collection}
 						<div 
 							class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer"
 							onclick={() => toggleCollection(collection)}
