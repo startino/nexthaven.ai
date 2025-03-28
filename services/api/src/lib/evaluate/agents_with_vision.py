@@ -6,6 +6,7 @@ import httpx
 from io import BytesIO
 from typing import List, Dict, Any, Union
 import openai  # Import for exception handling
+import random
 
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -75,12 +76,12 @@ class EvaluateAgent:
             for i, prop in enumerate(properties):
                 # Handle both Booking.com and Airbnb property types
                 if isinstance(prop, BookingApifyResponse) and prop.gallery:
-                    image_tasks.append(self._analyze_images(prop.gallery))
+                    image_tasks.append(self._analyze_images(prop.gallery, user_request))
                 elif isinstance(prop, AirbnbApifyResponse) and prop.images:
                     # Extract image URLs from Airbnb images
                     image_urls = [img.imageUrl for img in prop.images if img.imageUrl]
                     if image_urls:
-                        image_tasks.append(self._analyze_images(image_urls))
+                        image_tasks.append(self._analyze_images(image_urls, user_request))
                     else:
                         image_tasks.append(None)
                 else:
@@ -215,6 +216,8 @@ class EvaluateAgent:
                 Property: {property_data}
                 Image Analysis: {image_analysis}
                 
+                Pay careful attention to both the Generic Image Analysis (which describes the overall property style and features) and the User Preference-Centric Analysis (which specifically examines how well the property matches the user's stated preferences). Use insights from both analyses when evaluating how well the property aligns with the user's requirements, especially regarding style and feel.
+                
                 Return a property match with a score between 0-100 where 100 is a perfect match.
                 Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
                 Your score output should be just the number, no other text.
@@ -313,34 +316,65 @@ class EvaluateAgent:
             logging.error(f"Unexpected error evaluating property {property_index}: {str(e)}")
             return None
     
-    async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
-        """Analyze property images using vision model"""
+    async def _analyze_images(self, image_urls: List[str], user_request: GeneratedRequirement = None, max_images: int = 10) -> str:
+        """
+        Analyze property images using vision model - combined generic and preference analysis
+        
+        Args:
+            image_urls: List of image URLs to analyze
+            user_request: User's requirements to consider for preference-centric analysis
+            max_images: Maximum number of images to analyze
+            
+        Returns:
+            String containing combined image analysis
+        """
         if not image_urls:
             return "No images available for analysis."
 
-        # Limit the number of images to analyze
-        image_urls = image_urls[:max_images]
-
-        # Create prompt for vision model
-        messages = [
+        # Randomly select images up to max_images
+        if len(image_urls) > max_images:
+            selected_urls = random.sample(image_urls, max_images)
+        else:
+            selected_urls = image_urls.copy()
+            
+        # Extract user preferences for the prompt
+        preferences_text = "Not specified"
+        if user_request and hasattr(user_request, 'preferences') and user_request.preferences:
+            preferences_text = user_request.preferences
+            
+        # Create a combined prompt that addresses both generic and preference-specific analysis
+        combined_messages = [
             HumanMessage(
                 content=[
                     {
                         "type": "text",
-                        "text": "Analyze these property images and describe the style, vibe, and aesthetic of the property. Focus on decor, design elements, ambiance, and overall feel. Is it modern, traditional, minimalist, luxurious, cozy, etc.?",
+                        "text": f"""Analyze these property images comprehensively in two parts:
+
+PART 1 - GENERIC ANALYSIS:
+Describe the style, vibe, and aesthetic of the property. Focus on decor, design elements, ambiance, and overall feel. Is it modern, traditional, minimalist, luxurious, cozy, etc.? What are the key visual features of this property?
+
+PART 2 - USER PREFERENCE MATCH:
+The user has specified these preferences: '{preferences_text}'
+Analyze how well the property matches these specific preferences. Which visual elements align with or contradict the user's stated preferences?
+
+Please provide a detailed, thorough analysis of both aspects, clearly separating the two parts in your response.
+""",
                     },
                     *[
                         {"type": "image_url", "image_url": {"url": url}}
-                        for url in image_urls
+                        for url in selected_urls
                         if url
                     ],
                 ]
             )
         ]
 
-        # Get analysis from vision model
-        response = await self.vision_llm.ainvoke(messages)
-        return f"Image Analysis: {response.content}"
+        # Get combined analysis from vision model
+        response = await self.vision_llm.ainvoke(combined_messages)
+        
+        # Format the response
+        combined_analysis = f"""Image Analysis: {response.content}"""
+        return combined_analysis
 
     def _simplify_property(
         self, property_data: BookingApifyResponse | AirbnbApifyResponse
