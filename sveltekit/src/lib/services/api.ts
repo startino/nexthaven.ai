@@ -150,25 +150,12 @@ export const propertyService = {
 	async evaluatePropertiesWithPreferences(
 		sessionId: string,
 		preferences: string
-	): Promise<UnifiedProperty[]> {
-		try {
-			const response = await fetch(`${API_BASE_URL}/api/properties/evaluate`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(transformEvaluationRequest(sessionId, preferences))
-			});
-
-			if (!response.ok) {
-				const error = await response.text();
-				throw new Error(`Failed to evaluate properties: ${error}`);
-			}
-
-			const data: PropertyEvaluationResponse = await response.json();
-			return data.results;
-		} catch (error) {
-			console.error('Error evaluating properties:', error);
-			throw error;
-		}
+	): Promise<Response> {
+		return await fetch(`${API_BASE_URL}/properties/evaluate`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Connection: 'keep-alive' },
+			body: JSON.stringify(transformEvaluationRequest(sessionId, preferences))
+		});
 	},
 
 	/**
@@ -194,4 +181,17 @@ export const propertyService = {
 			throw error;
 		}
 	}
+};
+
+const handleCallExpert = async (): Promise<Response> => {
+	body = {};
+
+	return fetch(`${getURL(PUBLIC_API_URL)}experts/call`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Connection: 'keep-alive'
+		},
+		body: JSON.stringify(body)
+	});
 };

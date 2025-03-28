@@ -180,6 +180,32 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         f"/properties/evaluate: Evaluating properties for session: {request.session_id}"
     )
 
+    # Helper function to safely extract image URL from different object formats
+    def get_image_url(prop):
+        """Extract the main image URL from a property object, handling different formats safely."""
+        # If property has image attribute directly
+        if hasattr(prop, "image") and prop.image:
+            return prop.image
+
+        # Handle Airbnb-style image arrays
+        if hasattr(prop, "images") and prop.images:
+            try:
+                # Try first as a list of dictionaries
+                if isinstance(prop.images[0], dict) and "imageUrl" in prop.images[0]:
+                    return prop.images[0]["imageUrl"]
+
+                # Try as object with imageUrl attribute
+                if hasattr(prop.images[0], "imageUrl"):
+                    return prop.images[0].imageUrl
+
+                # Try as direct string in array
+                if isinstance(prop.images[0], str):
+                    return prop.images[0]
+            except (IndexError, TypeError, AttributeError):
+                pass
+
+        return ""
+
     async def event_generator():
         try:
             # Send initial SSE event - starting
@@ -371,6 +397,59 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                 return
 
             timings["property_retrieval"] = time.time() - property_retrieval_start
+
+            # Send a retrieved event with all properties
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "retrieved",
+                        "step": "retrieved",
+                        "message": f"Retrieved {len(all_properties)} properties",
+                        "progress": 40,
+                        "properties_count": len(all_properties),
+                        "properties": [
+                            # Convert to UnifiedProperty-like structure based on property type
+                            {
+                                "id": getattr(prop, "id", None)
+                                or getattr(prop, "property_id", f"prop-{i}"),
+                                "name": getattr(prop, "name", None)
+                                or getattr(prop, "title", "Unnamed Property"),
+                                "source": (
+                                    "Airbnb"
+                                    if hasattr(prop, "title")
+                                    else "Booking.com"
+                                ),
+                                "url": getattr(prop, "url", ""),
+                                "description": getattr(prop, "description", ""),
+                                "location": (
+                                    f"{getattr(getattr(prop, 'address', None), 'full', '')}"
+                                    if hasattr(prop, "address")
+                                    else ""
+                                ),
+                                "pricing": {
+                                    "total": (
+                                        getattr(
+                                            getattr(prop, "price", None), "price", 0
+                                        )
+                                        if hasattr(prop, "price")
+                                        and isinstance(prop.price, object)
+                                        else (
+                                            prop.price if hasattr(prop, "price") else 0
+                                        )
+                                    )
+                                },
+                                "media": {
+                                    "main_image": get_image_url(prop),
+                                    "gallery": [],
+                                },
+                            }
+                            for i, prop in enumerate(all_properties)
+                        ],
+                    }
+                ),
+                event="property_evaluation",
+            )
 
             # Update requirements with preferences
             yield ServerSentEvent(

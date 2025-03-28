@@ -56,6 +56,8 @@
 		"@stripe/stripe-js": "^6.1.0",
 		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.49.3",
-		"stripe": "^17.7.0"
+		"eventsource-parser": "^3.0.1",
+		"stripe": "^17.7.0",
+		"uuid": "^11.1.0"
 	}
 }
