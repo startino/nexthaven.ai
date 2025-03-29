@@ -3,12 +3,13 @@
   This component replaces PropertyTypeSidebar.svelte and supports all filter categories
 -->
 <script lang="ts">
-  import { Home, Coffee, Check, X, ChevronDown, ChevronUp, SignalLow, SignalMedium, SignalHigh } from 'lucide-svelte';
+  import { Home, Coffee, Check, X, ChevronDown, ChevronUp, SignalLow, SignalMedium, SignalHigh, Filter, Pencil } from 'lucide-svelte';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { slide, fade } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { filterGroups, findFilterOptionById } from './filters';
   import type { PreferenceStrength } from './types';
+  import { Dialog, DialogContent, DialogTitle, DialogDescription } from '$lib/components/ui/dialog';
   
   // State props
   let { selectedFilters, preferenceStrength, activePreferenceModal } = $props<{
@@ -22,6 +23,9 @@
     'property-type', 
     'amenities'
   ]);
+  
+  // Active filters dialog state
+  let showActiveFiltersDialog = $state(false);
   
   // Toggle filter selection
   function toggleFilter(groupId: string, filterId: string) {
@@ -79,9 +83,9 @@
   // Helper to get strength label
   function getStrengthLabel(strength: PreferenceStrength): string {
     switch(strength) {
-      case 'weak': return 'Low priority';
-      case 'mid': return 'Medium priority';
-      case 'strong': return 'High priority';
+      case 'weak': return 'Low strength';
+      case 'mid': return 'Medium strength';
+      case 'strong': return 'High strength';
       default: return '';
     }
   }
@@ -117,12 +121,68 @@
       activePreferenceModal = null;
     }
   }
+  
+  // Count total active filters
+  function getTotalActiveFilters(): number {
+    let count = 0;
+    for (const groupId in selectedFilters) {
+      if (selectedFilters[groupId]) {
+        count += (selectedFilters[groupId] as string[]).length;
+      }
+    }
+    return count;
+  }
+  
+  // Get all active filters with their details
+  function getActiveFiltersWithDetails() {
+    const activeFilters = [];
+    
+    for (const groupId in selectedFilters) {
+      if (selectedFilters[groupId] && (selectedFilters[groupId] as string[]).length > 0) {
+        const group = filterGroups.find(g => g.id === groupId);
+        if (!group) continue;
+        
+        for (const filterId of selectedFilters[groupId] as string[]) {
+          const option = group.options.find(o => o.id === filterId);
+          if (option) {
+            activeFilters.push({
+              groupId,
+              groupName: group.name,
+              filterId,
+              filterLabel: option.label,
+              strength: preferenceStrength[filterId] || 'mid'
+            });
+          }
+        }
+      }
+    }
+    
+    return activeFilters;
+  }
 </script>
 
 <div class="w-[280px] min-w-[280px] max-w-xs h-full border-r border-border sticky top-0 z-10 bg-background">
   <ScrollArea class="h-[calc(100vh-2rem)]">
     <div class="p-6">
-      <h2 class="text-xl font-medium text-foreground mb-8">Filters</h2>
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-xl font-medium text-foreground">Filters</h2>
+        
+        <!-- Active Filters Button -->
+        <button 
+          class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+          onclick={() => showActiveFiltersDialog = true}
+          aria-label="Show active filters"
+          title="Manage active filters"
+        >
+          <Filter size={14} class="text-primary" />
+          <span class="text-primary font-medium">{getTotalActiveFilters()}</span>
+        </button>
+      </div>
+      
+      <!-- Add explanatory text about filter strengths -->
+      <p class="text-xs text-muted-foreground mb-8">
+        You can set the strength of each filter to indicate how important it is to your search.
+      </p>
       
       <!-- Loop through filter groups -->
       {#each filterGroups as group}
@@ -219,7 +279,7 @@
                       transition:slide={{ duration: 150, easing: cubicOut }}
                     >
                       <div class="p-3 text-xs text-muted-foreground border-b border-border">
-                        Set importance
+                        Set importance strength
                       </div>
                       <button 
                         class={`w-full p-3 text-left text-sm ${preferenceStrength[option.id] === 'weak' ? 'bg-primary/10 text-primary' : 'hover:bg-background/30'}`}
@@ -229,7 +289,7 @@
                         <div class="flex justify-between items-center">
                           <div class="flex items-center gap-2">
                             <SignalLow size={14} class="text-primary/80" />
-                            <span>Low priority</span>
+                            <span>Low strength</span>
                           </div>
                           {#if preferenceStrength[option.id] === 'weak'}
                             <Check size={14} />
@@ -244,7 +304,7 @@
                         <div class="flex justify-between items-center">
                           <div class="flex items-center gap-2">
                             <SignalMedium size={14} class="text-primary/90" />
-                            <span>Medium priority</span>
+                            <span>Medium strength</span>
                           </div>
                           {#if preferenceStrength[option.id] === 'mid'}
                             <Check size={14} />
@@ -259,7 +319,7 @@
                         <div class="flex justify-between items-center">
                           <div class="flex items-center gap-2">
                             <SignalHigh size={14} class="text-primary" />
-                            <span>High priority</span>
+                            <span>High strength</span>
                           </div>
                           {#if preferenceStrength[option.id] === 'strong'}
                             <Check size={14} />
@@ -276,4 +336,107 @@
       {/each}
     </div>
   </ScrollArea>
-</div> 
+</div>
+
+<!-- Active Filters Dialog -->
+<Dialog bind:open={showActiveFiltersDialog}>
+  <DialogContent class="sm:max-w-[500px]">
+    <DialogTitle>Active Filters ({getTotalActiveFilters()})</DialogTitle>
+    <DialogDescription>
+      Manage your currently selected filters
+    </DialogDescription>
+    
+    <div class="mt-4 max-h-[60vh] overflow-y-auto pr-2">
+      {#if getTotalActiveFilters() === 0}
+        <div class="py-8 text-center text-muted-foreground">
+          <p>No filters selected</p>
+          <p class="text-sm mt-2">Add filters to refine your search results</p>
+        </div>
+      {:else}
+        <div class="space-y-4">
+          {#each filterGroups as group}
+            {#if selectedFilters[group.id] && (selectedFilters[group.id] as string[]).length > 0}
+              <div class="border-b border-border pb-4 last:border-0">
+                <h4 class="font-medium mb-3 flex items-center gap-2">
+                  {#if group.icon}
+                    <span class="text-muted-foreground">{@html `<svg width="16" height="16" class="lucide lucide-${group.icon}"><use href="#${group.icon}"></use></svg>`}</span>
+                  {/if}
+                  {group.name}
+                </h4>
+                
+                <div class="space-y-2">
+                  {#each selectedFilters[group.id] as filterId}
+                    {#if group.options.find(o => o.id === filterId)}
+                      {@const option = group.options.find(o => o.id === filterId)}
+                      <div class="flex items-center justify-between bg-card p-3 rounded-md">
+                        <div class="flex items-center gap-2">
+                          {#if option?.icon}
+                            <span class="shrink-0">{@html `<svg width="16" height="16" class="lucide lucide-${option.icon}"><use href="#${option.icon}"></use></svg>`}</span>
+                          {/if}
+                          <span>{option?.label}</span>
+                          
+                          {#if preferenceStrength[filterId]}
+                            <div class="flex items-center gap-1 ml-2 text-xs text-primary">
+                              <svelte:component this={getStrengthIcon(preferenceStrength[filterId])} size={12} class={preferenceStrength[filterId] === 'weak' ? 'text-primary/70' : preferenceStrength[filterId] === 'mid' ? 'text-primary/85' : 'text-primary'} />
+                              <span>{getStrengthLabel(preferenceStrength[filterId])}</span>
+                            </div>
+                          {/if}
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                          {#if group.showStrength}
+                            <button 
+                              class="p-1.5 hover:bg-muted rounded-md"
+                              onclick={() => {
+                                activePreferenceModal = `${group.id}:${filterId}`;
+                                showActiveFiltersDialog = false;
+                              }}
+                              aria-label="Change strength"
+                              title="Edit filter strength"
+                            >
+                              <Pencil size={14} class="text-muted-foreground" />
+                            </button>
+                          {/if}
+                          
+                          <button 
+                            class="p-1.5 hover:bg-destructive/10 hover:text-destructive rounded-md"
+                            onclick={() => toggleFilter(group.id, filterId)}
+                            aria-label="Remove filter"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          {/each}
+        </div>
+      {/if}
+    </div>
+    
+    {#if getTotalActiveFilters() > 0}
+      <div class="flex justify-end gap-2 mt-4">
+        <button 
+          class="px-4 py-2 text-sm rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+          onclick={() => {
+            for (const groupId in selectedFilters) {
+              selectedFilters[groupId] = [];
+            }
+            showActiveFiltersDialog = false;
+          }}
+        >
+          Clear All
+        </button>
+        <button 
+          class="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          onclick={() => showActiveFiltersDialog = false}
+        >
+          Done
+        </button>
+      </div>
+    {/if}
+  </DialogContent>
+</Dialog> 

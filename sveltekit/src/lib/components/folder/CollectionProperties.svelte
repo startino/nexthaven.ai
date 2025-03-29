@@ -2,12 +2,10 @@
 	import { page } from '$app/stores';
 	import { collectionState } from '$lib/stores/collections.svelte';
 	import { CollectionService } from '$lib/services/collection.service';
-	import { Package, Folder, Trash2, Crown, ArrowLeft } from 'lucide-svelte';
+	import { Package, Folder, Trash2, ArrowLeft } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
 	import { PropertyCard, PropertyGallery } from '$lib/components/property';
-	import { BookingComponent } from '$lib/components/booking';
-	import { setSelectedProperty } from '$lib/stores/properties.svelte';
 	
 	// Props
 	let { classname = '' } = $props<{
@@ -19,7 +17,6 @@
 	let isLoading = $state(false);
 	let selectedProperty: UnifiedProperty | null = $state(null);
 	let showGallery = $state(false);
-	let view = $state<'list' | 'booking'>('list');
 	
 	// Load properties when the current collection changes
 	$effect(() => {
@@ -83,25 +80,43 @@
 		showGallery = false;
 	}
 	
-	// Select property for booking and show booking view
+	// Select property for booking and open booking link
 	function selectPropertyForBooking(property: UnifiedProperty) {
 		try {
-			console.log("Selecting property for booking:", property.id);
-			setSelectedProperty(property);
-			selectedProperty = property;
-			view = 'booking';
+			console.log("Opening booking link for property:", property.id);
+			// Open the property URL in a new tab if available
+			if (property.url) {
+				window.open(property.url, '_blank', 'noopener,noreferrer');
+			} else {
+				console.error("No booking URL available for property:", property.id);
+			}
 		} catch (error) {
-			console.error("Error selecting property for booking:", error);
+			console.error("Error opening booking link:", error);
 		}
 	}
 	
-	// Return back to list view
-	function backToList() {
-		view = 'list';
+	// Save property to default collection
+	async function saveProperty(property: UnifiedProperty) {
+		try {
+			console.log("Saving property:", property.id);
+			if (!$page.data.session?.user?.id) {
+				console.error("You must be logged in to save properties");
+				return;
+			}
+			
+			// Ensure default collection exists
+			const defaultCollection = await CollectionService.ensureDefaultCollection($page.data.session.user.id);
+			
+			// Add property to default collection
+			await CollectionService.addPropertyToCollection(defaultCollection.id, property);
+			
+			console.log("Property saved successfully");
+		} catch (error) {
+			console.error("Error saving property:", error);
+		}
 	}
 </script>
 
-{#if view === 'list'}
 <div class={`py-2 ${classname}`}>
 	{#if collectionState.currentCollection}
 		<div class="mb-4">
@@ -186,17 +201,7 @@
 <PropertyGallery
 	property={selectedProperty}
 	showGallery={showGallery}
-	primaryActionText="View Booking Details"
-	primaryActionIcon={Crown}
 	on:close={closeGallery}
-	on:primaryAction={() => selectedProperty && selectPropertyForBooking(selectedProperty)}
-/>
-{:else}
-	{#if selectedProperty}
-		<BookingComponent 
-			property={selectedProperty}
-			backText="Back to collection"
-			onback={backToList}
-		/>
-	{/if}
-{/if} 
+	on:book={() => selectedProperty && selectPropertyForBooking(selectedProperty)}
+	on:save={() => selectedProperty && saveProperty(selectedProperty)}
+/> 

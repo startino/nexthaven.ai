@@ -25,23 +25,13 @@
     return 'from-orange-500 to-orange-400';
   }
   
-  // Function to render price explanation
-  function getPriceExplanation(property: UnifiedProperty): string {
-    if (property.pricing.total <= 1000) {
-      return `Price: The nightly rate of ${formatCurrency(property.pricing.total)} falls within your specified range`;
-    } else if (property.pricing.total <= 3500) {
-      return `Price: The property is priced at ${formatCurrency(property.pricing.total)}`;
-    } else {
-      return `Price (${property.score}): The total price of ~${formatCurrency(property.pricing.total)}`;
-    }
-  }
 </script>
 
 <button 
-  class="relative cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02]"
+  class="relative cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]"
   onclick={() => dispatch('select', property)}
 >
-  <Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-accent/20 transition-all h-[450px] flex flex-col">
+  <Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-primary/20 transition-all h-[450px] flex flex-col">
     <div class="relative h-56 overflow-hidden">
       <img 
         src={property.media.main_image || 'https://via.placeholder.com/400x200?text=No+Image'} 
@@ -70,7 +60,7 @@
       {/if}
     </div>
     
-    <div class="absolute top-3 right-3">
+    <div class="absolute top-3 right-16">
       <div class="w-16 h-16 rounded-full flex items-center justify-center bg-background/50 backdrop-blur-sm border-2 border-border text-foreground font-bold text-xl shadow-lg shadow-black/20 relative">
         <svg viewBox="0 0 36 36" class="absolute inset-0 w-full h-full">
           <path 
@@ -131,8 +121,7 @@
       </div>
       
       <div class="pt-2 text-sm text-green-400 mt-auto text-left flex gap-2">
-        <Check size={20} class="inline-block" />
-        <span class="text-foreground/90 line-clamp-2">{getPriceExplanation(property)}</span>
+        <span class="text-foreground/90 line-clamp-2">{property.reasoning}</span>
       </div>
     </CardContent>
   </Card>

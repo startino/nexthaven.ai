@@ -130,7 +130,7 @@
       placeholder="Tell us what you're looking for... (e.g., 'A cozy mountain cabin with a hot tub and amazing views')"
       oninput={(e: Event) => preferences = (e.target as HTMLTextAreaElement).value}
       onfocus={handleTextareaFocus}
-      class="w-full h-[90px] pl-12 py-3 text-base resize-none"
+      class="w-full h-[70px] pl-12 py-3 text-base resize-none"
     />
     
     {#if showPreviousPreferences && previousPreferences.length > 0}

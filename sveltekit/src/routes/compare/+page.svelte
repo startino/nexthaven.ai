@@ -5,6 +5,7 @@
 	import { ArrowLeft, Crown } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import { PropertyCard, PropertyGallery } from '$lib/components/property';
+	import { CollectionService } from '$lib/services/collection.service';
 
 	// Get data passed from the server
 	let { data } = $props();
@@ -46,16 +47,39 @@
 		selectedProperty = null;
 	}
 	
-	// Select property and navigate to booking
+	// Select property and open booking link
 	function selectProperty(property: UnifiedProperty) {
 		try {
-			console.log("Selecting property:", property.id);
-			setSelectedProperty(property);
-			// Include searchId in navigation if available
-			const searchIdParam = searchId ? `?searchId=${searchId}` : '';
-			goto('/booking' + searchIdParam);
+			console.log("Opening booking link for property:", property.id);
+			// Open the property URL in a new tab if available
+			if (property.url) {
+				window.open(property.url, '_blank', 'noopener,noreferrer');
+			} else {
+				console.error("No booking URL available for property:", property.id);
+			}
 		} catch (error) {
-			console.error("Error selecting property:", error);
+			console.error("Error opening booking link:", error);
+		}
+	}
+
+	// Save property to default collection
+	async function saveProperty(property: UnifiedProperty) {
+		try {
+			console.log("Saving property:", property.id);
+			if (!$page.data.session?.user?.id) {
+				console.error("You must be logged in to save properties");
+				return;
+			}
+			
+			// Ensure default collection exists
+			const defaultCollection = await CollectionService.ensureDefaultCollection($page.data.session.user.id);
+			
+			// Add property to default collection
+			await CollectionService.addPropertyToCollection(defaultCollection.id, property);
+			
+			console.log("Property saved successfully");
+		} catch (error) {
+			console.error("Error saving property:", error);
 		}
 	}
 </script>
@@ -97,8 +121,7 @@
 <PropertyGallery
 	property={selectedProperty}
 	showGallery={showGallery}
-	primaryActionText="Select as Winner"
-	primaryActionIcon={Crown}
 	on:close={closeGallery}
-	on:primaryAction={() => selectedProperty && selectProperty(selectedProperty)}
+	on:book={() => selectedProperty && selectProperty(selectedProperty)}
+	on:save={() => selectedProperty && saveProperty(selectedProperty)}
 /> 

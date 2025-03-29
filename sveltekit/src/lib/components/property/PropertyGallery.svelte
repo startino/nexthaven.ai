@@ -3,26 +3,24 @@
   import type { UnifiedProperty } from '$lib/types/unified-property';
   import { Button } from '$lib/components/ui/button';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
-  import { ArrowLeft, Crown, ChevronLeft, ChevronRight, X, ExternalLink } from 'lucide-svelte';
+  import { ArrowLeft, ChevronLeft, ChevronRight, X, ExternalLink, Check, Star, BookmarkPlus } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
+  import { Card, CardContent } from '$lib/components/ui/card';
   
-  // Props - combining all props into a single $props call
+  // Props - simplified
   let { 
     property, 
     showGallery = false,
-    primaryActionText = 'View Property',
-    primaryActionIcon = ExternalLink
   } = $props<{ 
     property: UnifiedProperty | null,
     showGallery: boolean,
-    primaryActionText?: string,
-    primaryActionIcon?: any
   }>();
   
   // Event dispatcher
   const dispatch = createEventDispatcher<{
     close: void;
-    primaryAction: void;
+    book: void;
+    save: void;
   }>();
   
   // Local state
@@ -66,6 +64,13 @@
     return [mainImage, ...galleryImages].filter(Boolean);
   }
   
+  // Get score color based on score value
+  function getScoreColor(score: number): string {
+    if (score >= 80) return 'bg-gradient-to-r from-purple-500 to-purple-400 text-white';
+    if (score >= 70) return 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white';
+    return 'bg-gradient-to-r from-orange-500 to-orange-400 text-white';
+  }
+  
   // Monitor gallery state changes to control body scroll
   $effect(() => {
     if (showGallery) {
@@ -83,6 +88,16 @@
       expandedImageIndex = null;
     }
   });
+  
+  // Handle save functionality
+  function handleSave() {
+    dispatch('save');
+  }
+  
+  // Handle booking functionality
+  function handleBook() {
+    dispatch('book');
+  }
 </script>
 
 {#if showGallery && property}
@@ -97,52 +112,147 @@
         <span>Back</span>
       </button>
       
-      {#if property.url || primaryActionText !== 'View Property'}
+      <div class="flex gap-2">
         <Button
-          onclick={() => dispatch('primaryAction')}
+          onclick={handleSave}
+          variant="outline"
+          class="rounded-full px-4"
+        >
+          <BookmarkPlus size={18} class="mr-2" />
+          Save
+        </Button>
+        
+        <Button
+          onclick={handleBook}
           class="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6"
         >
-          <svelte:component this={primaryActionIcon} size={18} class="mr-2" />
-          {primaryActionText}
+          <ExternalLink size={18} class="mr-2" />
+          Book
         </Button>
-      {/if}
+      </div>
     </div>
     
     <!-- Gallery Content - Scrollable area -->
     <ScrollArea class="flex-1 h-full">
-      <div class="px-4 py-8 md:px-8 max-w-6xl mx-auto">
+      <div class="px-4 py-8 md:px-8 max-w-7xl mx-auto">
+        <!-- Property Header Section -->
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">{property.name}</h1>
+          <p class="text-muted-foreground mt-1">{property.location}</p>
+          
+          <div class="flex gap-4 mt-4">
+            {#if property.capacity.bedrooms}
+              <div class="px-4 py-2 rounded-full bg-secondary/20">
+                <span class="text-foreground/90">{property.capacity.bedrooms} {property.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span>
+              </div>
+            {/if}
+            {#if property.capacity.beds}
+              <div class="px-4 py-2 rounded-full bg-secondary/20">
+                <span class="text-foreground/90">{property.capacity.beds} {property.capacity.beds === 1 ? 'bed' : 'beds'}</span>
+              </div>
+            {/if}
+          </div>
+        </div>
+        
+        <!-- Two column layout for property details and booking card -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <!-- Left side - AI Recommendation -->
+          <div class="lg:col-span-2">
+            <div class="flex gap-6 mb-8">
+              <!-- Score circle - Properly aligned -->
+              <div class="flex-shrink-0">
+                <div class="w-32 h-32 rounded-full flex items-center justify-center text-foreground font-bold text-3xl shadow-lg shadow-primary/10 relative">
+                  <svg viewBox="0 0 36 36" class="absolute inset-0 w-full h-full">
+                    <path 
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke="#444"
+                      stroke-width="2"
+                    />
+                    <path 
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none"
+                      stroke-dasharray="100, 100"
+                      stroke-dashoffset={100 - property.score}
+                      stroke-linecap="round"
+                      class="stroke-2 transition-all duration-1000 ease-out-expo"
+                      style="stroke: url(#gradient-gallery-{property.id})"
+                    />
+                    <defs>
+                      <linearGradient id="gradient-gallery-{property.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" class="{property.score >= 80 ? 'stop-color-purple-500' : property.score >= 70 ? 'stop-color-yellow-500' : 'stop-color-orange-500'}" />
+                        <stop offset="100%" class="{property.score >= 80 ? 'stop-color-purple-400' : property.score >= 70 ? 'stop-color-yellow-400' : 'stop-color-orange-400'}" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <span class="relative">{property.score}</span>
+                </div>
+                <div class="text-center mt-2">
+                  <div class={`text-sm px-3 py-1 rounded-full inline-block font-medium ${property.score >= 80 ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : property.score >= 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'}`}>
+                    {property.score >= 80 ? 'Excellent Match' : property.score >= 70 ? 'Good Match' : 'Average Match'}
+                  </div>
+                </div>
+                
+                <!-- Source information -->
+                <div class="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  <span>Source:</span>
+                  <span class={`px-2 py-0.5 rounded text-xs font-medium ${property.source === 'Airbnb' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                    {property.source}
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Reasoning -->
+              <div class="flex-1">
+                <h3 class="text-lg font-medium mb-3">Why this property matches your preferences:</h3>
+                <div class="bg-primary/5 rounded-lg p-4 border border-primary/10">
+                  <div class="flex gap-3">
+                    <Check size={20} class="text-green-500 flex-shrink-0 mt-1" />
+                    <p class="text-foreground/90">{property.reasoning}</p>
+                  </div>
+                </div>
+                
+                <div class="mt-4 text-sm text-muted-foreground">
+                  <div class="flex gap-1 items-center">
+                    <span>Price:</span>
+                    <span class="font-semibold text-lg text-foreground">${Math.round(property.pricing.total)}</span>
+                    <span>per night</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right side - Booking Card -->
+          <div class="lg:col-span-1">
+            <Card class="bg-gradient-to-r from-primary to-accent rounded-xl overflow-hidden shadow-lg">
+              <CardContent class="p-6 space-y-4">
+                <h3 class="text-xl font-bold text-primary-foreground">Ready to book?</h3>
+                <p class="text-primary-foreground/80">Complete your reservation on {property.source}</p>
+                
+                <a 
+                  href={property.url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="block w-full bg-background text-foreground font-bold py-3 px-4 rounded-lg hover:bg-muted transition-colors text-center flex items-center justify-center gap-2 shadow-md"
+                >
+                  <ExternalLink size={18} />
+                  Complete Booking
+                </a>
+                
+                <p class="text-xs text-primary-foreground/60 text-center">
+                  You'll be redirected to {property.source} to complete your reservation
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        
         <div class="mb-8">
           <h2 class="text-3xl font-serif">Gallery</h2>
           <p class="text-muted-foreground mt-2">Browse through the available images of {property.name}</p>
         </div>
 
-        <!-- Property Details -->
-        <div class="mb-8 border-b border-border pb-8">
-          <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-            <div>
-              <h3 class="text-xl font-medium">{property.name}</h3>
-              <p class="text-muted-foreground mt-1">{property.location}</p>
-              
-              <div class="flex gap-4 mt-4">
-                {#if property.capacity.bedrooms}
-                  <div class="px-4 py-2 rounded-full bg-secondary/20">
-                    <span class="text-foreground/90">{property.capacity.bedrooms} {property.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span>
-                  </div>
-                {/if}
-                {#if property.capacity.beds}
-                  <div class="px-4 py-2 rounded-full bg-secondary/20">
-                    <span class="text-foreground/90">{property.capacity.beds} {property.capacity.beds === 1 ? 'bed' : 'beds'}</span>
-                  </div>
-                {/if}
-              </div>
-            </div>
-            
-            <div class="text-2xl font-bold">
-              ${Math.round(property.pricing.total)}
-            </div>
-          </div>
-        </div>
-        
         <!-- Gallery Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {#each getAllImages() as image, index}
@@ -219,4 +329,31 @@
       </ScrollArea>
     </div>
   {/if}
-{/if} 
+{/if}
+
+<style>
+  .stop-color-purple-500 {
+    stop-color: #8b5cf6;
+  }
+  .stop-color-purple-400 {
+    stop-color: #a78bfa;
+  }
+  .stop-color-green-500 {
+    stop-color: #10b981;
+  }
+  .stop-color-green-400 {
+    stop-color: #34d399;
+  }
+  .stop-color-yellow-500 {
+    stop-color: #eab308;
+  }
+  .stop-color-yellow-400 {
+    stop-color: #facc15;
+  }
+  .stop-color-orange-500 {
+    stop-color: #f97316;
+  }
+  .stop-color-orange-400 {
+    stop-color: #fb923c;
+  }
+</style> 

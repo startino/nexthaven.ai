@@ -3,10 +3,10 @@
 	import { formatCurrency } from '$lib/utils';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowLeft, Crown } from 'lucide-svelte';
+	import { ArrowLeft } from 'lucide-svelte';
 	import { PropertyCard, PropertyGallery } from '$lib/components/property';
-	import { BookingComponent } from '$lib/components/booking';
-	import { setSelectedProperty } from '$lib/stores/properties.svelte';
+	import { CollectionService } from '$lib/services/collection.service';
+	import { page } from '$app/stores';
 
 	// Get data from server
 	let { data } = $props();
@@ -20,7 +20,6 @@
 	// Local state for viewing
 	let selectedProperty: UnifiedProperty | null = $state(null);
 	let showGallery = $state(false);
-	let view = $state<'list' | 'booking'>('list');
 	
 	// Open gallery for a property
 	function openGallery(property: UnifiedProperty) {
@@ -44,21 +43,19 @@
 		selectedProperty = null;
 	}
 	
-	// Select property for booking and show booking view
+	// Select property for booking and open booking link
 	function selectPropertyForBooking(property: UnifiedProperty) {
 		try {
-			console.log("Selecting property for booking:", property.id);
-			setSelectedProperty(property);
-			selectedProperty = property;
-			view = 'booking';
+			console.log("Opening booking link for property:", property.id);
+			// Open the property URL in a new tab if available
+			if (property.url) {
+				window.open(property.url, '_blank', 'noopener,noreferrer');
+			} else {
+				console.error("No booking URL available for property:", property.id);
+			}
 		} catch (error) {
-			console.error("Error selecting property for booking:", error);
+			console.error("Error opening booking link:", error);
 		}
-	}
-	
-	// Return back to list view
-	function backToList() {
-		view = 'list';
 	}
 	
 	// Format search date
@@ -76,9 +73,29 @@
 			return dateString || 'Unknown date';
 		}
 	}
+
+	// Save property to default collection
+	async function saveProperty(property: UnifiedProperty) {
+		try {
+			console.log("Saving property:", property.id);
+			if (!$page.data.session?.user?.id) {
+				console.error("You must be logged in to save properties");
+				return;
+			}
+			
+			// Ensure default collection exists
+			const defaultCollection = await CollectionService.ensureDefaultCollection($page.data.session.user.id);
+			
+			// Add property to default collection
+			await CollectionService.addPropertyToCollection(defaultCollection.id, property);
+			
+			console.log("Property saved successfully");
+		} catch (error) {
+			console.error("Error saving property:", error);
+		}
+	}
 </script>
 
-{#if view === 'list'}
 <div class="min-h-screen bg-background text-foreground">
 	<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 		<div class="flex justify-between items-center">
@@ -124,15 +141,7 @@
 <PropertyGallery
 	property={selectedProperty}
 	showGallery={showGallery}
-	primaryActionText="View Booking Details"
-	primaryActionIcon={Crown}
 	on:close={closeGallery}
-	on:primaryAction={() => selectedProperty && selectPropertyForBooking(selectedProperty)}
-/>
-{:else if view === 'booking' && selectedProperty}
-	<BookingComponent 
-		property={selectedProperty}
-		backText="Back to search results"
-		on:back={backToList}
-	/>
-{/if} 
+	on:book={() => selectedProperty && selectPropertyForBooking(selectedProperty)}
+	on:save={() => selectedProperty && saveProperty(selectedProperty)}
+/> 

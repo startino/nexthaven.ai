@@ -43,7 +43,6 @@
     </div>
     
     <div>
-      <h2 class="text-2xl font-bold mb-6">Property Map</h2>
       <div class="bg-background rounded-md border border-border h-[670px] flex items-center justify-center">
         <p class="text-muted-foreground">Map will be displayed here</p>
       </div>
