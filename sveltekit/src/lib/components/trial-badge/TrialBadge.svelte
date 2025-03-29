@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Crown } from "lucide-svelte";
+
 	let { trialEndDate, variant = 'small' as 'small' | 'large' } = $props();
 	
 	// Calculate days remaining in trial using a more reliable method
@@ -25,11 +27,11 @@
 
 {#if variant === 'small'}
 	<div class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-medium">
-		{daysRemaining} day{daysRemaining === 1 ? '' : 's'} left in trial
+		<Crown size={14} class="text-primary mr-2" /> {daysRemaining} day{daysRemaining === 1 ? '' : 's'} left in trial
 	</div>
 {:else}
-	<div class="flex flex-col items-center justify-center p-3 rounded-lg bg-primary/10 border border-primary/10">
-		<p class="text-lg font-bold">{daysRemaining} day{daysRemaining === 1 ? '' : 's'} remaining</p>
+	<div class="flex flex-col items-start text-left justify-center rounded-lg">
+		<p class="text-lg font-bold"> {daysRemaining} day{daysRemaining === 1 ? '' : 's'} remaining</p>
 		<p class="text-xs opacity-80">Subscribe to continue access after trial ends</p>
 	</div>
 {/if} 

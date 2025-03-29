@@ -3,10 +3,19 @@
 	import { stripeService, PRICING_TIER } from '$lib/services/stripe';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { CheckCircle, AlertCircle, Crown, ArrowRight } from 'lucide-svelte';
+	import { CheckCircle, AlertCircle, Crown, ArrowRight, CreditCard } from 'lucide-svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import { goto } from '$app/navigation';
 	import { TrialBadge } from '$lib/components/trial-badge';
+	import {
+		Dialog,
+		DialogContent,
+		DialogDescription,
+		DialogFooter,
+		DialogHeader,
+		DialogTitle,
+		DialogClose
+	} from '$lib/components/ui/dialog';
 
 	// Get data from server
 	let { data } = $props();
@@ -26,6 +35,9 @@
 	let billingPeriod = $state('monthly'); // Default to monthly
 	let isSuccess = $page.url.searchParams.get('success') === 'true';
 	let isCanceled = $page.url.searchParams.get('canceled') === 'true';
+	
+	// Dialog state
+	let isDialogOpen = $state(false);
 	
 	// Get redirect destination (if any)
 	let redirectTo = $state($page.url.searchParams.get('redirectTo') || '/search');
@@ -100,6 +112,11 @@
 			}, 2000);
 		}
 	});
+	
+	// Function to open the dialog
+	function openBillingDialog() {
+		isDialogOpen = true;
+	}
 </script>
 
 <svelte:head>
@@ -129,7 +146,7 @@
 		{:else if isSubscribed}
 			<!-- Content for subscribed users -->
 			<div class="mx-auto max-w-3xl p-6 bg-card rounded-xl border">
-				<div class="text-center mb-6">					
+				<div class="text-left mb-6">					
 					<h2 class="text-2xl font-bold mb-2">
 						{#if isInTrial}
 							Free Trial <span class="">Active</span>
@@ -137,7 +154,7 @@
 							Premium Subscription Active
 						{/if} 
 					</h2>
-					<p class="text-indigo-200 mb-2">You have access to all premium features!</p>
+					<p class="text-sm 	font-light mb-2">You have access to all premium features!</p>
 					
 					{#if planName !== 'Free Trial' && planName != null}
 						<p class="text-sm text-primary">Plan: {planName}</p>
@@ -149,93 +166,79 @@
 					
 					{#if isInTrial && trialEnd}
 						<!-- Enhanced trial information -->
-						<div class="mt-6 mb-6 w-full max-w-lg mx-auto">
-								<div class="my-2">
-									<TrialBadge trialEndDate={data.subscriptionStatus?.trialEnd || ''} variant="large" />
-								</div>
+						<div class="mt-6 mb-6 w-full max-w-lg">
+							<div class="my-2 flex flex-col items-start gap-6">
+								<TrialBadge trialEndDate={data.subscriptionStatus?.trialEnd || ''} variant="large" />
+								<Button onclick={openBillingDialog} class="flex items-center gap-2">
+									<CreditCard class="h-4 w-4" />
+									Choose Plan
+								</Button>
+							</div>
 							
-							<!-- Trial period progress bar -->
-							<div class="mt-4 mb-6 w-full">
-								<div class="flex justify-between text-xs mb-1">
-									<span>Trial progress</span>
-									{#if data.subscriptionStatus?.trialEnd}
-										{@const totalDays = 14}
-										{@const now = new Date()}
-										{@const endDate = new Date(data.subscriptionStatus.trialEnd)}
+							<!-- Dialog for billing plan selection and continue -->
+							<Dialog bind:open={isDialogOpen}>
+								<DialogContent class="sm:max-w-[425px]">
+									<DialogHeader>
+										<DialogTitle>Choose Your Plan</DialogTitle>
+										<DialogDescription>
+											Select your preferred billing period to continue after your trial ends.
+										</DialogDescription>
+									</DialogHeader>
+									
+									<!-- Billing period selector -->
+									<div class="mt-4">
+										<div class="text-left mb-2">
+											<p class="text-primary font-medium">Choose a billing plan:</p>
+										</div>
+										<div class="flex rounded-md overflow-hidden border border-primary/30">
+											<button 
+												class="flex-1 py-2 px-4 text-sm font-medium transition-all focus:outline-none {billingPeriod === 'monthly' ? 'bg-primary/30 text-primary font-semibold' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
+												onclick={() => billingPeriod = 'monthly'}
+											>
+												Monthly
+											</button>
+											<button 
+												class="flex-1 py-2 px-4 text-sm font-medium transition-all focus:outline-none flex items-center justify-center gap-2 {billingPeriod === 'yearly' ? 'bg-primary/30 text-primary font-semibold' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
+												onclick={() => billingPeriod = 'yearly'}
+											>
+												Yearly
+												{#if PRICING_TIER.options.length > 1 && PRICING_TIER.options[1]?.savingsAmount && PRICING_TIER.options[1].savingsAmount > 0}
+													<span class="ml-1 text-xs {billingPeriod === 'yearly' ? 'bg-primaryp/30 text-primary' : 'bg-primary/10 text-primary/70'} px-2 py-0.5 rounded-full">
+														Save ${PRICING_TIER.options[1].savingsAmount}
+													</span>
+												{/if}
+											</button>
+										</div>
+										<p class="mt-2 text-left text-muted-foreground text-sm">
+											${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'}
+											{#if billingPeriod === 'yearly' && yearlySavings > 0}
+												<span class="ml-1 text-xs text-green-400">
+													(Save ${yearlySavings})
+												</span>
+											{/if}
+										</p>
+									</div>
+									
+									<DialogFooter class="flex flex-col sm:flex-row sm:justify-between gap-3 mt-4">
+										<Button 
+											variant="secondary" 
+											onclick={handleContinue}
+											class="flex items-center justify-center gap-2 order-2 sm:order-1"
+										>
+											Continue with Trial
+											<ArrowRight size={16} />
+										</Button>
 										
-										{@const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())}
-										{@const trialStartDate = new Date(endDate)}
-										{@const _ = trialStartDate.setDate(trialStartDate.getDate() - totalDays)}
-										
-										{@const elapsedTime = nowDate.getTime() - trialStartDate.getTime()}
-										{@const totalTime = endDate.getTime() - trialStartDate.getTime()}
-										{@const progressPercent = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100))}
-										
-										<span>{Math.round(progressPercent)}%</span>
-									{/if}
-								</div>
-								<div class="relative w-full bg-card rounded-full h-3 border overflow">
-									{#if data.subscriptionStatus?.trialEnd}
-										{@const totalDays = 14}
-										{@const now = new Date()}
-										{@const endDate = new Date(data.subscriptionStatus.trialEnd)}
-										
-										{@const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())}
-										{@const trialStartDate = new Date(endDate)}
-										{@const _ = trialStartDate.setDate(trialStartDate.getDate() - totalDays)}
-										
-										{@const elapsedTime = nowDate.getTime() - trialStartDate.getTime()}
-										{@const totalTime = endDate.getTime() - trialStartDate.getTime()}
-										{@const progressPercent = Math.min(100, Math.max(0, (elapsedTime / totalTime) * 100))}
-										
-										<!-- Add min-width to ensure visibility even at 0% -->
-										<div 
-											class=" h-full rounded-full transition-all duration-500"
-											style="width: {Math.max(progressPercent, 0.5)}%"
-										></div>
-										
-										<!-- Pulsing indicator dot to show current position -->
-										<div 
-											class="absolute top-0 h-3 w-3 rounded-full border-2 border-white animate-pulse"
-											style="left: calc({progressPercent}% - 6px)"
-										></div>
-									{/if}
-								</div>
-							</div>
-													
-							<!-- Billing period selector for trial users -->
-							<div class="mt-4">
-								<div class="text-center mb-2">
-									<p class="text-primary font-medium">Choose a billing plan:</p>
-								</div>
-								<div class="flex rounded-md overflow-hidden border border-primary/30">
-									<button 
-										class="flex-1 py-2 px-4 text-sm font-medium transition-all focus:outline-none {billingPeriod === 'monthly' ? 'bg-primary/30 text-primary font-semibold' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
-										on:click={() => billingPeriod = 'monthly'}
-									>
-										Monthly
-									</button>
-									<button 
-										class="flex-1 py-2 px-4 text-sm font-medium transition-all focus:outline-none flex items-center justify-center gap-2 {billingPeriod === 'yearly' ? 'bg-primary/30 text-primary font-semibold' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
-										on:click={() => billingPeriod = 'yearly'}
-									>
-										Yearly
-										{#if PRICING_TIER.options.length > 1 && PRICING_TIER.options[1]?.savingsAmount && PRICING_TIER.options[1].savingsAmount > 0}
-											<span class="ml-1 text-xs {billingPeriod === 'yearly' ? 'bg-primaryp/30 text-primary' : 'bg-primary/10 text-primary/70'} px-2 py-0.5 rounded-full">
-												Save ${PRICING_TIER.options[1].savingsAmount}
-											</span>
-										{/if}
-									</button>
-								</div>
-								<p class="mt-2 text-center text-indigo-200 text-sm">
-									${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'}
-									{#if billingPeriod === 'yearly' && yearlySavings > 0}
-										<span class="ml-1 text-xs text-green-400">
-											(Save ${yearlySavings})
-										</span>
-									{/if}
-								</p>
-							</div>
+										<Button 
+											onclick={handleSubscribe}
+											class="button-gradient order-1 sm:order-2" 
+											disabled={isLoading}
+										>
+											{isLoading ? 'Processing...' : `Subscribe Now`}
+										</Button>
+									</DialogFooter>
+								</DialogContent>
+							</Dialog>
 						</div>
 					{/if}
 					
@@ -250,31 +253,13 @@
 					{#if !isInTrial}
 					<button 
 						type="button"
-						class="px-6 py-3 bg-gradient-to-r from-primaryp to-purple-600 text-white rounded-lg hover:from-indigo-500 hover:to-purple-500 transition-all shadow-md"
-						on:click={handleManageSubscription}
+						class="px-6 py-3 bg-gradient-to-r from-primaryp to-purple-600 text-white rounded-lg hover:from-secondary hover:to-secondary transition-all shadow-md"
+						onclick={handleManageSubscription}
 						disabled={isLoading}
 					>
 						{isLoading ? 'Loading...' : 'Manage Subscription'}
 					</button>
-					{:else}
-					<button 
-						type="button"
-						class="px-6 py-3 bg-gradient-to-r from-primaryp to-purple-600 text-white rounded-lg hover:from-indigo-500 hover:to-purple-500 transition-all shadow-md"
-						on:click={handleSubscribe}
-						disabled={isLoading}
-					>
-						{isLoading ? 'Loading...' : `Subscribe to ${billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'} Plan`}
-					</button>
 					{/if}
-					
-					<button 
-						type="button"
-						class="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg hover:from-green-500 hover:to-teal-500 transition-all shadow-md flex items-center justify-center gap-2"
-						on:click={handleContinue}
-					>
-						Continue 
-						<ArrowRight size={20} />
-					</button>
 				</div>
 			</div>
 		{:else}
@@ -284,13 +269,13 @@
 					<div class="flex rounded-md overflow-hidden border border-border">
 						<button 
 							class="flex-1 py-2.5 px-4 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background {billingPeriod === 'monthly' ? 'button-gradient text-white font-semibold shadow-sm' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
-							on:click={() => billingPeriod = 'monthly'}
+							onclick={() => billingPeriod = 'monthly'}
 						>
 							Monthly
 						</button>
 						<button 
 							class="flex-1 py-2.5 px-4 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center gap-2 {billingPeriod === 'yearly' ? 'button-gradient text-white font-semibold shadow-sm' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
-							on:click={() => billingPeriod = 'yearly'}
+							onclick={() => billingPeriod = 'yearly'}
 						>
 							Yearly
 							{#if PRICING_TIER.options.length > 1 && PRICING_TIER.options[1]?.savingsAmount && PRICING_TIER.options[1].savingsAmount > 0}
@@ -341,7 +326,7 @@
 					<Button 
 						class="w-full button-gradient" 
 						disabled={isLoading}
-						on:click={handleSubscribe}
+						onclick={handleSubscribe}
 					>
 						{#if isLoading}
 							Processing...
