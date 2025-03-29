@@ -4,7 +4,7 @@
 	import { Label } from "$lib/components/ui/label";
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { goto } from "$app/navigation";
-	import { User, Mail, Lock } from "lucide-svelte";
+	import { User, Mail, Lock, Eye, EyeOff } from "lucide-svelte";
 
 	let { data } = $props();
 	const { supabase } = data;
@@ -12,18 +12,21 @@
 	let name = $state("");
 	let email = $state("");
 	let password = $state("");
-	let confirmPassword = $state("");
 	let isLoading = $state(false);
 	let errorMessage = $state("");
+	let showPassword = $state(false);
 	
 	// Form validation
 	let isEmailValid = $derived(validateEmail(email) || email === "");
 	let isPasswordValid = $derived(password.length >= 6 || password === "");
-	let doPasswordsMatch = $derived(password === confirmPassword || confirmPassword === "");
 	
 	function validateEmail(email: string): boolean {
 		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return re.test(email);
+	}
+	
+	function togglePasswordVisibility() {
+		showPassword = !showPassword;
 	}
 	
 	async function handleSignup() {
@@ -39,12 +42,6 @@
 		
 		if (!validateEmail(email)) {
 			errorMessage = "Please enter a valid email address";
-			isLoading = false;
-			return;
-		}
-		
-		if (password !== confirmPassword) {
-			errorMessage = "Passwords don't match";
 			isLoading = false;
 			return;
 		}
@@ -78,16 +75,13 @@
 </script>
 
 <div class="flex min-h-screen items-center justify-center px-4">
-	<Card class="w-full max-w-md border-border bg-card/80 backdrop-blur-sm">
+	<Card class="w-full max-w-md bg-white/5 backdrop-blur-sm">
 		<CardHeader>
-			<div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-				<User size={28} class="text-gradient" />
-			</div>
 			<CardTitle class="text-2xl text-center text-gradient">Create Account</CardTitle>
 			<CardDescription class="text-center">Sign up for a new account to get started</CardDescription>
 		</CardHeader>
 		<CardContent>
-			<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); handleSignup(); }}>
+			<form class="space-y-6" onsubmit={(e) => { e.preventDefault(); handleSignup(); }}>
 				<div class="space-y-2">
 					<Label for="name" class="flex items-center gap-1.5">
 						<User size={14} />
@@ -124,31 +118,32 @@
 						<Lock size={14} />
 						Password
 					</Label>
-					<Input 
-						id="password" 
-						type="password" 
-						bind:value={password} 
-						required 
-						class="{!isPasswordValid && password ? 'border-red-500' : 'border-border/50'} focus-visible:ring-primary"
-					/>
+					<div class="relative">
+						<Input 
+							id="password" 
+							type={showPassword ? "text" : "password"} 
+							bind:value={password} 
+							required 
+							class="{!isPasswordValid && password ? 'border-red-500' : 'border-border/50'} focus-visible:ring-primary pr-10"
+						/>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							class="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+							onclick={togglePasswordVisibility}
+							tabindex={-1}
+						>
+							{#if showPassword}
+								<EyeOff size={16} />
+							{:else}
+								<Eye size={16} />
+							{/if}
+							<span class="sr-only">{showPassword ? 'Hide' : 'Show'} password</span>
+						</Button>
+					</div>
 					{#if !isPasswordValid && password}
 						<p class="text-xs text-red-500 mt-1">Password must be at least 6 characters</p>
-					{/if}
-				</div>
-				<div class="space-y-2">
-					<Label for="confirmPassword" class="flex items-center gap-1.5">
-						<Lock size={14} />
-						Confirm Password
-					</Label>
-					<Input 
-						id="confirmPassword" 
-						type="password" 
-						bind:value={confirmPassword} 
-						required 
-						class="{!doPasswordsMatch && confirmPassword ? 'border-red-500' : 'border-border/50'} focus-visible:ring-primary"
-					/>
-					{#if !doPasswordsMatch && confirmPassword}
-						<p class="text-xs text-red-500 mt-1">Passwords don't match</p>
 					{/if}
 				</div>
 				{#if errorMessage}
@@ -158,8 +153,8 @@
 				{/if}
 				<Button 
 					type="submit" 
-					class="w-full button-gradient" 
-					disabled={isLoading || !isEmailValid || !isPasswordValid || !doPasswordsMatch}
+					class="w-full mt-6" 
+					disabled={isLoading || !isEmailValid || !isPasswordValid}
 				>
 					{isLoading ? 'Creating account...' : 'Sign Up'}
 				</Button>
@@ -172,9 +167,9 @@
 			</div>
 			<div class="text-xs text-center text-muted-foreground">
 				By signing up, you agree to our
-				<a href="/terms" class="underline hover:text-primary">Terms of Service</a>
+				<a href="/legal/tos" class="underline hover:text-primary">Terms of Service</a>
 				and
-				<a href="/privacy" class="underline hover:text-primary">Privacy Policy</a>
+				<a href="/legal/privacy" class="underline hover:text-primary">Privacy Policy</a>
 			</div>
 		</CardFooter>
 	</Card>

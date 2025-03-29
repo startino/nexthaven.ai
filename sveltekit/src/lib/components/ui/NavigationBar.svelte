@@ -7,10 +7,11 @@
 	console.log("page.data", page.data);
 </script>
 
-<header class="w-full bg-black/60 backdrop-blur-md py-3 px-6 border-b border-gray-800 fixed top-0 z-50">
+<header class="w-full bg-white/5 backdrop-blur-md py-3 px-6 border-b border-white/10 fixed top-0 z-50">
 	<div class="container mx-auto flex justify-between items-center">
 		<div class="flex items-center">
-			<a href="/" class="text-2xl font-bold tracking-tight">
+			<a href="/" class="text-xl flex flex-row place-items-center">
+				<img src="/favicon.png" alt="nexthaven.ai" class="w-12 h-12" />
 				<span class="font-serif">
 					nexthaven.ai
 				</span>
@@ -116,17 +117,14 @@
 				<!-- Login/Signup buttons -->
 				<Button
 					variant="ghost"
-					size="sm"
-					class="text-sm"
+					class=""
 					href="/login"
 				>
 					Sign In
 				</Button>
 				
-				<Button
-					variant="outline"
-					size="sm"
-					class="text-sm button-gradient"
+				<Button	
+					class=""
 					href="/signup"
 				>
 					Sign Up

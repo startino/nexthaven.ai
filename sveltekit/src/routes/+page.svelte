@@ -9,7 +9,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { ArrowRight, LogIn, Search } from 'lucide-svelte';
+	import { ArrowRight, Search } from 'lucide-svelte';
 
 
 	onMount(() => {
@@ -21,19 +21,15 @@
 </script>
 
 <div class="flex flex-col items-center justify-center min-h-screen py-12 px-4">
-	<!-- Header -->
-	<div class="w-full max-w-md text-center mb-16">
-		<h1 class="text-4xl font-serif font-bold mb-2">nexthaven.ai</h1>
-	</div>
 	
 	<div class="mt-8 text-center mb-16">
-		<h2 class="text-5xl font-serif font-bold leading-tight mb-4">
-			Find your <span class="text-gradient">next</span>
+		<h2 class="text-5xl font-serif leading-tight mb-4">
+			Find your <span class="">next</span>
 		</h2>
-		<div class="mt-2 text-5xl font-serif font-bold leading-tight">
+		<div class="text-5xl font-serif leading-tight">
 			<span class="text-[hsl(var(--hotel))]">hotel</span>
 			<span class="mx-2">/</span>
-			<span class="text-[hsl(var(--apartment))]">apartment</span>
+			<span class="text-[hsl(var(--apartment))]">condo</span>
 			<span class="mx-2">/</span>
 			<span class="text-[hsl(var(--hostel))]">hostel</span><span>.</span>
 		</div>
@@ -43,6 +39,7 @@
 	</div>
 	
 	<!-- Search Button -->
+	 
 	<div class="w-full max-w-md">
 		{#if $page.data.session}
 			<Button 
@@ -59,14 +56,15 @@
 		{:else}
 			<a href="/login" class="block w-full">
 				<div class="group bg-gradient-to-r from-purple-800/90 to-pink-600/90 rounded-xl overflow-hidden">
-					<div class="flex items-center justify-between px-6 py-5 bg-black/60 backdrop-blur-md rounded-xl">
+					<div class="flex items-center justify-between px-6 py-5 rounded-xl">
 						<div class="flex items-center gap-4">
 							<div class="text-white">
-								<LogIn size={24} />
+								<Search size={24} />
 							</div>
 							<div class="text-left">
-								<div class="text-xl font-bold">Sign In to Search</div>
-								<div class="text-sm text-gray-300/90">Unlock personalized accommodation search</div>
+								<!-- This text was "sign in to search" but that's not appealing to users-->
+								 <!-- The if statement around this is a little redundant now-->
+								<div class="text-xl font-bold">Start New Search</div>
 							</div>
 						</div>
 						<div class="text-white">
@@ -84,7 +82,7 @@
 		</p>
 		<p class="mt-1 text-xs sm:text-sm">
 			Contact:
-			<a href="mailto:jorge.lewis@startin.no" class="text-primary hover:text-primary/80 hover:underline">jorge.lewis@startin.no</a>
+			<a href="mailto:jorge.lewis@starti.no" class="text-purple-400 hover:text-purple-200 hover:underline">jorge.lewis@starti.no</a>
 		</p>
 	</div>
 	

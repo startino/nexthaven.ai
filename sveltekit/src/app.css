@@ -49,25 +49,23 @@
 		--card: 0 0% 10%; /* Almost black for cards */
 		--card-foreground: 210 40% 98%;
 
-		--border: 217.2 32.6% 17.5%;
+		--border: 329 10% 15%;
 		--input: 217.2 32.6% 17.5%;
 
-		/* Purple gradient start color */
-		--primary: 283 70% 40%;
+		--primary: 270 95% 80%;
 		--primary-foreground: 0 0% 100%;
 
-		/* Pink gradient end color */
-		--secondary: 339 82% 51%;
+		--secondary: 329 86% 75%;
 		--secondary-foreground: 210 40% 98%;
+
+		--accent: 234 89% 74%;
+		--accent-foreground: 0 0% 100%;
 
 		/* Color values for specific elements */
 		--hotel: 339 83% 66%;
 		--apartment: 291 76% 42%;
 		--hostel: 228 65% 45%;
-
-		--accent: 280 80% 50%;
-		--accent-foreground: 0 0% 100%;
-
+		
 		--destructive: 0 63% 31%;
 		--destructive-foreground: 210 40% 98%;
 
@@ -106,6 +104,6 @@
 	}
 
 	.button-gradient {
-		@apply from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 bg-gradient-to-r text-white;
+		@apply from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 bg-gradient-to-r;
 	}
 }

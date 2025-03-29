@@ -2,29 +2,33 @@
 	import { Button } from "$lib/components/ui/button";
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { page } from "$app/stores";
-	import { Mail, ArrowLeft, CheckCircle } from "lucide-svelte";
+	import { Mail, ArrowLeft, CheckCircle, Clock } from "lucide-svelte";
 	
 	// Get email from URL query params
 	const email = $page.url.searchParams.get('email') || '';
 </script>
 
 <div class="flex min-h-screen items-center justify-center px-4">
-	<Card class="w-full max-w-md border-border bg-card/80 backdrop-blur-sm">
+	<Card class="w-full max-w-lg">
 		<CardHeader class="text-center">
 			<div class="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
 				<Mail size={32} class="text-gradient" />
 			</div>
-			<CardTitle class="text-2xl text-gradient">Check Your Email</CardTitle>
-			<CardDescription>
-				We've sent a confirmation link to
-				<span class="font-medium text-primary">{email}</span>
-			</CardDescription>
+			<CardTitle class="text-2xl">Check Your Email</CardTitle>
 		</CardHeader>
 		<CardContent class="text-center space-y-4">
-			<div class="bg-primary/10 rounded-lg p-4 flex flex-col items-center gap-2">
+			<div class=" rounded-lg p-4 flex flex-row place-items-start gap-2">
 				<CheckCircle size={20} class="text-primary" />
-				<p class="text-sm">
-					Please check your email and click the confirmation link to complete your signup.
+				<p class="text-sm flex flex-row gap-2">
+					We've sent a confirmation link to:
+					<span class="font-bold ">{email}</span>
+				</p>
+			</div>
+			<div class="rounded-lg p-4 flex flex-row place-items-start gap-2">
+				<Clock size={20} class="text-primary" />
+				<p class="text-sm text-left flex flex-row gap-2">
+					Please check your email and click the confirmation link.
+					<br/>
 					If you don't see the email, check your spam folder.
 				</p>
 			</div>
