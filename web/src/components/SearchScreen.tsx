@@ -50,15 +50,9 @@ interface SearchForm {
 
 // Default form values
 const DEFAULT_FORM_VALUES = {
-<<<<<<< HEAD
-  query: "",
-  date: "",
-  budget: { min: 420, max: 600 }, // Set min to 70% of max
-=======
   query: '',
   date: '',
   budget: { min: 700, max: 1000 }, // Set min to 70% of max
->>>>>>> alpha
   adults: 2,
   number_of_rooms: 1,
   preferences: "",
@@ -214,13 +208,8 @@ function SearchScreen({
   // Validate details step
   const validateDetailsStep = () => {
     // Ensure budget is valid
-<<<<<<< HEAD
-    if (!form.budget.max || form.budget.max < 100) {
-      setAiMessage("Please enter a valid budget (minimum $100)");
-=======
     if (!form.budget.max || form.budget.max < 75) {
       setAiMessage('Please enter a valid budget (minimum $75)');
->>>>>>> alpha
       // Set default budget if invalid
       setForm((prev) => ({
         ...prev,
@@ -557,23 +546,6 @@ function SearchScreen({
         <div className="pt-2 space-y-4">
           {/* Budget slider */}
           <div className="relative">
-<<<<<<< HEAD
-            <span className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-white/60">
-              $
-            </span>
-            <input
-              type="number"
-              min="100"
-              step="50"
-              value={
-                form.budget.max === 0
-                  ? DEFAULT_FORM_VALUES.budget.max
-                  : form.budget.max
-              }
-              onChange={(e) => {
-                const newMax =
-                  parseInt(e.target.value) || DEFAULT_FORM_VALUES.budget.max; // Default to 600 if invalid
-=======
             <input
               type="range"
               min="75"
@@ -582,7 +554,6 @@ function SearchScreen({
               value={form.budget.max === 0 ? DEFAULT_FORM_VALUES.budget.max : form.budget.max}
               onChange={(e) => {
                 const newMax = parseInt(e.target.value);
->>>>>>> alpha
                 // Calculate minimum as 70% of maximum (can be adjusted)
                 const calculatedMin = Math.floor(newMax * 0.7);
                 setForm({
