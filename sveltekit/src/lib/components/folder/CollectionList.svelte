@@ -149,8 +149,7 @@
 
 <div class={`py-2 ${classname}`}>
 	<div class="flex justify-between items-center mb-4">
-		<h2 class="text-xl font-semibold">My Collections</h2>
-		<Button size="sm" variant="outline" onclick={() => { showCreateDialog = true; }}>
+		<Button class="w-full"  onclick={() => { showCreateDialog = true; }}>
 			<Plus class="h-4 w-4 mr-2" />
 			New Collection
 		</Button>
@@ -164,8 +163,8 @@
 			</div>
 		{:else if collectionState.collections && collectionState.collections.length > 0}
 			{#each collectionState.collections as collection}
-				<div 
-					class="group flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+				<button 
+					class="group flex items-center w-full justify-between py-2 px-4 rounded-md hover:bg-primary/10"
 					onclick={() => selectCollection(collection)}
 				>
 					<div class="flex items-center space-x-2">
@@ -201,7 +200,7 @@
 							{/if}
 						</DropdownMenuContent>
 					</DropdownMenu>
-				</div>
+				</button>
 			{/each}
 		{:else}
 			<div class="text-center p-4 border rounded-md border-dashed">
