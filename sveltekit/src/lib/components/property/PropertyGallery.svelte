@@ -6,6 +6,9 @@
   import { ArrowLeft, ChevronLeft, ChevronRight, X, ExternalLink, Check, Star, BookmarkPlus } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Card, CardContent } from '$lib/components/ui/card';
+  import { AddToCollection } from '$lib/components/folder';
+  import { page } from '$app/stores';
+  import { CollectionService } from '$lib/services/collection.service';
   
   // Props - simplified
   let { 
@@ -90,8 +93,25 @@
   });
   
   // Handle save functionality
-  function handleSave() {
-    dispatch('save');
+  async function handleSave() {
+    if (!property) return;
+    try {
+      if (!$page.data.session?.user?.id) {
+        console.error("You must be logged in to save properties");
+        return;
+      }
+      
+      // Ensure default collection exists
+      const defaultCollection = await CollectionService.ensureDefaultCollection($page.data.session.user.id);
+      
+      // Add property to default collection
+      await CollectionService.addPropertyToCollection(defaultCollection.id, property);
+      
+      console.log("Property saved successfully");
+      dispatch('save');
+    } catch (error) {
+      console.error("Error saving property:", error);
+    }
   }
   
   // Handle booking functionality
@@ -113,14 +133,20 @@
       </button>
       
       <div class="flex gap-2">
-        <Button
-          onclick={handleSave}
-          variant="outline"
-          class="rounded-full px-4"
-        >
-          <BookmarkPlus size={18} class="mr-2" />
-          Save
-        </Button>
+        {#if property}
+          <div onclick={(e) => e.stopPropagation()} class="z-10">
+            <AddToCollection property={property} />
+          </div>
+        {:else}
+          <Button
+            onclick={handleSave}
+            variant="outline"
+            class="rounded-full px-4"
+          >
+            <BookmarkPlus size={18} class="mr-2" />
+            Save
+          </Button>
+        {/if}
         
         <Button
           onclick={handleBook}
@@ -151,6 +177,9 @@
                 <span class="text-foreground/90">{property.capacity.beds} {property.capacity.beds === 1 ? 'bed' : 'beds'}</span>
               </div>
             {/if}
+            <div class="px-4 py-2 rounded-full bg-secondary/20 font-semibold text-green-600 dark:text-green-400">
+              <span>${Math.round(property.pricing.total)} per night</span>
+            </div>
           </div>
         </div>
         
@@ -212,11 +241,11 @@
                   </div>
                 </div>
                 
-                <div class="mt-4 text-sm text-muted-foreground">
-                  <div class="flex gap-1 items-center">
-                    <span>Price:</span>
-                    <span class="font-semibold text-lg text-foreground">${Math.round(property.pricing.total)}</span>
-                    <span>per night</span>
+                <div class="mt-4 space-y-2">
+                  <div class="flex items-center">
+                    <span class="mr-2 text-muted-foreground">Price:</span>
+                    <span class="text-2xl font-bold text-foreground">${Math.round(property.pricing.total)}</span>
+                    <span class="ml-2 text-muted-foreground">per night</span>
                   </div>
                 </div>
               </div>

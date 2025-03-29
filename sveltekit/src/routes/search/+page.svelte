@@ -23,7 +23,7 @@
 		
 	// Import utilities
 	import { TEMPLATE_TEXT, loadPreviousPreferences } from './preferences';
-	import { parseDateRange, calculateStartDate, formatDateRange } from './dateHelpers';
+	import { parseDateRange, calculateStartDate, formatDateRange, isValidDate } from './dateHelpers';
 	import { fade } from 'svelte/transition';
 	
 	// Import filter system
@@ -298,14 +298,7 @@
 			progressInterval = setInterval(updateProgressSmooth, 100);
 			
 			// Make a request to create a new session
-			sessionId = await queryProperties({
-				query: parsedQuery.query || '',
-				date: parsedQuery.date || '',
-				budget: parsedQuery.budget || { min: 200, max: 600 },
-				adults: parsedQuery.adults || 2,
-				children: parsedQuery.children || 0,
-				number_of_rooms: parsedQuery.number_of_rooms || 1
-			});
+			sessionId = await queryProperties(parsedQuery);
 			
 			if (sessionId) {
 				console.log('Created session ID:', sessionId);
@@ -409,72 +402,80 @@
 		}
 	}
 	
-	// Function to submit the search
-    async function submitSearch() {
-        // Build search query with all filters
-        const searchQueryJson = prepareSearchQuery({
-            destination,
-            dateRange,
-            budget,
-            selectedRooms,
-            preferences,
-            selectedPropertyType: selectedFilters['property-type'].length > 0 ? selectedFilters['property-type'] : null,
-            selectedAmenities: selectedFilters['amenities'],
-            selectedLocationFeatures: selectedFilters['nearby'],
-            selectedAccessibility: selectedFilters['accessibility'],
-            selectedSafetyFeatures: selectedFilters['safety-features'],
-            selectedHouseRules: selectedFilters['house-rules'],
-            selectedRating: selectedFilters['rating'],
-            preferenceStrength
-        });
-        
-        try {
-            console.log("Storing search query and starting search process");
-            
-            // Store the search query using the reactive store
-            setSearchQuery(searchQueryJson);
-            
-            // Set search state to true to show loading UI
-            isSearching = true;
-            
-            // Save to Supabase first
-            await saveSearchToSupabase(searchQueryJson);
-            
-            // Start the property evaluation process
-            await startPropertyEvaluation(searchQueryJson);
-        } catch (error) {
-            console.error('Error starting search:', error);
-            isSearching = false;
-        }
-    }
-    
-    // Save search to Supabase
-    async function saveSearchToSupabase(searchQueryJson: string): Promise<void> {
-        try {
-            // Use the API endpoint instead of form action
-            const response = await fetch('/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    searchQuery: searchQueryJson
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (!response.ok) {
-                console.error('Error saving search to Supabase:', result.message);
-            } else if (result.searchId) {
-                // Store the search ID for updating with results later
-                console.log('Search saved with ID:', result.searchId);
-                searchId = result.searchId;
-            }
-        } catch (error) {
-            console.error('Error calling search API:', error);
-        }
-    }
+	// Handle form submission for search
+	async function handleSearch() {
+		// Validate inputs
+		if (!destination) {
+			setError('Please enter a destination');
+			return;
+		}
+		
+		if (!dateRange) {
+			setError('Please enter dates for your stay');
+			return;
+		}
+		
+		if (!isValidDate(dateRange)) {
+			setError('Please enter valid dates for your stay');
+			return;
+		}
+		
+		// Reset error state
+		setError(null);
+		
+		// Start the loading state
+		isSearching = true;
+		progress = 0;
+		targetProgress = 0;
+		
+		// Save user preference if not empty
+		if (preferences) {
+			previousPreferences = loadPreviousPreferences();
+		}
+		
+		// Prepare the search API query
+		try {
+			// Prepare budget value
+			const budgetValue = {
+				min: 50, // Minimum default
+				max: budget ? parseInt(budget) : 600, // Default of 600
+				currency: 'USD' // Default currency
+			};
+			
+			// Build the query
+			const query = prepareSearchQuery({
+				destination,
+				dateRange,
+				budget: budgetValue,
+				rooms: selectedRooms,
+				preferences,
+				filters: selectedFilters
+			});
+			
+			// Set the search query to the store for use in the results
+			setSearchQuery({
+				destination,
+				dateRange,
+				budget: budgetValue,
+				preferences,
+				filters: selectedFilters
+			});
+			
+			// Start the search session
+			sessionId = await propertyService.startSearch(query);
+			console.log('Search session started with ID:', sessionId);
+			
+			// Set up the progress animation
+			progressInterval = setInterval(updateProgressSmooth, 30);
+			
+			// Set up SSE events connection for realtime updates
+			setupEventStream(sessionId);
+		} catch (error) {
+			console.error('Error starting search:', error);
+			isSearching = false;
+			setError('Failed to start search. Please try again.');
+		}
+	}
 </script>
 
 <div class="flex h-screen overflow-hidden">
@@ -512,7 +513,7 @@
 				{selectedRooms}
 				{preferences}
 				{previousPreferences}
-				onSubmit={submitSearch}
+				onSubmit={handleSearch}
 			/>
 			
 			<!-- Active Filters -->

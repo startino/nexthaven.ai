@@ -3,11 +3,11 @@
   Includes destination, dates, preferences, and search button
 -->
 <script lang="ts">
-  import { Calendar, MapPin, MessageSquare, Search, Clock, Check } from 'lucide-svelte';
+  import { Calendar, MapPin, MessageSquare, Search, Clock, Check, AlertCircle } from 'lucide-svelte';
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
-  import { formatDateRange, parseDateRange } from './dateHelpers';
+  import { formatDateRange, parseDateRange, isValidDate } from './dateHelpers';
   import { savePreference } from './preferences';
   import type { SavedPreference } from './types';
   import { slide } from 'svelte/transition';
@@ -28,8 +28,18 @@
   // UI state
   let showPreviousPreferences = $state(false);
   let textareaElement: HTMLElement;
+  let dateError = $state<string | null>(null);
   
   function handleDateRangeBlur() {
+    // Clear any previous error
+    dateError = null;
+    
+    // Validate date
+    if (dateRange && !isValidDate(dateRange)) {
+      dateError = "Please enter a valid date format or select from time period options";
+      return;
+    }
+    
     const result = parseDateRange(dateRange);
     if (result.timeFrame || result.duration) {
       // Update the parent component's state through the binding
@@ -59,31 +69,36 @@
     });
   }
   
-  async function handleSubmit() {
-    // Save current preference if not empty
-    if (preferences.trim()) {
-      previousPreferences = savePreference(preferences, previousPreferences);
+  // Handler for saving the preference and submitting the form
+  function handleSubmit() {
+    // Validate date before submitting
+    if (dateRange && !isValidDate(dateRange)) {
+      dateError = "Please enter a valid date format or select from time period options";
+      return;
     }
     
-    // Call the parent's submit function
-    await onSubmit();
+    dateError = null;
+    
+    // Save the preference if it's non-empty and proceed with submission
+    if (preferences.trim()) {
+      savePreference(preferences);
+    }
+    
+    // Actually submit the form
+    onSubmit();
   }
   
-  // Function to handle clicks outside the preferences dropdown
+  // Close the previous preferences dropdown when clicking outside of it
   function handleClickOutside(event: MouseEvent) {
-    const target = event.target as Node;
-    if (showPreviousPreferences && textareaElement && !textareaElement.contains(target)) {
-      // Check if the click is inside a previous preference item
-      const wasPreferenceItemClick = (event.target as HTMLElement).closest('[data-preference-item]');
-      if (!wasPreferenceItemClick) {
-        showPreviousPreferences = false;
-      }
+    if (textareaElement && !textareaElement.contains(event.target as Node) && 
+        !(event.target as Element).closest('[data-preference-item]')) {
+      showPreviousPreferences = false;
     }
   }
   
-  // Function to handle focus on the textarea
+  // Open the previous preferences dropdown when focusing on the textarea
   function handleTextareaFocus() {
-    if (previousPreferences.length > 0) {
+    if (previousPreferences.length) {
       showPreviousPreferences = true;
     }
   }
@@ -105,10 +120,19 @@
         type="text" 
         placeholder="Check-in - Check-out"
         value={dateRange}
-        oninput={(e: Event) => dateRange = (e.target as HTMLInputElement).value}
+        oninput={(e: Event) => {
+          dateRange = (e.target as HTMLInputElement).value;
+          if (dateError) dateError = null; // Clear error when typing
+        }}
         onblur={handleDateRangeBlur}
-        class="h-12 pl-12 text-base"
+        class="h-12 pl-12 text-base {dateError ? 'border-red-500 focus:ring-red-500' : ''}"
       />
+      {#if dateError}
+        <div class="text-red-500 text-sm mt-1 flex items-center gap-1.5">
+          <AlertCircle size={14} />
+          <span>{dateError}</span>
+        </div>
+      {/if}
     </div>
     
     <div class="relative">
@@ -164,7 +188,7 @@
   <Button 
     onclick={handleSubmit}
     class="h-12 button-gradient mt-1 text-base"
-    disabled={!destination || !dateRange}
+    disabled={!destination || !dateRange || dateError !== null}
   >
     <Search class="h-5 w-5 mr-2" />
     Discover Properties

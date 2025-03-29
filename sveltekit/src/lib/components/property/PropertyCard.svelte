@@ -60,7 +60,7 @@
       {/if}
     </div>
     
-    <div class="absolute top-3 right-16">
+    <div class="absolute top-3 right-3">
       <div class="w-16 h-16 rounded-full flex items-center justify-center bg-background/50 backdrop-blur-sm border-2 border-border text-foreground font-bold text-xl shadow-lg shadow-black/20 relative">
         <svg viewBox="0 0 36 36" class="absolute inset-0 w-full h-full">
           <path 
@@ -85,7 +85,7 @@
             </linearGradient>
           </defs>
         </svg>
-        <span class="absolute transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 {getScoreColor(property.score)}">{property.score}</span>
+        <span class="relative">{property.score}</span>
       </div>
     </div>
     

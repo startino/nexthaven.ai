@@ -2,6 +2,41 @@
 export const timeFrames = ['Next Week', 'Two Weeks', 'Next Month'];
 export const durations = ['1 Week', '1 Month', '3 Months'];
 
+// Check if a date string is valid
+export function isValidDate(dateString: string): boolean {
+  if (!dateString) return false;
+  
+  // Check for timeFrames and durations format
+  if (timeFrames.includes(dateString) || 
+      durations.includes(dateString) || 
+      dateString.startsWith('for ') ||
+      /^(Next Week|Two Weeks|Next Month)\s+for\s+(1 Week|1 Month|3 Months)$/i.test(dateString)) {
+    return true;
+  }
+  
+  // Check for standard date formats (YYYY-MM-DD, MM/DD/YYYY, etc.)
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
+}
+
+// Safely format a date string, returning a default value if invalid
+export function safeFormatDate(dateString: string, defaultValue = 'Invalid date'): string {
+  if (!dateString) return defaultValue;
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return defaultValue;
+    
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return defaultValue;
+  }
+}
+
 // Calculate start date based on selected time frame
 export function calculateStartDate(timeFrame: string): string {
   let now = new Date();
@@ -75,6 +110,10 @@ export function parseDateRange(dateRange: string): { timeFrame: string | null; d
 
 // Format a Date into a readable format like "Mar 15"
 export function formatDate(date: Date): string {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid date';
+  }
+  
   const month = date.toLocaleString('default', { month: 'short' });
   return `${month} ${date.getDate()}`;
 } 
