@@ -1,3 +1,7 @@
+<!-- 
+  Main search page for Rentino
+  This page allows users to search properties with a comprehensive filter system
+-->
 <script lang="ts">
 	import { setSearchQuery, clearStore, setError, getErrorMessage } from '$lib/stores/properties.svelte';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
@@ -6,16 +10,28 @@
 	import type { SubscriptionStatus } from '$lib/utils/subscription';
 	
 	// Import components
-	import PropertyTypeSidebar from './PropertyTypeSidebar.svelte';
+	import FilterSidebar from './FilterSidebar.svelte';
 	import SearchForm from './SearchForm.svelte';
 	import PropertyDisplays from './PropertyDisplays.svelte';
-	import ErrorDisplay from './ErrorDisplay.svelte';
+	import ActiveFilters from './ActiveFilters.svelte';
 		
 	// Import utilities
-	import { TEMPLATE_TEXT, loadPreviousPreferences, SavedPreference } from './preferences';
-	import { timeFrames, durations, parseDateRange, calculateStartDate, formatDateRange } from './dateHelpers';
-	import { popularDestinations, roomOptions, propertyTypes, amenities } from './searchData';
+	import { TEMPLATE_TEXT, loadPreviousPreferences } from './preferences';
+	import { parseDateRange, calculateStartDate, formatDateRange } from './dateHelpers';
 	import { fade } from 'svelte/transition';
+	
+	// Import filter system
+	import { 
+		popularDestinations, 
+		roomOptions, 
+		propertyTypes, 
+		amenities, 
+		timeFrames, 
+		durations, 
+		filterGroups,
+		prepareSearchQuery
+	} from './filters';
+	import type { SavedPreference, PreferenceStrength } from './types';
 	
 	// Define interface for page data
 	interface PageData {
@@ -39,11 +55,28 @@
 	let preferences = $state('');
 	let error = $derived(getErrorMessage());
 	let previousPreferences = $state<SavedPreference[]>([]);
-	let showPreviousPreferences = $state(false);
-	let selectedPropertyType = $state<string | null>(null);
-	let selectedAmenities = $state<string[]>([]);
 	let activePreferenceModal = $state<string | null>(null);
-	let preferenceStrength = $state<Record<string, 'weak' | 'mid' | 'strong'>>({});
+	let preferenceStrength = $state<Record<string, PreferenceStrength>>({});
+	
+	// Combined filter state for all categories
+	let selectedFilters = $state<Record<string, string[]>>({
+		'property-type': [],
+		'amenities': [],
+		'property-style': [],
+		'nearby': [],
+		'view-type': [],
+		'privacy-level': [],
+		'surroundings': [],
+		'safety-rating': [],
+		'review-consideration': [],
+		'verified-stay': [],
+		'review-timeframe': [],
+		'flooring': [],
+		'accessibility': [],
+		'safety-features': [],
+		'house-rules': [],
+		'rating': []
+	});
 	
 	// Create an effect to clear the error after a timeout
 	$effect(() => {
@@ -63,10 +96,11 @@
 		clearStore();
 	});
 	
-	// Function to select a previous preference
-	function selectPreviousPreference(preferenceText: string) {
-		preferences = preferenceText;
-		showPreviousPreferences = false;
+	// Function to handle removing a filter
+	function removeFilter(groupId: string, filterId: string) {
+		if (Array.isArray(selectedFilters[groupId])) {
+			selectedFilters[groupId] = selectedFilters[groupId].filter(id => id !== filterId);
+		}
 	}
 	
 	function selectDestination(dest: string) {
@@ -101,62 +135,131 @@
 	function closePreferenceModal() {
 		activePreferenceModal = null;
 	}
+	
+	// Function to submit the search
+    async function submitSearch() {
+        // Build search query with all filters
+        const searchQueryJson = prepareSearchQuery({
+            destination,
+            dateRange,
+            budget,
+            selectedRooms,
+            preferences,
+            selectedPropertyType: selectedFilters['property-type'].length > 0 ? selectedFilters['property-type'] : null,
+            selectedAmenities: selectedFilters['amenities'],
+            selectedLocationFeatures: selectedFilters['nearby'],
+            selectedAccessibility: selectedFilters['accessibility'],
+            selectedSafetyFeatures: selectedFilters['safety-features'],
+            selectedHouseRules: selectedFilters['house-rules'],
+            selectedRating: selectedFilters['rating'],
+            preferenceStrength
+        });
+        
+        try {
+            console.log("Storing search query and navigating to loading page");
+            
+            // Store the search query using the reactive store
+            setSearchQuery(searchQueryJson);
+            
+            // Save to Supabase and navigate
+            await saveSearchToSupabaseAndNavigate(searchQueryJson);
+        } catch (error) {
+            console.error('Error starting search:', error);
+        }
+    }
+    
+    // Save search to Supabase and navigate to results
+    async function saveSearchToSupabaseAndNavigate(searchQueryJson: string): Promise<void> {
+        try {
+            // Use the API endpoint instead of form action
+            const response = await fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    searchQuery: searchQueryJson
+                })
+            });
+            
+            const result = await response.json();
+            console.log('saveSearch result:', result);
+            
+            if (!response.ok) {
+                console.error('Error saving search to Supabase:', result.message);
+            } else if (result.searchId) {
+                // Store the search ID for updating with results later
+                console.log('Search saved with ID:', result.searchId);
+            }
+            
+            // After saving to Supabase, navigate using goto which preserves state better
+            const searchIdParam = result.searchId ? `?searchId=${result.searchId}` : '';
+            console.log('Navigating to loading page with params:', searchIdParam);
+            goto('/loading' + searchIdParam);
+        } catch (error) {
+            console.error('Error calling search API:', error);
+            // Still attempt to navigate even if the save fails, but without searchId
+            goto('/loading');
+        }
+    }
 </script>
 
-<div class="flex flex-col py-6 lg:py-8">
-	<div class="flex flex-1 overflow-hidden">
-		<!-- Left Sidebar - Property Types and Amenities -->
-		<PropertyTypeSidebar
-			{selectedPropertyType}
-			{activePreferenceModal}
-			{preferenceStrength}
-			{selectedAmenities}
-		/>
+<div class="flex h-screen overflow-hidden">
+	<!-- Left Sidebar - Comprehensive Filter System -->
+	<FilterSidebar
+		selectedFilters={selectedFilters}
+		{activePreferenceModal}
+		{preferenceStrength}
+	/>
 
-		<!-- Main Content Area -->
-		<div class="flex-1 h-full">
-			<ScrollArea class="h-full">
-				<div class="p-5">
-					<!-- Error message box -->
-					{#if error}
-					<div 
-					  class="w-full mb-6 p-4 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
-					  transition:fade={{ duration: 200 }}
-					>
-					  <div class="flex items-start gap-3">
-						<div class="mt-1">⚠️</div>
-						<div>
-						  <h3 class="font-medium mb-1">Error</h3>
-						  <p class="text-sm">{error}</p>
-						</div>
-					  </div>
-					</div>
-				  {/if} 					
-					<!-- Search Inputs -->
-					<SearchForm
-						{destination}
-						{dateRange}
-						{budget}
-						{selectedRooms}
-						{preferences}
-						{selectedPropertyType}
-						{selectedAmenities}
-						{preferenceStrength}
-						{previousPreferences}
-					/>
-					
-					<!-- Properties Section -->
-					<PropertyDisplays />
+	<!-- Main Content Area -->
+	<div class="flex-1 overflow-y-auto">
+		<div class="p-6 md:p-8">
+			<!-- Error message box -->
+			{#if error}
+			<div 
+				class="w-full mb-8 p-4 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
+				transition:fade={{ duration: 200 }}
+			>
+				<div class="flex items-start gap-3">
+				<div class="mt-1">⚠️</div>
+				<div>
+					<h3 class="font-medium mb-1">Error</h3>
+					<p class="text-sm">{error}</p>
 				</div>
-			</ScrollArea>
+				</div>
+			</div>
+			{/if} 					
+			
+			<!-- Search Inputs -->
+			<SearchForm
+				{destination}
+				{dateRange}
+				{budget}
+				{selectedRooms}
+				{preferences}
+				{previousPreferences}
+				onSubmit={submitSearch}
+			/>
+			
+			<!-- Active Filters -->
+			<ActiveFilters 
+				filters={selectedFilters}
+				{preferenceStrength}
+				onRemove={removeFilter}
+			/>
+			
+			<!-- Properties Section -->
+			<PropertyDisplays />
 		</div>
 	</div>
 </div>
 
 <!-- Click outside detector to close preference modal -->
 {#if activePreferenceModal}
-	<div 
-		class="fixed inset-0 z-0"
+	<button 
+		class="fixed inset-0 z-0 w-full h-full border-0 bg-transparent cursor-default"
 		onclick={closePreferenceModal}
-	></div>
+		aria-label="Close filter preference modal"
+	></button>
 {/if} 

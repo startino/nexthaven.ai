@@ -1,12 +1,9 @@
 // filters.ts - Centralized filter definitions for the search functionality
 // This file organizes all filter options and structures in a scalable way
 
-import type { DateRange } from './types';
+import type { PreferenceStrength, SearchParams, AppliedFilters } from './types';
 
 // ====== Common Types ======
-
-/** Defines the strength/importance of a preference for the user */
-export type PreferenceStrength = 'weak' | 'mid' | 'strong';
 
 /** Interface for all filter option items */
 export interface FilterOption {
@@ -23,8 +20,8 @@ export interface FilterGroup {
   icon?: string;
   description?: string;
   options: FilterOption[];
-  multiSelect?: boolean;
-  showStrength?: boolean;
+  multiSelect: boolean;
+  showStrength: boolean;
 }
 
 // ====== Location Filters ======
@@ -93,6 +90,18 @@ export const propertyTypes: FilterOption[] = [
   { id: 'farm-stay', label: 'Farm Stay', icon: 'wheat' }
 ];
 
+// ====== Property Style Filters ======
+
+export const propertyStyles: FilterOption[] = [
+  { id: 'modern', label: 'Modern', icon: 'square' },
+  { id: 'rustic', label: 'Rustic', icon: 'pilcrow' },
+  { id: 'cozy', label: 'Cozy', icon: 'coffee' },
+  { id: 'minimalist', label: 'Minimalist', icon: 'minus-square' },
+  { id: 'traditional', label: 'Traditional', icon: 'landmark' },
+  { id: 'bohemian', label: 'Bohemian', icon: 'palette' },
+  { id: 'elegant', label: 'Elegant', icon: 'sparkles' }
+];
+
 // ====== Amenity Filters ======
 
 export const amenities: FilterOption[] = [
@@ -115,6 +124,87 @@ export const locationFeatures: FilterOption[] = [
   { id: 'waterfront', label: 'Waterfront', icon: 'waves' },
   { id: 'downtown', label: 'Downtown', icon: 'building-2' },
   { id: 'countryside', label: 'Countryside', icon: 'mountain' }
+];
+
+// ====== Nearby Attractions ======
+
+export const nearbyAttractions: FilterOption[] = [
+  { id: 'beach', label: 'Beach', icon: 'umbrella-beach' },
+  { id: 'gym', label: 'Gym', icon: 'dumbbell' },
+  { id: 'co-working', label: 'Co-working Space', icon: 'briefcase' },
+  { id: 'city-center', label: 'City Center', icon: 'map-pin' },
+  { id: 'nomad-hotspots', label: 'Nomad Hotspots', icon: 'globe' },
+  { id: 'cafes', label: 'Cafes', icon: 'coffee' },
+  { id: 'restaurants', label: 'Restaurants', icon: 'utensils' },
+  { id: 'public-transport', label: 'Public Transport', icon: 'train' }
+];
+
+// ====== View Types ======
+
+export const viewTypes: FilterOption[] = [
+  { id: 'ocean', label: 'Ocean View', icon: 'waves' },
+  { id: 'mountain', label: 'Mountain View', icon: 'mountain' },
+  { id: 'city', label: 'City View', icon: 'building' },
+  { id: 'garden', label: 'Garden View', icon: 'flower' },
+  { id: 'lake', label: 'Lake View', icon: 'water' },
+  { id: 'park', label: 'Park View', icon: 'trees' },
+  { id: 'landmark', label: 'Landmark View', icon: 'monument' }
+];
+
+// ====== Privacy Levels ======
+
+export const privacyLevels: FilterOption[] = [
+  { id: 'entire-place', label: 'Entire Place', icon: 'home' },
+  { id: 'private-room', label: 'Private Room', icon: 'door-closed' },
+  { id: 'shared-room', label: 'Shared Room', icon: 'users' }
+];
+
+// ====== Surroundings ======
+
+export const surroundings: FilterOption[] = [
+  { id: 'quiet', label: 'Quiet', icon: 'volume-x' },
+  { id: 'lively', label: 'Lively', icon: 'music' },
+  { id: 'residential', label: 'Residential', icon: 'home' },
+  { id: 'tourist-area', label: 'Tourist Area', icon: 'camera' }
+];
+
+// ====== Safety Ratings ======
+
+export const safetyRatings: FilterOption[] = [
+  { id: 'very-safe', label: 'Very Safe', icon: 'shield-check' },
+  { id: 'safe', label: 'Safe', icon: 'shield' },
+  { id: 'average', label: 'Average', icon: 'shield-off' }
+];
+
+// ====== Review Filters ======
+
+export const reviewConsideration: FilterOption[] = [
+  { id: 'weak', label: 'Weak Consideration', icon: 'star-half' },
+  { id: 'normal', label: 'Normal Consideration', icon: 'star' },
+  { id: 'strong', label: 'Strong Consideration', icon: 'star-plus' }
+];
+
+export const verifiedStayStatus: FilterOption[] = [
+  { id: 'verified', label: 'Verified Stays Only', icon: 'badge-check' },
+  { id: 'all-reviews', label: 'All Reviews', icon: 'message-square' }
+];
+
+export const reviewTimeframe: FilterOption[] = [
+  { id: '3-months', label: 'Last 3 Months', icon: 'calendar' },
+  { id: '6-months', label: 'Last 6 Months', icon: 'calendar' },
+  { id: '12-months', label: 'Last 12 Months', icon: 'calendar' },
+  { id: 'all-time', label: 'All Time', icon: 'calendar' }
+];
+
+// ====== Flooring Types ======
+
+export const flooringTypes: FilterOption[] = [
+  { id: 'tiles', label: 'Tiles', icon: 'grid' },
+  { id: 'wood', label: 'Wood', icon: 'trees' },
+  { id: 'marble', label: 'Marble', icon: 'circle' },
+  { id: 'carpet', label: 'Carpet', icon: 'square' },
+  { id: 'concrete', label: 'Concrete', icon: 'box' },
+  { id: 'laminate', label: 'Laminate', icon: 'layers' }
 ];
 
 // ====== Accessibility Features ======
@@ -165,6 +255,16 @@ export const filterGroups: FilterGroup[] = [
     icon: 'home',
     description: 'What type of property are you looking for?',
     options: propertyTypes,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'property-style',
+    name: 'Property Style',
+    icon: 'paintbrush',
+    description: 'What style of property do you prefer?',
+    options: propertyStyles,
+    multiSelect: true,
     showStrength: true
   },
   {
@@ -173,15 +273,89 @@ export const filterGroups: FilterGroup[] = [
     icon: 'coffee',
     description: 'Must-have features for your stay',
     options: amenities,
-    multiSelect: true
+    multiSelect: true,
+    showStrength: true
   },
   {
-    id: 'location-features',
-    name: 'Location',
-    icon: 'map-pin',
-    description: 'Special location features',
-    options: locationFeatures,
-    multiSelect: true
+    id: 'nearby',
+    name: 'Nearby Attractions',
+    icon: 'compass',
+    description: 'What would you like to be close to?',
+    options: nearbyAttractions,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'view-type',
+    name: 'View Type',
+    icon: 'eye',
+    description: 'What view would you prefer?',
+    options: viewTypes,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'privacy-level',
+    name: 'Privacy Level',
+    icon: 'lock',
+    description: 'What level of privacy do you need?',
+    options: privacyLevels,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'surroundings',
+    name: 'Surroundings',
+    icon: 'globe',
+    description: 'What kind of neighborhood do you prefer?',
+    options: surroundings,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'safety-rating',
+    name: 'Safety Rating',
+    icon: 'shield',
+    description: 'Minimum safety rating based on neighborhood statistics',
+    options: safetyRatings,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'review-consideration',
+    name: 'Review Consideration',
+    icon: 'star',
+    description: 'How much weight to give to reviews?',
+    options: reviewConsideration,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'verified-stay',
+    name: 'Verified Stay',
+    icon: 'check-circle',
+    description: 'Filter by verified stays only?',
+    options: verifiedStayStatus,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'review-timeframe',
+    name: 'Review Timeframe',
+    icon: 'calendar',
+    description: 'How recent should reviews be?',
+    options: reviewTimeframe,
+    multiSelect: true,
+    showStrength: true
+  },
+  {
+    id: 'flooring',
+    name: 'Flooring Type',
+    icon: 'grid',
+    description: 'What type of flooring do you prefer?',
+    options: flooringTypes,
+    multiSelect: true,
+    showStrength: true
   },
   {
     id: 'accessibility',
@@ -189,15 +363,17 @@ export const filterGroups: FilterGroup[] = [
     icon: 'wheelchair',
     description: 'Accessibility features',
     options: accessibilityFeatures,
-    multiSelect: true
+    multiSelect: true,
+    showStrength: true
   },
   {
-    id: 'safety',
-    name: 'Safety',
-    icon: 'shield',
+    id: 'safety-features',
+    name: 'Safety Features',
+    icon: 'alert-triangle',
     description: 'Safety features',
     options: safetyFeatures,
-    multiSelect: true
+    multiSelect: true,
+    showStrength: true
   },
   {
     id: 'house-rules',
@@ -205,43 +381,25 @@ export const filterGroups: FilterGroup[] = [
     icon: 'book',
     description: 'Policies and permissions',
     options: houseRules,
-    multiSelect: true
+    multiSelect: true,
+    showStrength: true
   },
   {
     id: 'rating',
     name: 'Rating',
     icon: 'star',
     description: 'Minimum guest rating',
-    options: ratingFilters
+    options: ratingFilters,
+    multiSelect: true,
+    showStrength: true
   }
 ];
 
-// ====== Filter Query Interfaces ======
-
-/**
- * Interface that defines the structure of a search query
- * This should match what's sent to the API or used in state
- */
-export interface SearchQueryData {
-  query: string;
-  date: string;
-  budget: {
-    min: number;
-    max: number;
-  };
-  adults: number;
-  children: number;
-  number_of_rooms: number;
-  preferences: string;
-  property_type: string | null;
-  amenities: string[];
-  location_features?: string[];
-  accessibility?: string[];
-  safety_features?: string[];
-  house_rules?: string[];
-  rating?: string;
-  property_preferences: Record<string, PreferenceStrength>;
-}
+// A map of filter groups by ID for easy lookup
+export const filterGroupsById = filterGroups.reduce((acc, group) => {
+  acc[group.id] = group;
+  return acc;
+}, {} as Record<string, FilterGroup>);
 
 // ====== Helper Functions ======
 
@@ -262,7 +420,7 @@ export function prepareSearchQuery({
   selectedAccessibility = [],
   selectedSafetyFeatures = [],
   selectedHouseRules = [],
-  selectedRating = null,
+  selectedRating = undefined,
   preferenceStrength
 }: {
   destination: string;
@@ -270,37 +428,42 @@ export function prepareSearchQuery({
   budget: string;
   selectedRooms: number;
   preferences: string;
-  selectedPropertyType: string | null;
+  selectedPropertyType: string[] | null;
   selectedAmenities: string[];
   selectedLocationFeatures?: string[];
   selectedAccessibility?: string[];
   selectedSafetyFeatures?: string[];
   selectedHouseRules?: string[];
-  selectedRating?: string | null;
+  selectedRating?: string[];
   preferenceStrength: Record<string, PreferenceStrength>;
 }): string {
-  const searchQuery: SearchQueryData = {
+  const filters: AppliedFilters = {
+    propertyType: selectedPropertyType,
+    amenities: selectedAmenities,
+    locationFeatures: selectedLocationFeatures,
+    accessibility: selectedAccessibility,
+    safetyFeatures: selectedSafetyFeatures,
+    houseRules: selectedHouseRules,
+    rating: selectedRating,
+    preferenceStrength: preferenceStrength
+  };
+
+  const searchParams: SearchParams = {
     query: destination,
-    date: dateRange,
-    budget: {
+    dateRange: dateRange,
+    priceRange: {
       min: parseInt(budget) || 200,
       max: parseInt(budget) * 1.5 || 600
     },
-    adults: 2,
-    children: 0,
-    number_of_rooms: selectedRooms,
-    preferences: preferences,
-    property_type: selectedPropertyType,
-    amenities: selectedAmenities,
-    location_features: selectedLocationFeatures,
-    accessibility: selectedAccessibility,
-    safety_features: selectedSafetyFeatures,
-    house_rules: selectedHouseRules,
-    rating: selectedRating,
-    property_preferences: preferenceStrength
+    guests: {
+      adults: 2,
+      children: 0
+    },
+    filters,
+    preferences
   };
   
-  return JSON.stringify(searchQuery);
+  return JSON.stringify(searchParams);
 }
 
 /**
@@ -326,4 +489,32 @@ export function mapFilterIdsToLabels(ids: string[]): string[] {
     const option = findFilterOptionById(id);
     return option ? option.label : id;
   });
+}
+
+/**
+ * Get a list of all available filters across all groups
+ * @returns An array of all filter options
+ */
+export function getAllFilterOptions(): FilterOption[] {
+  return filterGroups.flatMap(group => group.options);
+}
+
+/**
+ * Check if a filter should allow multiple selections
+ * @param groupId The filter group ID
+ * @returns boolean indicating if multi-select is enabled
+ */
+export function isMultiSelectFilter(groupId: string): boolean {
+  const group = filterGroupsById[groupId];
+  return group?.multiSelect || false;
+}
+
+/**
+ * Check if a filter should show preference strength options
+ * @param groupId The filter group ID
+ * @returns boolean indicating if strength selection is enabled
+ */
+export function showsStrengthOptions(groupId: string): boolean {
+  const group = filterGroupsById[groupId];
+  return group?.showStrength || false;
 }

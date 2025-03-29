@@ -1,9 +1,5 @@
-// Define interface for saved preferences
-export interface SavedPreference {
-  id: number;
-  date: string;
-  preferences: string;
-}
+// Import the SavedPreference type from types.ts
+import type { SavedPreference } from './types';
 
 // Function to load previous preferences from localStorage
 export function loadPreviousPreferences(): SavedPreference[] {
@@ -15,9 +11,9 @@ export function loadPreviousPreferences(): SavedPreference[] {
       // Default preferences if none found
       return [
         {
-          id: 1,
-          date: '2025-03-15',
-          preferences: 'Modern apartment with a home office setup, high-speed internet, and a quiet neighborhood. Must have in-unit laundry and a balcony.'
+          id: 'default-1',
+          text: 'Modern apartment with a home office setup, high-speed internet, and a quiet neighborhood. Must have in-unit laundry and a balcony.',
+          timestamp: Date.now() - 86400000 // Yesterday
         }
       ];
     }
@@ -32,10 +28,10 @@ export function savePreference(preferences: string, previousPreferences: SavedPr
   try {
     if (!preferences) return previousPreferences; // Don't save empty preferences
     
-    const newPreference = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      preferences: preferences
+    const newPreference: SavedPreference = {
+      id: `pref-${Date.now()}`,
+      text: preferences,
+      timestamp: Date.now()
     };
     
     // Prepend new preference and keep only the 6 most recent
