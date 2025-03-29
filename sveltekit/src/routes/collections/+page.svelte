@@ -16,16 +16,7 @@
 <div class="min-h-screen bg-background">
 	<div class="max-w-7xl mx-auto px-4 py-6 lg:py-8">
 		<!-- Page header -->
-		<div class="mb-6">
-			<Button 
-				variant="ghost" 
-				class="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4"
-				href="/"
-			>
-				<ArrowLeft size={18} />
-				<span>Back to home</span>
-			</Button>
-			
+		<div class="mb-6">	
 			<h1 class="text-3xl font-serif">My Saved Properties</h1>
 			<p class="text-muted-foreground mt-2">Organize and manage your saved properties in collections.</p>
 		</div>

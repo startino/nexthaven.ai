@@ -42,13 +42,6 @@
 <div class="min-h-screen bg-background text-foreground">
 	<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 		<div class="flex justify-between items-center">
-			<button 
-				onclick={() => goto('/')}
-				class="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-			>
-				<ArrowLeft size={20} />
-				<span>Back to Home</span>
-			</button>
 			<h1 class="text-xl md:text-3xl font-serif italic text-foreground">Search History</h1>
 		</div>
 		

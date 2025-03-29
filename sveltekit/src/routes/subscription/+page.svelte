@@ -123,7 +123,7 @@
 	<title>Premium Subscription</title>
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
+<div class="container mx-auto py-8 px-4">
 	<div class="max-w-4xl mx-auto">
 		
 		{#if isSuccess}
@@ -154,7 +154,7 @@
 							Premium Subscription Active
 						{/if} 
 					</h2>
-					<p class="text-sm 	font-light mb-2">You have access to all premium features!</p>
+					<p class="text-muted-foreground text-sm mb-2">You have access to all premium features!</p>
 					
 					{#if planName !== 'Free Trial' && planName != null}
 						<p class="text-sm text-primary">Plan: {planName}</p>

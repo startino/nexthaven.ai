@@ -303,15 +303,6 @@ Literally any other preferences:
 
 <div class="max-w-4xl mx-auto py-8 px-4">
 
-	<div class="flex justify-start items-center mb-8">
-		<Button 
-			variant="outline" 
-			class="flex items-center gap-2" 
-			href="/">
-			<ArrowLeft class="h-4 w-4" />
-			<span>Back to Home</span>
-		</Button>
-	</div>
 	
 	<!-- Error message box -->
 	{#if error}

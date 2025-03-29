@@ -78,12 +78,10 @@
 </script>
 
 <div class="container mx-auto py-8 px-4">
-	<div class="max-w-3xl mx-auto">
-		<h1 class="text-3xl font-bold text-gradient mb-6">Account Settings</h1>
-		
+	<div class="max-w-3xl mx-auto">		
 		<div class="space-y-6">
 			<!-- Profile Info -->
-			<Card>
+			<Card class="bg-card max-w-3xl">
 				<CardHeader>
 					<CardTitle class="flex items-center gap-2">
 						<User size={20} />

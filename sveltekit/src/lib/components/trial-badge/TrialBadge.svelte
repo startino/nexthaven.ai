@@ -32,6 +32,6 @@
 {:else}
 	<div class="flex flex-col items-start text-left justify-center rounded-lg">
 		<p class="text-lg font-bold"> {daysRemaining} day{daysRemaining === 1 ? '' : 's'} remaining</p>
-		<p class="text-xs opacity-80">Subscribe to continue access after trial ends</p>
+		<p class="text-sm ">Subscribe to continue access after trial ends</p>
 	</div>
 {/if} 
