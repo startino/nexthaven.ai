@@ -397,7 +397,7 @@
       }}
       onblur={handleBlur}
       onkeydown={handleKeydown}
-      class={cn('pl-10 pr-10 h-10', className)}
+      class={cn('pl-10 pr-10 h-10 hover:bg-primary/10', className)}
       aria-expanded={isOpen}
       aria-autocomplete="list"
       role="combobox"

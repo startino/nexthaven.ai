@@ -3,7 +3,7 @@
   Includes destination, dates, preferences, and search button
 -->
 <script lang="ts">
-  import { Calendar, MessageSquare, Search, Clock, Check, AlertCircle } from 'lucide-svelte';
+  import { Calendar, MessageSquare, Search, Clock, Check, AlertCircle, Sparkle } from 'lucide-svelte';
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
@@ -272,7 +272,7 @@
           <Button
             variant="outline"
             class={cn(
-              "w-full h-12 justify-start text-left font-normal",
+              "w-full h-12 justify-start text-left hover:bg-primary/10 hover:text-muted-foreground",
               !dateRange && "text-muted-foreground",
               dateError && "border-red-500 focus:ring-red-500"
             )}
@@ -332,13 +332,13 @@
   {/if}
   
   <div class="relative" bind:this={textareaElement}>
-    <MessageSquare class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
+    <Sparkle class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
     <Textarea 
       value={preferences}
       placeholder="Write your personal, potentially strange... preferences here... (if you couldn't find the right filter)"
       oninput={(e: Event) => preferences = (e.target as HTMLTextAreaElement).value}
       onfocus={handleTextareaFocus}
-      class="w-full pl-12 py-3 text-base resize-none"
+      class="w-full pl-12 py-3 text-base resize-none hover:bg-primary/10"
     />
 <!--     
     {#if showPreviousPreferences && previousPreferences.length > 0}
