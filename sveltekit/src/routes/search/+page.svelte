@@ -119,6 +119,11 @@
 		}
 	});
 	
+	// Log when destination changes
+	$effect(() => {
+		console.log("Parent component destination updated:", destination);
+	});
+	
 	// Parse a search query
 	function parseSearchQuery() {
 		let searchParams = new URLSearchParams(window.location.search);
@@ -242,9 +247,34 @@
 		activePreferenceModal = null;
 	}
 	
+	// Function to setup event stream for property updates
+	function setupEventStream(sessionId: string) {
+		// Set up the evaluation endpoint URL
+		const apiUrl = `${PUBLIC_API_URL}/properties/evaluate`;
+		
+		// Construct the request body
+		const requestBody = {
+			session_id: sessionId,
+			preferences: preferences || ''
+		};
+		
+		// Make the request
+		const response = fetch(apiUrl, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(requestBody)
+		});
+		
+		// Set up subscription for property evaluation events
+		const unsubscribe = subscribeToEvent('property_evaluation', handlePropertyEvaluationEvent);
+		
+		// Start streaming events from the response
+		streamEvents(response);
+	}
+	
 	// Function to start or resume a search
 	async function resumeSearch() {
-		// image.pngO: Implement logic to resume a search based on searchId
+		// Implement logic to resume a search based on searchId
 		console.log("Resuming search with ID:", searchId);
 	}
 	
@@ -368,27 +398,8 @@
 			if (sessionId) {
 				console.log('Created session ID:', sessionId);
 				
-				// Now stream the evaluation
-				const apiUrl = `${PUBLIC_API_URL}/properties/evaluate`;
-				
-				// Construct the request body
-				const requestBody = {
-					session_id: sessionId,
-					preferences: parsedQuery.preferences || ''
-				};
-				
-				// Make the request and start streaming events
-				const response = fetch(apiUrl, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(requestBody)
-				});
-				
-				// Set up subscription for property evaluation events
-				const unsubscribe = subscribeToEvent('property_evaluation', handlePropertyEvaluationEvent);
-				
-				// Set up streaming of events
-				streamEvents(response);
+				// Set up SSE events connection for realtime updates
+				setupEventStream(sessionId);
 			} else {
 				throw new Error('Failed to create a session');
 			}
@@ -469,8 +480,12 @@
 	
 	// Handle form submission for search
 	async function handleSearch() {
+		// Add debugging logs
+		console.log('Search button clicked with destination:', destination);
+		console.log('Destination type:', typeof destination, 'Length:', destination ? destination.length : 0);
+		
 		// Validate inputs
-		if (!destination) {
+		if (!destination || destination.trim() === '') {
 			setError('Please enter a destination');
 			return;
 		}
@@ -503,18 +518,24 @@
 			// Prepare budget value
 			const budgetValue = {
 				min: 50, // Minimum default
-				max: budget ? parseInt(budget) : 600, // Default of 600
-				currency: 'USD' // Default currency
+				max: budget ? parseInt(budget) : 600 // Default of 600
 			};
 			
 			// Build the query
 			const query = prepareSearchQuery({
 				destination,
 				dateRange,
-				budget: budgetValue,
-				rooms: selectedRooms,
+				budget: budget.toString(),
+				selectedRooms,
 				preferences,
-				filters: selectedFilters
+				selectedPropertyType: selectedFilters['property-type'] || null,
+				selectedAmenities: selectedFilters['amenities'] || [],
+				selectedLocationFeatures: selectedFilters['nearby'] || [],
+				selectedAccessibility: selectedFilters['accessibility'] || [],
+				selectedSafetyFeatures: selectedFilters['safety-features'] || [],
+				selectedHouseRules: selectedFilters['house-rules'] || [],
+				selectedRating: selectedFilters['rating'] || [],
+				preferenceStrength
 			});
 			
 			// Set the search query to the store for use in the results
@@ -526,8 +547,17 @@
 				filters: selectedFilters
 			});
 			
-			// Start the search session
-			sessionId = await propertyService.startSearch(query);
+			// Start the search session using queryProperties instead of startSearch
+			const response = await propertyService.queryProperties({
+				query: destination,
+				date: dateRange,
+				budget: budgetValue,
+				adults: selectedRooms * 2, // Assume 2 adults per room
+				children: 0,
+				number_of_rooms: selectedRooms
+			});
+			
+			sessionId = response.session_id;
 			console.log('Search session started with ID:', sessionId);
 			
 			// Set up the progress animation
@@ -572,11 +602,11 @@
 			
 			<!-- Search Inputs -->
 			<SearchForm
-				{destination}
-				{dateRange}
-				{budget}
-				{selectedRooms}
-				{preferences}
+				bind:destination
+				bind:dateRange
+				bind:budget
+				bind:selectedRooms
+				bind:preferences
 				{previousPreferences}
 				onSubmit={handleSearch}
 			/>

@@ -28,7 +28,7 @@
 </script>
 
 <button 
-  class="relative cursor-pointer transform transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]"
+  class="relative cursor-pointer transform transition-all duration-300 hover:-translate-y-1"
   onclick={() => dispatch('select', property)}
 >
   <Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-primary/20 transition-all h-[450px] flex flex-col">
@@ -111,14 +111,16 @@
         {/if}
       </div>
       
-      <div class="flex flex-wrap gap-2 my-2">
+      <!-- Disabling amenities for now, should display once we have AI generated ones.-->
+       <!-- This is because the ones from the properties are pretty useless-->
+      <!-- <div class="flex flex-wrap gap-2 my-2">
         {#each property.features.amenities.slice(0, 3) as amenity}
           <Badge variant="outline">{amenity}</Badge>
         {/each}
         {#if property.features.amenities.length > 3}
           <Badge variant="outline" class="text-xs">+{property.features.amenities.length - 3}</Badge>
         {/if}
-      </div>
+      </div> -->
       
       <div class="pt-2 text-sm text-green-400 mt-auto text-left flex gap-2">
         <span class="text-foreground/90 line-clamp-2">{property.reasoning}</span>

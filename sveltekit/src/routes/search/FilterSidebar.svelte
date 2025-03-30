@@ -30,39 +30,6 @@
     filterChange: Record<string, string[]>;
   }>();
   
-  // Filter categories and options with interface matching FilterGroup
-  const filterCategories = [
-    {
-      id: 'property-type',
-      name: 'Property Type',
-      icon: 'home',
-      description: 'Select property types you are interested in',
-      multiSelect: true,
-      showStrength: true,
-      options: [
-        { id: 'house', label: 'House', icon: 'home', description: 'A standalone residential building' },
-        { id: 'apartment', label: 'Apartment', icon: 'building', description: 'A residential unit in a building' },
-        { id: 'condo', label: 'Condo', icon: 'building-2', description: 'An apartment you own' },
-        { id: 'villa', label: 'Villa', icon: 'castle', description: 'A luxury home with amenities' }
-      ]
-    },
-    {
-      id: 'amenities',
-      name: 'Amenities',
-      icon: 'coffee',
-      description: 'Select amenities important to you',
-      multiSelect: true,
-      showStrength: true,
-      options: [
-        { id: 'pool', label: 'Pool', icon: 'pool', description: 'Private or shared swimming pool' },
-        { id: 'wifi', label: 'WiFi', icon: 'wifi', description: 'High-speed internet access' },
-        { id: 'kitchen', label: 'Kitchen', icon: 'utensils', description: 'Full kitchen facilities' },
-        { id: 'ac', label: 'Air Conditioning', icon: 'snowflake', description: 'Climate control' }
-      ]
-    }
-    // Add more filter categories as needed
-  ];
-  
   // Toggle filter selection
   function toggleFilter(groupId: string, filterId: string) {
     const group = filterGroups.find(g => g.id === groupId);
@@ -229,7 +196,7 @@
       </p>
       
       <!-- Loop through filter groups -->
-      {#each filterCategories as category}
+      {#each filterGroups as category}
         <div class="mb-8">
           <!-- Category header -->
           <button 
@@ -392,7 +359,7 @@
         </div>
       {:else}
         <div class="space-y-4">
-          {#each filterCategories as category}
+          {#each filterGroups as category}
             {#if selectedFilters[category.id] && (selectedFilters[category.id] as string[]).length > 0}
               <div class="border-b border-border pb-4 last:border-0">
                 <h4 class="font-medium mb-3 flex items-center gap-2">

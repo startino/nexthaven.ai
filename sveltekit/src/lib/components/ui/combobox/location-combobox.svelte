@@ -40,7 +40,7 @@
 
   // Props
   let {
-    value = '',
+    value = $bindable(''),
     placeholder = 'Search for a location...',
     class: className = '',
     onSelect
@@ -451,7 +451,7 @@
                 aria-selected={highlightedIndex === i}
                 onclick={() => handleSelectLocation(place)}
                 onmouseenter={() => {
-                  highlightedIndex = i as number;
+                  highlightedIndex = i;
                 }}
                 id={`location-option-${i}`}
               >

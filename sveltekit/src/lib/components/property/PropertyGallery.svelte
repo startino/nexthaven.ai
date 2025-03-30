@@ -163,7 +163,7 @@
       <div class="px-4 py-8 md:px-8 max-w-7xl mx-auto">
         <!-- Property Header Section -->
         <div class="mb-8">
-          <h1 class="text-2xl font-bold">{property.name}</h1>
+          <h1 class="text-2xl font-bold">${Math.round(property.pricing.total)}/night - {property.name}</h1>
           <p class="text-muted-foreground mt-1">{property.location}</p>
           
           <div class="flex gap-4 mt-4">
@@ -177,9 +177,6 @@
                 <span class="text-foreground/90">{property.capacity.beds} {property.capacity.beds === 1 ? 'bed' : 'beds'}</span>
               </div>
             {/if}
-            <div class="px-4 py-2 rounded-full bg-secondary/20 font-semibold text-green-600 dark:text-green-400">
-              <span>${Math.round(property.pricing.total)} per night</span>
-            </div>
           </div>
         </div>
         
@@ -236,7 +233,6 @@
                 <h3 class="text-lg font-medium mb-3">Why this property matches your preferences:</h3>
                 <div class="bg-primary/5 rounded-lg p-4 border border-primary/10">
                   <div class="flex gap-3">
-                    <Check size={20} class="text-green-500 flex-shrink-0 mt-1" />
                     <p class="text-foreground/90">{property.reasoning}</p>
                   </div>
                 </div>
@@ -272,6 +268,18 @@
                 <p class="text-xs text-primary-foreground/60 text-center">
                   You'll be redirected to {property.source} to complete your reservation
                 </p>
+              </CardContent>
+            </Card>
+            
+            <Card class="mt-4 bg-card rounded-xl overflow-hidden shadow-lg">
+              <CardContent class="p-6 space-y-4">
+                <button 
+                  onclick={handleSave}
+                  class="block w-full bg-muted text-foreground font-bold py-3 px-4 rounded-lg hover:bg-muted/80 transition-colors text-center flex items-center justify-center gap-2 shadow-md"
+                >
+                  <BookmarkPlus size={18} />
+                  Save for later
+                </button>
               </CardContent>
             </Card>
           </div>

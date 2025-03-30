@@ -149,7 +149,7 @@
 
 <Popover onOpenChange={handlePopoverOpen}>
 	<PopoverTrigger>
-		<Button variant="outline" size="sm" class="h-8">
+		<Button size="sm" variant="outline" class="h-8 bg-card hover:bg-card/90 hover:scale-[1.01] transition-all duration-300">
 			<Folder class="h-3.5 w-3.5 mr-2" />
 			Save
 		</Button>
@@ -173,7 +173,7 @@
 				<div class="max-h-[240px] overflow-y-auto space-y-2 pr-1">
 					{#each collectionState.collections as collection}
 						<div 
-							class="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+							class="flex items-center justify-between p-2 rounded-md {savedCollections.has(collection.id) ? 'hover:bg-destructive/10' : 'hover:bg-primary/10'} cursor-pointer"
 							onclick={() => toggleCollection(collection)}
 						>
 							<div class="flex items-center space-x-2">

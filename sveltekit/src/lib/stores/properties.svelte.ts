@@ -22,8 +22,8 @@ export function getErrorMessage() {
 }
 
 // Function to set the properties in the store
-export function setProperties(newProperties: UnifiedProperty[]) {
-	properties = newProperties;
+export function setProperties(props: UnifiedProperty[]) {
+	properties = props;
 }
 
 // Function to set the selected property in the store
@@ -32,8 +32,13 @@ export function setSelectedProperty(property: UnifiedProperty | null) {
 }
 
 // Function to set the search query in the store
-export function setSearchQuery(query: string) {
-	searchQuery = query;
+export function setSearchQuery(query: string | object) {
+	// If the query is an object, stringify it
+	if (typeof query === 'object') {
+		searchQuery = JSON.stringify(query);
+	} else {
+		searchQuery = query;
+	}
 }
 
 // Function to set an error message in the store

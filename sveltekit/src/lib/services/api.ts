@@ -107,7 +107,7 @@ export const propertyService = {
 	 */
 	async queryProperties(payload: PropertyQueryRequest): Promise<PropertyQueryResponse> {
 		try {
-			const response = await fetch(`${API_BASE_URL}/api/properties/query`, {
+			const response = await fetch(`${API_BASE_URL}/properties/query`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(transformQueryRequest(payload))
@@ -130,7 +130,7 @@ export const propertyService = {
 	 */
 	async checkQueryStatus(sessionId: string): Promise<PropertyQueryStatusResponse> {
 		try {
-			const response = await fetch(`${API_BASE_URL}/api/properties/status/${sessionId}`);
+			const response = await fetch(`${API_BASE_URL}/properties/status/${sessionId}`);
 
 			if (!response.ok) {
 				const error = await response.text();
@@ -161,26 +161,26 @@ export const propertyService = {
 	/**
 	 * Legacy endpoint: Evaluate properties all in one step (backwards compatibility)
 	 */
-	async evaluateProperties(payload: LegacyPropertyEvaluationRequest): Promise<UnifiedProperty[]> {
-		try {
-			const response = await fetch(`${API_BASE_URL}/api/properties/evaluateAll`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(transformLegacyRequest(payload))
-			});
+	// async evaluateProperties(payload: LegacyPropertyEvaluationRequest): Promise<UnifiedProperty[]> {
+	// 	try {
+	// 		const response = await fetch(`${API_BASE_URL}/properties/evaluateAll`, {
+	// 			method: 'POST',
+	// 			headers: { 'Content-Type': 'application/json' },
+	// 			body: JSON.stringify(transformLegacyRequest(payload))
+	// 		});
 
-			if (!response.ok) {
-				const error = await response.text();
-				throw new Error(`Failed to evaluate properties: ${error}`);
-			}
+	// 		if (!response.ok) {
+	// 			const error = await response.text();
+	// 			throw new Error(`Failed to evaluate properties: ${error}`);
+	// 		}
 
-			const data: PropertyEvaluationResponse = await response.json();
-			return data.results;
-		} catch (error) {
-			console.error('Error evaluating properties:', error);
-			throw error;
-		}
-	}
+	// 		const data: PropertyEvaluationResponse = await response.json();
+	// 		return data.results;
+	// 	} catch (error) {
+	// 		console.error('Error evaluating properties:', error);
+	// 		throw error;
+	// 	}
+	// }
 };
 
 const handleCallExpert = async (): Promise<Response> => {

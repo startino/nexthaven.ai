@@ -21,7 +21,8 @@
   import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
 
   // Form inputs  
-  let { destination, dateRange, budget, selectedRooms, preferences, 
+  let { destination = $bindable(''), dateRange = $bindable(''), budget = $bindable(''), 
+        selectedRooms = $bindable(1), preferences = $bindable(''), 
         previousPreferences, onSubmit } = $props<{
     destination: string;
     dateRange: string;
@@ -255,7 +256,9 @@
   
   // Handle location selection
   function handleLocationSelect(location: { description: string; place_id: string }) {
+    console.log('Location selected:', location);
     destination = location.description;
+    console.log('Destination updated to:', destination);
   }
 
   // Toggle debug mode
@@ -308,7 +311,7 @@
     
     <div class="relative">
       <LocationCombobox 
-        value={destination}
+        bind:value={destination}
         placeholder="Location..."
         onSelect={handleLocationSelect}
         class="h-12"
@@ -334,9 +337,8 @@
   <div class="relative" bind:this={textareaElement}>
     <Sparkle class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
     <Textarea 
-      value={preferences}
+      bind:value={preferences}
       placeholder="Write your personal, potentially strange... preferences here... (if you couldn't find the right filter)"
-      oninput={(e: Event) => preferences = (e.target as HTMLTextAreaElement).value}
       onfocus={handleTextareaFocus}
       class="w-full pl-12 py-3 text-base resize-none hover:bg-primary/10"
     />
@@ -373,6 +375,7 @@
     onclick={handleSubmit}
     class="h-12 button-gradient mt-1 text-base"
     disabled={!destination || !dateRange || dateError !== null}
+    data-debug={`dest:${!!destination} date:${!!dateRange} err:${dateError !== null}`}
   >
     <Search class="h-5 w-5 mr-2" />
     Discover Properties
