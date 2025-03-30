@@ -1,7 +1,3 @@
-<!-- 
-  FilterSidebar.svelte - A comprehensive sidebar component for displaying and managing filters 
-  This component replaces PropertyTypeSidebar.svelte and supports all filter categories
--->
 <script lang="ts">
   import { Home, Coffee, Check, X, ChevronDown, ChevronUp, SignalLow, SignalMedium, SignalHigh, Filter, Pencil } from 'lucide-svelte';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
@@ -11,6 +7,7 @@
   import type { PreferenceStrength } from './types';
   import { Dialog, DialogContent, DialogTitle, DialogDescription } from '$lib/components/ui/dialog';
   import { createEventDispatcher } from 'svelte';
+	import { Button } from '$lib/components/ui/button';
   
   // State props
   let { selectedFilters, preferenceStrength, activePreferenceModal } = $props<{
@@ -33,26 +30,34 @@
     filterChange: Record<string, string[]>;
   }>();
   
-  // Filter categories and options
+  // Filter categories and options with interface matching FilterGroup
   const filterCategories = [
     {
       id: 'property-type',
       name: 'Property Type',
+      icon: 'home',
+      description: 'Select property types you are interested in',
+      multiSelect: true,
+      showStrength: true,
       options: [
-        { id: 'house', name: 'House' },
-        { id: 'apartment', name: 'Apartment' },
-        { id: 'condo', name: 'Condo' },
-        { id: 'villa', name: 'Villa' }
+        { id: 'house', label: 'House', icon: 'home', description: 'A standalone residential building' },
+        { id: 'apartment', label: 'Apartment', icon: 'building', description: 'A residential unit in a building' },
+        { id: 'condo', label: 'Condo', icon: 'building-2', description: 'An apartment you own' },
+        { id: 'villa', label: 'Villa', icon: 'castle', description: 'A luxury home with amenities' }
       ]
     },
     {
       id: 'amenities',
       name: 'Amenities',
+      icon: 'coffee',
+      description: 'Select amenities important to you',
+      multiSelect: true,
+      showStrength: true,
       options: [
-        { id: 'pool', name: 'Pool' },
-        { id: 'wifi', name: 'WiFi' },
-        { id: 'kitchen', name: 'Kitchen' },
-        { id: 'ac', name: 'Air Conditioning' }
+        { id: 'pool', label: 'Pool', icon: 'pool', description: 'Private or shared swimming pool' },
+        { id: 'wifi', label: 'WiFi', icon: 'wifi', description: 'High-speed internet access' },
+        { id: 'kitchen', label: 'Kitchen', icon: 'utensils', description: 'Full kitchen facilities' },
+        { id: 'ac', label: 'Air Conditioning', icon: 'snowflake', description: 'Climate control' }
       ]
     }
     // Add more filter categories as needed
@@ -93,6 +98,9 @@
         }
       }
     }
+
+    // Dispatch the updated filters
+    dispatch('filterChange', selectedFilters as Record<string, string[]>);
   }
 
   // Set preference strength for a filter
@@ -191,25 +199,9 @@
     return activeFilters;
   }
 
-  // Handle filter selection
+  // Handle filter selection - use our toggleFilter function
   function toggleFilterCategory(categoryId: string, optionId: string) {
-    // Create a copy of the filters object
-    const updatedFilters = { ...selectedFilters };
-    
-    // Initialize the category array if it doesn't exist
-    if (!updatedFilters[categoryId]) {
-      updatedFilters[categoryId] = [];
-    }
-    
-    // Toggle the option
-    if (updatedFilters[categoryId].includes(optionId)) {
-      updatedFilters[categoryId] = updatedFilters[categoryId].filter(id => id !== optionId);
-    } else {
-      updatedFilters[categoryId] = [...updatedFilters[categoryId], optionId];
-    }
-    
-    // Dispatch the updated filters
-    dispatch('filterChange', updatedFilters);
+    toggleFilter(categoryId, optionId);
   }
 </script>
 
@@ -296,22 +288,19 @@
                         : 'bg-card'}`}
                     onclick={() => toggleFilterCategory(category.id, option.id)}
                     aria-pressed={isFilterSelected(category.id, option.id)}
-                    aria-label={`Select ${option.name} filter`}
+                    aria-label={`Select ${option.label} filter`}
                   >
                     <div class="flex justify-between items-center">
                       <div class="flex items-center gap-3 overflow-hidden">
                         {#if option.icon}
                           <span class="shrink-0">{@html `<svg width="16" height="16" class="lucide lucide-${option.icon}"><use href="#${option.icon}"></use></svg>`}</span>
                         {/if}
-                        <span class="truncate">{option.name}</span>
+                        <span class="truncate">{option.label}</span>
                       </div>
                       {#if isFilterSelected(category.id, option.id)}
                         <Check size={16} class="text-primary shrink-0" />
                       {/if}
                     </div>
-                    {#if option.description}
-                      <p class="text-xs text-muted-foreground mt-2">{option.description}</p>
-                    {/if}
                   </button>
                   
                   <!-- Preference strength modal -->
@@ -330,9 +319,6 @@
                       class="absolute z-40 top-full left-0 mt-2 w-full bg-card rounded-md shadow-lg border border-border overflow-hidden"
                       transition:slide={{ duration: 150, easing: cubicOut }}
                     >
-                      <div class="p-3 text-xs text-muted-foreground border-b border-border">
-                        Set importance strength
-                      </div>
                       <button 
                         class={`w-full p-3 text-left text-sm ${preferenceStrength[option.id] === 'weak' ? 'bg-primary/10 text-primary' : 'hover:bg-background/30'}`}
                         onclick={() => setPreferenceStrength(option.id, 'weak')}
@@ -425,7 +411,7 @@
                           {#if option?.icon}
                             <span class="shrink-0">{@html `<svg width="16" height="16" class="lucide lucide-${option.icon}"><use href="#${option.icon}"></use></svg>`}</span>
                           {/if}
-                          <span>{option?.name}</span>
+                          <span>{option?.label}</span>
                           
                           {#if preferenceStrength[filterId]}
                             <div class="flex items-center gap-1 ml-2 text-xs text-primary">
@@ -471,8 +457,9 @@
     
     {#if getTotalActiveFilters() > 0}
       <div class="flex justify-end gap-2 mt-4">
-        <button 
-          class="px-4 py-2 text-sm rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+        <Button 
+          variant="destructive"
+          class=""
           onclick={() => {
             for (const groupId in selectedFilters) {
               selectedFilters[groupId] = [];
@@ -481,13 +468,14 @@
           }}
         >
           Clear All
-        </button>
-        <button 
-          class="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        </Button>
+        <Button 
+          variant="default"
+          class=""
           onclick={() => showActiveFiltersDialog = false}
         >
           Done
-        </button>
+        </Button>
       </div>
     {/if}
   </DialogContent>

@@ -17,7 +17,6 @@
 	// Import components
 	import FilterSidebar from './FilterSidebar.svelte';
 	import SearchForm from './SearchForm.svelte';
-	import ActiveFilters from './ActiveFilters.svelte';
 	import PropertyResults from './PropertyResults.svelte';
 	import SearchProgress from './SearchProgress.svelte';
 		
@@ -245,7 +244,7 @@
 	
 	// Function to start or resume a search
 	async function resumeSearch() {
-		// TODO: Implement logic to resume a search based on searchId
+		// image.pngO: Implement logic to resume a search based on searchId
 		console.log("Resuming search with ID:", searchId);
 	}
 	
@@ -581,13 +580,7 @@
 				{previousPreferences}
 				onSubmit={handleSearch}
 			/>
-			
-			<!-- Active Filters -->
-			<ActiveFilters 
-				filters={selectedFilters}
-				{preferenceStrength}
-				onRemove={removeFilter}
-			/>
+		
 			
 			<!-- Search Progress Bar (when searching) -->
 			<SearchProgress

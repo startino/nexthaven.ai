@@ -313,14 +313,14 @@
         onSelect={handleLocationSelect}
         class="h-12"
       />
-      {#if import.meta.env.DEV}
+      <!-- {#if import.meta.env.DEV}
         <button 
           class="absolute right-0 -bottom-6 text-xs text-muted-foreground hover:text-primary"
           onclick={toggleDebug}
         >
           Debug
         </button>
-      {/if}
+      {/if} -->
     </div>
   </div>
   
@@ -335,12 +335,12 @@
     <MessageSquare class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
     <Textarea 
       value={preferences}
-      placeholder="Tell us what you're looking for... (e.g., 'A cozy mountain cabin with a hot tub and amazing views')"
+      placeholder="Write your personal, potentially strange... preferences here... (if you couldn't find the right filter)"
       oninput={(e: Event) => preferences = (e.target as HTMLTextAreaElement).value}
       onfocus={handleTextareaFocus}
-      class="w-full h-[70px] pl-12 py-3 text-base resize-none"
+      class="w-full pl-12 py-3 text-base resize-none"
     />
-    
+<!--     
     {#if showPreviousPreferences && previousPreferences.length > 0}
       <div 
         class="absolute left-0 right-0 top-full mt-1 bg-card z-10 border rounded-md shadow-md max-h-[200px] overflow-y-auto"
@@ -366,7 +366,7 @@
           {/each}
         </div>
       </div>
-    {/if}
+    {/if} -->
   </div>
 
   <Button 

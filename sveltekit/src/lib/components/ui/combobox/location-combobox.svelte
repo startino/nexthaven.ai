@@ -62,7 +62,6 @@
   let sessionToken: any = $state(null);
   let googleMapsLoaded = $state(false);
   let apiKeyStatus = $state('unverified');
-  let inputElement: HTMLElement | null = $state(null);
   let highlightedIndex = $state<number>(-1);
 
   // Log the API key for debugging but redact part of it
@@ -310,19 +309,41 @@
     }
   }
 
+  function searchLocations() {
+    if (inputValue.length >= 2) {
+      // Only search if we have at least 2 characters
+      isLoading = true;
+      isOpen = true;
+      
+      if (autocompleteService && googleMapsLoaded) {
+        autocompleteService.getPlacePredictions(
+          { input: inputValue },
+          (predictions: PlaceResult[] | null, status: PlacesServiceStatus) => {
+            isLoading = false;
+            if (status === 'OK' && predictions) {
+              places = predictions;
+            } else {
+              isError = true;
+              errorMessage = `Error: ${status || 'Unknown error'}`;
+              places = [];
+            }
+          }
+        );
+      }
+    }
+  }
+
   function toggleDropdown() {
     if (!isOpen && inputValue.length >= 2) {
       // If we have input text but no predictions yet, trigger a search
-      if (places.length === 0 && inputValue.length >= 2) {
-        // Instead of trying to dispatch event on input element
-        // Just directly call our input handler with a simulated event
-        const simulatedEvent = {
-          target: { value: inputValue }
-        } as Event;
-        handleInput(simulatedEvent);
+      if (places.length === 0) {
+        searchLocations();
+      } else {
+        isOpen = true;
       }
+    } else {
+      isOpen = !isOpen;
     }
-    isOpen = !isOpen;
   }
 
   function handleBlur(event: FocusEvent) {
@@ -368,7 +389,6 @@
   <div class="relative">
     <MapPin class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
     <Input
-      bind:this={inputElement}
       value={inputValue}
       {placeholder}
       oninput={handleInput}
@@ -381,6 +401,7 @@
       aria-expanded={isOpen}
       aria-autocomplete="list"
       role="combobox"
+      id="location-input"
     />
     <Button
       variant="ghost"
@@ -390,6 +411,7 @@
       aria-expanded={isOpen}
       class="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
       tabindex="-1"
+      aria-controls="location-dropdown"
     >
       <ChevronsUpDown class="h-4 w-4 opacity-50" />
       <span class="sr-only">Toggle menu</span>
@@ -398,11 +420,13 @@
   
   {#if isOpen}
     <div
-      class="absolute z-50 mt-1 max-h-[280px] w-full overflow-auto rounded-md border bg-card shadow-md outline-none animate-in fade-in-0 zoom-in-95 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+      id="location-dropdown"
+      class="absolute z-50 mt-1 max-h-[280px] w-full overflow-auto rounded-md border bg-card shadow-md outline-none animate-in fade-in-0 zoom-in-95"
       transition:fly={{ duration: 200, y: 5 }}
       role="listbox"
+      aria-labelledby="location-input"
     >
-      <div class="p-1">
+      <div class="p-1 space-y-1">
         {#if isLoading}
           <div class="flex items-center justify-center p-6">
             <Loader2 class="h-5 w-5 animate-spin text-muted-foreground" />
@@ -415,19 +439,24 @@
         {:else if places.length === 0}
           <div class="py-6 text-center text-sm text-muted-foreground">No results found.</div>
         {:else}
-          <div class="space-y-0.5">
+          <div class="space-y-1">
             {#each places as place, i (place.place_id)}
               <button
                 class={cn(
-                  "w-full relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground",
-                  highlightedIndex === i && "bg-accent text-accent-foreground"
+                  "w-full relative flex cursor-default select-none items-start gap-2 rounded-sm py-2 px-2 text-sm outline-none transition-colors text-left",
+                  "hover:bg-primary/10 focus:bg-primary/10",
+                  highlightedIndex === i ? "bg-primary/20 text-foreground" : ""
                 )}
                 role="option"
                 aria-selected={highlightedIndex === i}
                 onclick={() => handleSelectLocation(place)}
-                onmouseenter={() => highlightedIndex = i}
+                onmouseenter={() => {
+                  highlightedIndex = i as number;
+                }}
+                id={`location-option-${i}`}
               >
-                <div class="flex flex-col truncate">
+                <MapPin class="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <div class="flex flex-col w-full truncate">
                   <span class="font-medium">{place.structured_formatting.main_text}</span>
                   <span class="text-xs text-muted-foreground truncate">{place.structured_formatting.secondary_text}</span>
                 </div>
