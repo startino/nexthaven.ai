@@ -7,11 +7,16 @@
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
-  import { formatDateRange, parseDateRange, isValidDate } from './dateHelpers';
+  import { formatDateRange, parseDateRange, isValidDate, calculateStartDate } from './dateHelpers';
   import { savePreference } from './preferences';
   import type { SavedPreference } from './types';
   import { slide } from 'svelte/transition';
   import { onMount } from 'svelte';
+  import type { DateRange } from "bits-ui";
+  import { CalendarDate, DateFormatter, type DateValue, getLocalTimeZone, today } from "@internationalized/date";
+  import { cn } from "$lib/utils.js";
+  import * as Popover from "$lib/components/ui/popover/index.js";
+  import { RangeCalendar } from "$lib/components/ui/range-calendar/index.js";
 
   // Form inputs  
   let { destination, dateRange, budget, selectedRooms, preferences, 
@@ -29,6 +34,135 @@
   let showPreviousPreferences = $state(false);
   let textareaElement: HTMLElement;
   let dateError = $state<string | null>(null);
+  
+  // Set up DateFormatter for displaying dates
+  const df = new DateFormatter("en-US", {
+    dateStyle: "medium"
+  });
+
+  // Create calendar state
+  let calendarValue: DateRange | undefined = $state(undefined);
+  let startValue: DateValue | undefined = $state(undefined);
+  let minDate = today(getLocalTimeZone());
+
+  // Initialize calendar with the minimum date but no default selection
+  onMount(() => {
+    // We no longer set default dates here
+    // Just parse any existing dateRange if it exists
+    if (dateRange && isValidDate(dateRange)) {
+      try {
+        const parsed = parseDateRange(dateRange);
+        
+        if (parsed.startDate && parsed.endDate) {
+          const startDate = new Date(parsed.startDate);
+          const endDate = new Date(parsed.endDate);
+          
+          calendarValue = {
+            start: new CalendarDate(
+              startDate.getFullYear(), 
+              startDate.getMonth() + 1, 
+              startDate.getDate()
+            ),
+            end: new CalendarDate(
+              endDate.getFullYear(), 
+              endDate.getMonth() + 1, 
+              endDate.getDate()
+            )
+          };
+        }
+      } catch (e) {
+        console.error("Failed to parse existing date range", e);
+      }
+    }
+  });
+
+  // Update calendar value when dateRange changes
+  $effect(() => {
+    if (dateRange && isValidDate(dateRange)) {
+      try {
+        const parsed = parseDateRange(dateRange);
+        
+        if (parsed.startDate && parsed.endDate) {
+          const startDate = new Date(parsed.startDate);
+          const endDate = new Date(parsed.endDate);
+          
+          calendarValue = {
+            start: new CalendarDate(
+              startDate.getFullYear(), 
+              startDate.getMonth() + 1, 
+              startDate.getDate()
+            ),
+            end: new CalendarDate(
+              endDate.getFullYear(), 
+              endDate.getMonth() + 1, 
+              endDate.getDate()
+            )
+          };
+        } else {
+          // Handle timeFrame and duration based dates
+          let startDate: Date;
+          let endDate: Date;
+          
+          if (parsed.timeFrame) {
+            const startDateStr = calculateStartDate(parsed.timeFrame);
+            startDate = new Date(startDateStr);
+          } else {
+            startDate = new Date();
+          }
+          
+          // Calculate end date based on duration
+          endDate = new Date(startDate);
+          if (parsed.duration) {
+            if (parsed.duration === '1 Week') {
+              endDate.setDate(startDate.getDate() + 7);
+            } else if (parsed.duration === '1 Month') {
+              endDate.setMonth(startDate.getMonth() + 1);
+            } else if (parsed.duration === '3 Months') {
+              endDate.setMonth(startDate.getMonth() + 3);
+            }
+          } else {
+            // Default to 1 week if no duration specified
+            endDate.setDate(startDate.getDate() + 7);
+          }
+          
+          calendarValue = {
+            start: new CalendarDate(
+              startDate.getFullYear(), 
+              startDate.getMonth() + 1, 
+              startDate.getDate()
+            ),
+            end: new CalendarDate(
+              endDate.getFullYear(), 
+              endDate.getMonth() + 1, 
+              endDate.getDate()
+            )
+          };
+        }
+      } catch (e) {
+        console.error("Failed to parse date range", e);
+      }
+    }
+  });
+
+  // Update dateRange when calendar value changes
+  $effect(() => {
+    if (calendarValue && calendarValue.start) {
+      try {
+        const start = calendarValue.start.toDate(getLocalTimeZone());
+        let formattedRange = df.format(start);
+        
+        if (calendarValue.end) {
+          const end = calendarValue.end.toDate(getLocalTimeZone());
+          formattedRange += ` - ${df.format(end)}`;
+        }
+        
+        dateRange = formattedRange;
+        dateError = null;
+      } catch (e) {
+        console.error("Failed to format date range", e);
+      }
+    }
+  });
   
   function handleDateRangeBlur() {
     // Clear any previous error
@@ -81,7 +215,7 @@
     
     // Save the preference if it's non-empty and proceed with submission
     if (preferences.trim()) {
-      savePreference(preferences);
+      savePreference(preferences, previousPreferences);
     }
     
     // Actually submit the form
@@ -115,18 +249,37 @@
 <div class="grid grid-cols-1 gap-5">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
     <div class="relative">
-      <Calendar class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
-      <Input 
-        type="text" 
-        placeholder="Check-in - Check-out"
-        value={dateRange}
-        oninput={(e: Event) => {
-          dateRange = (e.target as HTMLInputElement).value;
-          if (dateError) dateError = null; // Clear error when typing
-        }}
-        onblur={handleDateRangeBlur}
-        class="h-12 pl-12 text-base {dateError ? 'border-red-500 focus:ring-red-500' : ''}"
-      />
+      <Popover.Root>
+        <Popover.Trigger asChild let:builder>
+          <Button
+            variant="outline"
+            class={cn(
+              "w-full h-12 justify-start text-left font-normal",
+              !dateRange && "text-muted-foreground",
+              dateError && "border-red-500 focus:ring-red-500"
+            )}
+            builders={[builder]}
+          >
+            <Calendar class="mr-2 h-5 w-5 text-muted-foreground" />
+            {#if dateRange}
+              {dateRange}
+            {:else}
+              Check-in - Check-out
+            {/if}
+          </Button>
+        </Popover.Trigger>
+        <Popover.Content class="w-auto p-3" align="start">
+          <div class="space-y-3">
+            <RangeCalendar
+              bind:value={calendarValue}
+              bind:startValue
+              initialFocus
+              numberOfMonths={2}
+              minValue={minDate}
+            />
+          </div>
+        </Popover.Content>
+      </Popover.Root>
       {#if dateError}
         <div class="text-red-500 text-sm mt-1 flex items-center gap-1.5">
           <AlertCircle size={14} />

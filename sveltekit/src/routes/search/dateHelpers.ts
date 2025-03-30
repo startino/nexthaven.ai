@@ -14,6 +14,14 @@ export function isValidDate(dateString: string): boolean {
     return true;
   }
   
+  // Check for date range format (e.g., "March 15, 2024 - April 20, 2024")
+  if (/^[A-Za-z]+ \d{1,2}, \d{4} - [A-Za-z]+ \d{1,2}, \d{4}$/.test(dateString)) {
+    const [startStr, endStr] = dateString.split(' - ');
+    const startDate = new Date(startStr);
+    const endDate = new Date(endStr);
+    return !isNaN(startDate.getTime()) && !isNaN(endDate.getTime());
+  }
+  
   // Check for standard date formats (YYYY-MM-DD, MM/DD/YYYY, etc.)
   const date = new Date(dateString);
   return !isNaN(date.getTime());
@@ -71,7 +79,13 @@ export function formatDateRange(timeFrame: string, duration: string): string {
 }
 
 // Parse a date range string into timeframe and duration components
-export function parseDateRange(dateRange: string): { timeFrame: string | null; duration: string | null } {
+// and now also handle specific date ranges
+export function parseDateRange(dateRange: string): { 
+  timeFrame: string | null; 
+  duration: string | null;
+  startDate?: string;
+  endDate?: string;
+} {
   if (!dateRange) return { timeFrame: null, duration: null };
   
   // Full format: "Next Week for 1 Month"
@@ -102,6 +116,29 @@ export function parseDateRange(dateRange: string): { timeFrame: string | null; d
     const period = durationMatch[1];
     if (durations.includes(period)) {
       return { timeFrame: null, duration: period };
+    }
+  }
+  
+  // Handle date range format from calendar (e.g., "March 15, 2024 - April 20, 2024")
+  const dateRangeMatch = dateRange.match(/^([A-Za-z]+ \d{1,2}, \d{4}) - ([A-Za-z]+ \d{1,2}, \d{4})$/);
+  if (dateRangeMatch) {
+    const startDateStr = dateRangeMatch[1];
+    const endDateStr = dateRangeMatch[2];
+    
+    try {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        return { 
+          timeFrame: null, 
+          duration: null,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        };
+      }
+    } catch (e) {
+      console.error("Failed to parse date range", e);
     }
   }
   

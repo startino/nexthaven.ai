@@ -120,10 +120,73 @@
 		}
 	});
 	
-	// Get previously saved preferences on mount
+	// Parse a search query
+	function parseSearchQuery() {
+		let searchParams = new URLSearchParams(window.location.search);
+		
+		// Check if there's a destination
+		if (searchParams.has('q')) {
+			destination = searchParams.get('q') || '';
+		} else if (searchParams.has('destination')) {
+			destination = searchParams.get('destination') || '';
+		}
+		
+		// Check for dates
+		if (searchParams.has('dates')) {
+			dateRange = searchParams.get('dates') || '';
+		} else if (searchParams.has('date')) {
+			dateRange = searchParams.get('date') || '';
+		} else if (searchParams.has('checkin') && searchParams.has('checkout')) {
+			const checkin = searchParams.get('checkin') || '';
+			const checkout = searchParams.get('checkout') || '';
+			
+			if (checkin && checkout) {
+				try {
+					const checkinDate = new Date(checkin);
+					const checkoutDate = new Date(checkout);
+					
+					if (!isNaN(checkinDate.getTime()) && !isNaN(checkoutDate.getTime())) {
+						const formatOptions: Intl.DateTimeFormatOptions = { 
+							year: 'numeric', 
+							month: 'long', 
+							day: 'numeric' 
+						};
+						dateRange = `${checkinDate.toLocaleDateString('en-US', formatOptions)} - ${checkoutDate.toLocaleDateString('en-US', formatOptions)}`;
+					}
+				} catch (e) {
+					console.error('Failed to parse check-in/out dates:', e);
+				}
+			}
+		}
+		
+		// Check for budget
+		if (searchParams.has('budget')) {
+			budget = searchParams.get('budget') || '600';
+		} else if (searchParams.has('max_price')) {
+			budget = searchParams.get('max_price') || '600';
+		}
+		
+		// Check for number of guests/rooms
+		if (searchParams.has('rooms')) {
+			selectedRooms = parseInt(searchParams.get('rooms') || '1', 10);
+		} else if (searchParams.has('guests')) {
+			selectedRooms = Math.ceil(parseInt(searchParams.get('guests') || '2', 10) / 2);
+		}
+	}
+	
+	// Handle URL changes and parse the search query
 	onMount(() => {
+		parseSearchQuery();
+		
+		// Load previously saved preferences
 		previousPreferences = loadPreviousPreferences();
-		// Clear the store on mount
+		
+		// Add a listener for back/forward navigation
+		window.addEventListener('popstate', () => {
+			parseSearchQuery();
+		});
+		
+		// Clear the store on mount - ensure a fresh search
 		clearStore();
 		
 		// Check if we should start searching immediately (e.g., if redirected back from a failed search)
@@ -132,6 +195,9 @@
 		}
 		
 		return () => {
+			// Clean up the popstate listener
+			window.removeEventListener('popstate', parseSearchQuery);
+			
 			// Clean up intervals
 			if (progressInterval) clearInterval(progressInterval);
 		};

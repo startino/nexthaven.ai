@@ -10,6 +10,7 @@
   import { filterGroups, findFilterOptionById } from './filters';
   import type { PreferenceStrength } from './types';
   import { Dialog, DialogContent, DialogTitle, DialogDescription } from '$lib/components/ui/dialog';
+  import { createEventDispatcher } from 'svelte';
   
   // State props
   let { selectedFilters, preferenceStrength, activePreferenceModal } = $props<{
@@ -26,6 +27,36 @@
   
   // Active filters dialog state
   let showActiveFiltersDialog = $state(false);
+  
+  // Event dispatcher
+  const dispatch = createEventDispatcher<{
+    filterChange: Record<string, string[]>;
+  }>();
+  
+  // Filter categories and options
+  const filterCategories = [
+    {
+      id: 'property-type',
+      name: 'Property Type',
+      options: [
+        { id: 'house', name: 'House' },
+        { id: 'apartment', name: 'Apartment' },
+        { id: 'condo', name: 'Condo' },
+        { id: 'villa', name: 'Villa' }
+      ]
+    },
+    {
+      id: 'amenities',
+      name: 'Amenities',
+      options: [
+        { id: 'pool', name: 'Pool' },
+        { id: 'wifi', name: 'WiFi' },
+        { id: 'kitchen', name: 'Kitchen' },
+        { id: 'ac', name: 'Air Conditioning' }
+      ]
+    }
+    // Add more filter categories as needed
+  ];
   
   // Toggle filter selection
   function toggleFilter(groupId: string, filterId: string) {
@@ -159,6 +190,27 @@
     
     return activeFilters;
   }
+
+  // Handle filter selection
+  function toggleFilterCategory(categoryId: string, optionId: string) {
+    // Create a copy of the filters object
+    const updatedFilters = { ...selectedFilters };
+    
+    // Initialize the category array if it doesn't exist
+    if (!updatedFilters[categoryId]) {
+      updatedFilters[categoryId] = [];
+    }
+    
+    // Toggle the option
+    if (updatedFilters[categoryId].includes(optionId)) {
+      updatedFilters[categoryId] = updatedFilters[categoryId].filter(id => id !== optionId);
+    } else {
+      updatedFilters[categoryId] = [...updatedFilters[categoryId], optionId];
+    }
+    
+    // Dispatch the updated filters
+    dispatch('filterChange', updatedFilters);
+  }
 </script>
 
 <div class="w-[280px] min-w-[280px] max-w-xs h-full border-r border-border sticky top-0 z-10 bg-background">
@@ -185,25 +237,25 @@
       </p>
       
       <!-- Loop through filter groups -->
-      {#each filterGroups as group}
+      {#each filterCategories as category}
         <div class="mb-8">
           <!-- Category header -->
           <button 
             class="w-full flex items-center justify-between mb-4 py-1 group"
-            onclick={() => toggleCategory(group.id)}
-            onkeydown={(e) => handleCategoryKeydown(e, group.id)}
-            aria-expanded={expandedCategories.includes(group.id)}
-            aria-controls={`filter-group-${group.id}`}
+            onclick={() => toggleCategory(category.id)}
+            onkeydown={(e) => handleCategoryKeydown(e, category.id)}
+            aria-expanded={expandedCategories.includes(category.id)}
+            aria-controls={`filter-group-${category.id}`}
           >
             <div class="flex items-center gap-2">
-              {#if group.icon}
-                <span class="text-muted-foreground">{@html `<svg width="18" height="18" class="lucide lucide-${group.icon}"><use href="#${group.icon}"></use></svg>`}</span>
+              {#if category.icon}
+                <span class="text-muted-foreground">{@html `<svg width="18" height="18" class="lucide lucide-${category.icon}"><use href="#${category.icon}"></use></svg>`}</span>
               {/if}
-              <h3 class="text-md font-medium text-foreground">{group.name}</h3>
+              <h3 class="text-md font-medium text-foreground">{category.name}</h3>
             </div>
             
             <span class="text-muted-foreground">
-              {#if expandedCategories.includes(group.id)}
+              {#if expandedCategories.includes(category.id)}
                 <ChevronUp size={18} />
               {:else}
                 <ChevronDown size={18} />
@@ -212,12 +264,12 @@
           </button>
           
           <!-- Filter options -->
-          {#if expandedCategories.includes(group.id)}
-            <div id={`filter-group-${group.id}`} class="space-y-3" transition:slide={{ duration: 200, easing: cubicOut }}>
-              {#each group.options as option}
+          {#if expandedCategories.includes(category.id)}
+            <div id={`filter-group-${category.id}`} class="space-y-3" transition:slide={{ duration: 200, easing: cubicOut }}>
+              {#each category.options as option}
                 <div class="relative">
                   <!-- Selected filter strength indicator -->
-                  {#if isFilterSelected(group.id, option.id) && preferenceStrength[option.id]}
+                  {#if isFilterSelected(category.id, option.id) && preferenceStrength[option.id]}
                     <div 
                       class="mb-2 px-1 text-xs text-primary flex justify-between items-center" 
                       transition:fade={{ duration: 150 }}
@@ -228,7 +280,7 @@
                       </div>
                       <button 
                         class="hover:bg-muted p-0.5 rounded-full"
-                        onclick={() => toggleFilter(group.id, option.id)}
+                        onclick={() => toggleFilter(category.id, option.id)}
                         aria-label="Clear selection"
                       >
                         <X size={12} />
@@ -239,21 +291,21 @@
                   <!-- Filter option button -->
                   <button
                     class={`w-full p-3.5 text-left rounded-md text-sm hover:bg-background/30 transition cursor-pointer
-                      ${isFilterSelected(group.id, option.id)
+                      ${isFilterSelected(category.id, option.id)
                         ? 'bg-primary/10 border border-primary/30 font-medium' 
                         : 'bg-card'}`}
-                    onclick={() => toggleFilter(group.id, option.id)}
-                    aria-pressed={isFilterSelected(group.id, option.id)}
-                    aria-label={`Select ${option.label} filter`}
+                    onclick={() => toggleFilterCategory(category.id, option.id)}
+                    aria-pressed={isFilterSelected(category.id, option.id)}
+                    aria-label={`Select ${option.name} filter`}
                   >
                     <div class="flex justify-between items-center">
                       <div class="flex items-center gap-3 overflow-hidden">
                         {#if option.icon}
                           <span class="shrink-0">{@html `<svg width="16" height="16" class="lucide lucide-${option.icon}"><use href="#${option.icon}"></use></svg>`}</span>
                         {/if}
-                        <span class="truncate">{option.label}</span>
+                        <span class="truncate">{option.name}</span>
                       </div>
-                      {#if isFilterSelected(group.id, option.id)}
+                      {#if isFilterSelected(category.id, option.id)}
                         <Check size={16} class="text-primary shrink-0" />
                       {/if}
                     </div>
@@ -263,7 +315,7 @@
                   </button>
                   
                   <!-- Preference strength modal -->
-                  {#if activePreferenceModal === `${group.id}:${option.id}`}
+                  {#if activePreferenceModal === `${category.id}:${option.id}`}
                     <div 
                       class="fixed inset-0 bg-black/20 z-30"
                       transition:fade={{ duration: 100 }}
@@ -354,26 +406,26 @@
         </div>
       {:else}
         <div class="space-y-4">
-          {#each filterGroups as group}
-            {#if selectedFilters[group.id] && (selectedFilters[group.id] as string[]).length > 0}
+          {#each filterCategories as category}
+            {#if selectedFilters[category.id] && (selectedFilters[category.id] as string[]).length > 0}
               <div class="border-b border-border pb-4 last:border-0">
                 <h4 class="font-medium mb-3 flex items-center gap-2">
-                  {#if group.icon}
-                    <span class="text-muted-foreground">{@html `<svg width="16" height="16" class="lucide lucide-${group.icon}"><use href="#${group.icon}"></use></svg>`}</span>
+                  {#if category.icon}
+                    <span class="text-muted-foreground">{@html `<svg width="16" height="16" class="lucide lucide-${category.icon}"><use href="#${category.icon}"></use></svg>`}</span>
                   {/if}
-                  {group.name}
+                  {category.name}
                 </h4>
                 
                 <div class="space-y-2">
-                  {#each selectedFilters[group.id] as filterId}
-                    {#if group.options.find(o => o.id === filterId)}
-                      {@const option = group.options.find(o => o.id === filterId)}
+                  {#each selectedFilters[category.id] as filterId}
+                    {#if category.options.find(o => o.id === filterId)}
+                      {@const option = category.options.find(o => o.id === filterId)}
                       <div class="flex items-center justify-between bg-card p-3 rounded-md">
                         <div class="flex items-center gap-2">
                           {#if option?.icon}
                             <span class="shrink-0">{@html `<svg width="16" height="16" class="lucide lucide-${option.icon}"><use href="#${option.icon}"></use></svg>`}</span>
                           {/if}
-                          <span>{option?.label}</span>
+                          <span>{option?.name}</span>
                           
                           {#if preferenceStrength[filterId]}
                             <div class="flex items-center gap-1 ml-2 text-xs text-primary">
@@ -384,11 +436,11 @@
                         </div>
                         
                         <div class="flex items-center gap-2">
-                          {#if group.showStrength}
+                          {#if category.showStrength}
                             <button 
                               class="p-1.5 hover:bg-muted rounded-md"
                               onclick={() => {
-                                activePreferenceModal = `${group.id}:${filterId}`;
+                                activePreferenceModal = `${category.id}:${filterId}`;
                                 showActiveFiltersDialog = false;
                               }}
                               aria-label="Change strength"
@@ -400,7 +452,7 @@
                           
                           <button 
                             class="p-1.5 hover:bg-destructive/10 hover:text-destructive rounded-md"
-                            onclick={() => toggleFilter(group.id, filterId)}
+                            onclick={() => toggleFilter(category.id, filterId)}
                             aria-label="Remove filter"
                           >
                             <X size={14} />

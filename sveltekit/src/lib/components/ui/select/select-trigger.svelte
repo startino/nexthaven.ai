@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Select as SelectPrimitive } from "bits-ui";
-	import CaretSort from "svelte-radix/CaretSort.svelte";
+	import { ChevronDown } from "lucide-svelte";
 	import { cn } from "$lib/utils.js";
 
 	type $$Props = SelectPrimitive.TriggerProps;
@@ -19,6 +19,6 @@
 >
 	<slot />
 	<div>
-		<CaretSort class="h-4 w-4 opacity-50" />
+		<ChevronDown class="h-4 w-4 opacity-50" />
 	</div>
 </SelectPrimitive.Trigger>

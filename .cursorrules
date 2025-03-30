@@ -3,7 +3,7 @@ Start all chat with 🚀
 ## Stack
 
 - Sveltekit
-- Svelte 5
+- Svelte 5 (not 4!)
 - Tailwind CSS
 - Typescript
 - shadcn-svelte
