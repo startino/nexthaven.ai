@@ -3,7 +3,7 @@
   Includes destination, dates, preferences, and search button
 -->
 <script lang="ts">
-  import { Calendar, MapPin, MessageSquare, Search, Clock, Check, AlertCircle } from 'lucide-svelte';
+  import { Calendar, MessageSquare, Search, Clock, Check, AlertCircle } from 'lucide-svelte';
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
@@ -17,6 +17,8 @@
   import { cn } from "$lib/utils.js";
   import * as Popover from "$lib/components/ui/popover/index.js";
   import { RangeCalendar } from "$lib/components/ui/range-calendar/index.js";
+  import { LocationCombobox } from "$lib/components/ui/combobox";
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
 
   // Form inputs  
   let { destination, dateRange, budget, selectedRooms, preferences, 
@@ -34,6 +36,7 @@
   let showPreviousPreferences = $state(false);
   let textareaElement: HTMLElement;
   let dateError = $state<string | null>(null);
+  let showDebug = $state(false);
   
   // Set up DateFormatter for displaying dates
   const df = new DateFormatter("en-US", {
@@ -73,6 +76,11 @@
       } catch (e) {
         console.error("Failed to parse existing date range", e);
       }
+    }
+
+    // Debug mode
+    if (import.meta.env.DEV) {
+      console.log('Google Maps API Key:', PUBLIC_GOOGLE_MAPS_API_KEY);
     }
   });
 
@@ -244,6 +252,16 @@
       return () => document.removeEventListener('click', handleClickOutside);
     }
   });
+  
+  // Handle location selection
+  function handleLocationSelect(location: { description: string; place_id: string }) {
+    destination = location.description;
+  }
+
+  // Toggle debug mode
+  function toggleDebug() {
+    showDebug = !showDebug;
+  }
 </script>
 
 <div class="grid grid-cols-1 gap-5">
@@ -289,16 +307,29 @@
     </div>
     
     <div class="relative">
-      <MapPin class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
-      <Input 
-        type="text" 
-        placeholder="Location..."
+      <LocationCombobox 
         value={destination}
-        oninput={(e: Event) => destination = (e.target as HTMLInputElement).value}
-        class="h-12 pl-12 text-base"
+        placeholder="Location..."
+        onSelect={handleLocationSelect}
+        class="h-12"
       />
+      {#if import.meta.env.DEV}
+        <button 
+          class="absolute right-0 -bottom-6 text-xs text-muted-foreground hover:text-primary"
+          onclick={toggleDebug}
+        >
+          Debug
+        </button>
+      {/if}
     </div>
   </div>
+  
+  {#if showDebug && import.meta.env.DEV}
+    <div class="bg-muted p-3 rounded-md text-xs">
+      <div><strong>Google Maps API Key:</strong> {PUBLIC_GOOGLE_MAPS_API_KEY || 'Not set'}</div>
+      <div><strong>Current destination value:</strong> {destination || 'Not set'}</div>
+    </div>
+  {/if}
   
   <div class="relative" bind:this={textareaElement}>
     <MessageSquare class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
