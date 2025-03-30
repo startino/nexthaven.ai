@@ -20,10 +20,12 @@
 	} from '$lib/components/ui/popover';
 	import type { PropertyCollection } from '$lib/stores/collections';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
+	import { cn } from '$lib/utils';
 	
 	// Props
-	let { property } = $props<{
-		property: UnifiedProperty
+	let { property, triggerBtnStyle } = $props<{
+		property: UnifiedProperty,
+		triggerBtnStyle?: string,
 	}>();
 	
 	// Local state
@@ -149,7 +151,7 @@
 
 <Popover onOpenChange={handlePopoverOpen}>
 	<PopoverTrigger>
-		<Button size="sm" variant="outline" class="h-8 bg-card hover:bg-card/90 hover:scale-[1.01] transition-all duration-300">
+		<Button size="sm" variant="outline" class={cn("h-8 bg-card hover:bg-card/90 hover:scale-[1.01] transition-all duration-300", triggerBtnStyle)}>
 			<Folder class="h-3.5 w-3.5 mr-2" />
 			Save
 		</Button>

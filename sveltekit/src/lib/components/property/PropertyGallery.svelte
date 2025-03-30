@@ -232,8 +232,8 @@
               <div class="flex-1">
                 <h3 class="text-lg font-medium mb-3">Why this property matches your preferences:</h3>
                 <div class="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                  <div class="flex gap-3">
-                    <p class="text-foreground/90">{property.reasoning}</p>
+                  <div class="text-sm whitespace-pre-line leading-relaxed">
+                    {property.reasoning}
                   </div>
                 </div>
                 
@@ -249,8 +249,8 @@
           </div>
           
           <!-- Right side - Booking Card -->
-          <div class="lg:col-span-1">
-            <Card class="bg-gradient-to-r from-primary to-accent rounded-xl overflow-hidden shadow-lg">
+          <div class="lg:col-span-1 space-y-4">
+            <Card class="bg-gradient-to-r from-primary to-accent rounded-xl overflow-hidden">
               <CardContent class="p-6 space-y-4">
                 <h3 class="text-xl font-bold text-primary-foreground">Ready to book?</h3>
                 <p class="text-primary-foreground/80">Complete your reservation on {property.source}</p>
@@ -271,15 +271,11 @@
               </CardContent>
             </Card>
             
-            <Card class="mt-4 bg-card rounded-xl overflow-hidden shadow-lg">
-              <CardContent class="p-6 space-y-4">
-                <button 
-                  onclick={handleSave}
-                  class="block w-full bg-muted text-foreground font-bold py-3 px-4 rounded-lg hover:bg-muted/80 transition-colors text-center flex items-center justify-center gap-2 shadow-md"
-                >
-                  <BookmarkPlus size={18} />
-                  Save for later
-                </button>
+            <!-- Save for later -->
+            <Card class="bg-card rounded-xl overflow-hidden">
+              <CardContent class=" flex flex-row justify-between items-center">
+                <h3 class="text-xl font-bold text-card-foreground">Save for later</h3>                
+                <AddToCollection property={property} triggerBtnStyle="gradient-primary text-primary-foreground hover:bg-gradient-primary/90 hover:text-primary-foreground/90 hover:scale-[1.1] transition-all duration-300" />
               </CardContent>
             </Card>
           </div>
