@@ -6,11 +6,13 @@
   import { Check } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { AddToCollection } from '$lib/components/folder';
+  import { Skeleton } from '$lib/components/ui/skeleton';
 
   // Props
-  let { property, showCollectionButton = true } = $props<{ 
+  let { property, showCollectionButton = true, isLoading = false } = $props<{ 
     property: UnifiedProperty;
     showCollectionButton?: boolean;
+    isLoading?: boolean;
   }>();
   
   // Event dispatcher
@@ -25,6 +27,10 @@
     return 'from-orange-500 to-orange-400';
   }
   
+  // Helper to check if a property field is undefined or null
+  function isPending(value: any): boolean {
+    return value === undefined || value === null;
+  }
 </script>
 
 <button 
@@ -33,14 +39,22 @@
 >
   <Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-primary/20 transition-all h-[450px] flex flex-col">
     <div class="relative h-56 overflow-hidden">
-      <img 
-        src={property.media.main_image || 'https://via.placeholder.com/400x200?text=No+Image'} 
-        alt={property.name}
-        class="w-full h-full object-cover"
-      />
+      {#if isPending(property.media?.main_image) || isLoading}
+        <div class="w-full h-full bg-muted animate-pulse"></div>
+      {:else}
+        <img 
+          src={property.media.main_image || 'https://via.placeholder.com/400x200?text=No+Image'} 
+          alt={property.name}
+          class="w-full h-full object-cover"
+        />
+      {/if}
       <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
       <div class="absolute bottom-4 left-4 text-foreground text-2xl font-bold">
-        ${Math.round(property.pricing.total)}
+        {#if isPending(property.pricing?.total) || isLoading}
+          <div class="w-20 h-8 bg-muted/40 backdrop-blur-sm animate-pulse rounded-md"></div>
+        {:else}
+          ${Math.round(property.pricing.total)}
+        {/if}
       </div>
       
       {#if showCollectionButton}
@@ -73,7 +87,7 @@
             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
             fill="none"
             stroke-dasharray="100, 100"
-            stroke-dashoffset={100 - property.score}
+            stroke-dashoffset={isPending(property.score) || isLoading ? 100 : (100 - property.score)}
             stroke-linecap="round"
             class="stroke-[3] transition-all duration-1000 ease-out-expo"
             style="stroke: url(#gradient-{property.id})"
@@ -85,18 +99,33 @@
             </linearGradient>
           </defs>
         </svg>
-        <span class="relative">{property.score}</span>
+        {#if isPending(property.score) || isLoading}
+          <div class="relative w-8 h-5 bg-muted/60 animate-pulse rounded-md"></div>
+        {:else}
+          <span class="relative">{property.score}</span>
+        {/if}
       </div>
     </div>
     
     <CardContent class="p-4 space-y-3 flex-1 flex flex-col">
       <div class="space-y-1 text-left">
-        <h3 class="font-bold text-lg line-clamp-1">{property.name}</h3>
-        <p class="text-sm text-muted-foreground line-clamp-1">{property.location}</p>
+        {#if isPending(property.name) || isLoading}
+          <Skeleton class="h-6 w-3/4" />
+        {:else}
+          <h3 class="font-bold text-lg line-clamp-1">{property.name}</h3>
+        {/if}
+        
+        {#if isPending(property.location) || isLoading}
+          <Skeleton class="h-4 w-1/2" />
+        {:else}
+          <p class="text-sm text-muted-foreground line-clamp-1">{property.location}</p>
+        {/if}
       </div>
       
       <div class="text-xs text-muted-foreground space-y-1 text-left">
-        {#if property.capacity.bedrooms || property.capacity.beds}
+        {#if isPending(property.capacity) || isLoading}
+          <Skeleton class="h-4 w-32" />
+        {:else if property.capacity.bedrooms || property.capacity.beds}
           <div class="flex items-center gap-2">
             {#if property.capacity.bedrooms}
               <span>{property.capacity.bedrooms} {property.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span>
@@ -111,19 +140,33 @@
         {/if}
       </div>
       
-      <!-- Disabling amenities for now, should display once we have AI generated ones.-->
-       <!-- This is because the ones from the properties are pretty useless-->
+      <!-- Amenities - if we decide to show them in the future -->
       <!-- <div class="flex flex-wrap gap-2 my-2">
-        {#each property.features.amenities.slice(0, 3) as amenity}
-          <Badge variant="outline">{amenity}</Badge>
-        {/each}
-        {#if property.features.amenities.length > 3}
-          <Badge variant="outline" class="text-xs">+{property.features.amenities.length - 3}</Badge>
+        {#if isPending(property.features?.amenities) || isLoading}
+          <div class="flex gap-2">
+            <Skeleton class="h-5 w-16 rounded-full" />
+            <Skeleton class="h-5 w-24 rounded-full" />
+            <Skeleton class="h-5 w-20 rounded-full" />
+          </div>
+        {:else}
+          {#each property.features.amenities.slice(0, 3) as amenity}
+            <Badge variant="outline">{amenity}</Badge>
+          {/each}
+          {#if property.features.amenities.length > 3}
+            <Badge variant="outline" class="text-xs">+{property.features.amenities.length - 3}</Badge>
+          {/if}
         {/if}
       </div> -->
       
       <div class="pt-2 text-sm text-green-400 mt-auto text-left flex gap-2">
-        <span class="text-foreground/90 line-clamp-2">{property.reasoning}</span>
+        {#if isPending(property.reasoning) || isLoading}
+          <div class="w-full space-y-2">
+            <Skeleton class="h-4 w-full" />
+            <Skeleton class="h-4 w-3/4" />
+          </div>
+        {:else}
+          <span class="text-foreground/90 line-clamp-2">{property.reasoning}</span>
+        {/if}
       </div>
     </CardContent>
   </Card>
@@ -153,5 +196,14 @@
   }
   .stop-color-orange-400 {
     stop-color: #fb923c;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  
+  .animate-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
   }
 </style> 

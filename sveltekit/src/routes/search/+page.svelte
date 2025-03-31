@@ -1,6 +1,6 @@
 <!-- 
   Main search page for Rentino
-  This page allows users to search properties with a comprehensive filter system
+  This page allows users to search properties with a tag-based preference system
 -->
 <script lang="ts">
 	import { setSearchQuery, clearStore, setError, getErrorMessage, setProperties } from '$lib/stores/properties.svelte';
@@ -15,28 +15,20 @@
 	import type { UnifiedProperty } from '$lib/types/unified-property';
 	
 	// Import components
-	import FilterSidebar from './FilterSidebar.svelte';
 	import SearchForm from './SearchForm.svelte';
 	import PropertyResults from './PropertyResults.svelte';
 	import SearchProgress from './SearchProgress.svelte';
+	import { ResizablePane, ResizablePaneGroup, ResizableHandle } from '$lib/components/ui/resizable';
+	import { Button } from '$lib/components/ui/button';
+	import { X, MapPin } from 'lucide-svelte';
 		
 	// Import utilities
 	import { TEMPLATE_TEXT, loadPreviousPreferences } from './preferences';
 	import { parseDateRange, calculateStartDate, formatDateRange, isValidDate } from './dateHelpers';
 	import { fade } from 'svelte/transition';
 	
-	// Import filter system
-	import { 
-		popularDestinations, 
-		roomOptions, 
-		propertyTypes, 
-		amenities, 
-		timeFrames, 
-		durations, 
-		filterGroups,
-		prepareSearchQuery
-	} from './filters';
-	import type { SavedPreference, PreferenceStrength } from './types';
+	// Import necessary types
+	import type { SavedPreference } from './types';
 	
 	// Define interface for page data
 	interface PageData {
@@ -62,8 +54,7 @@
 	let preferences = $state('');
 	let error = $derived(getErrorMessage());
 	let previousPreferences = $state<SavedPreference[]>([]);
-	let activePreferenceModal = $state<string | null>(null);
-	let preferenceStrength = $state<Record<string, PreferenceStrength>>({});
+	let showMap = $state(true); // Track if map section is visible
 	
 	// Search state
 	let isSearching = $state(false);
@@ -87,26 +78,6 @@
 		{ min: 75, max: 88 }, // Step 7: 75-88%
 		{ min: 88, max: 100 } // Step 8: 88-100%
 	];
-	
-	// Combined filter state for all categories
-	let selectedFilters = $state<Record<string, string[]>>({
-		'property-type': [],
-		'amenities': [],
-		'property-style': [],
-		'nearby': [],
-		'view-type': [],
-		'privacy-level': [],
-		'surroundings': [],
-		'safety-rating': [],
-		'review-consideration': [],
-		'verified-stay': [],
-		'review-timeframe': [],
-		'flooring': [],
-		'accessibility': [],
-		'safety-features': [],
-		'house-rules': [],
-		'rating': []
-	});
 	
 	// Create an effect to clear the error after a timeout
 	$effect(() => {
@@ -207,13 +178,6 @@
 		};
 	});
 	
-	// Function to handle removing a filter
-	function removeFilter(groupId: string, filterId: string) {
-		if (Array.isArray(selectedFilters[groupId])) {
-			selectedFilters[groupId] = selectedFilters[groupId].filter(id => id !== filterId);
-		}
-	}
-	
 	function selectDestination(dest: string) {
 		destination = dest;
 	}
@@ -243,19 +207,19 @@
 		}
 	}
 	
-	function closePreferenceModal() {
-		activePreferenceModal = null;
-	}
-	
 	// Function to setup event stream for property updates
 	function setupEventStream(sessionId: string) {
 		// Set up the evaluation endpoint URL
 		const apiUrl = `${PUBLIC_API_URL}/properties/evaluate`;
 		
+		// Ensure preferences are properly formatted and used
+		const tagsPreferences = preferences.trim();
+		console.log("Sending tag preferences to backend:", tagsPreferences);
+		
 		// Construct the request body
 		const requestBody = {
 			session_id: sessionId,
-			preferences: preferences || ''
+			preferences: tagsPreferences || ''
 		};
 		
 		// Make the request
@@ -521,33 +485,16 @@
 				max: budget ? parseInt(budget) : 600 // Default of 600
 			};
 			
-			// Build the query
-			const query = prepareSearchQuery({
-				destination,
-				dateRange,
-				budget: budget.toString(),
-				selectedRooms,
-				preferences,
-				selectedPropertyType: selectedFilters['property-type'] || null,
-				selectedAmenities: selectedFilters['amenities'] || [],
-				selectedLocationFeatures: selectedFilters['nearby'] || [],
-				selectedAccessibility: selectedFilters['accessibility'] || [],
-				selectedSafetyFeatures: selectedFilters['safety-features'] || [],
-				selectedHouseRules: selectedFilters['house-rules'] || [],
-				selectedRating: selectedFilters['rating'] || [],
-				preferenceStrength
-			});
-			
 			// Set the search query to the store for use in the results
 			setSearchQuery({
 				destination,
 				dateRange,
 				budget: budgetValue,
 				preferences,
-				filters: selectedFilters
+				filters: {} // Removed filters, using tags instead
 			});
 			
-			// Start the search session using queryProperties instead of startSearch
+			// Start the search session using queryProperties
 			const response = await propertyService.queryProperties({
 				query: destination,
 				date: dateRange,
@@ -571,74 +518,126 @@
 			setError('Failed to start search. Please try again.');
 		}
 	}
+	
+	// Function to toggle map visibility
+	function toggleMapVisibility() {
+		showMap = !showMap;
+	}
 </script>
 
-<div class="flex h-screen overflow-hidden">
-	<!-- Left Sidebar - Comprehensive Filter System -->
-	<FilterSidebar
-		selectedFilters={selectedFilters}
-		{activePreferenceModal}
-		{preferenceStrength}
-	/>
-
-	<!-- Main Content Area -->
-	<div class="flex-1 overflow-y-auto">
-		<div class="p-6 md:p-8">
-			<!-- Error message box -->
-			{#if error}
-			<div 
-				class="w-full mb-8 p-4 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
-				transition:fade={{ duration: 200 }}
-			>
-				<div class="flex items-start gap-3">
-				<div class="mt-1">⚠️</div>
-				<div>
-					<h3 class="font-medium mb-1">Error</h3>
-					<p class="text-sm">{error}</p>
-				</div>
+<div class="w-full h-screen overflow-hidden">
+	<ResizablePaneGroup direction="horizontal" class="h-full">
+		<!-- Left sidebar with search inputs and results -->
+		<ResizablePane minSize={20} defaultSize={showMap ? 66 : 100}>
+			<div class="h-full overflow-y-auto">
+				<div class="p-4 md:p-6">
+					<!-- Error message box -->
+					{#if error}
+					<div 
+						class="w-full mb-4 p-3 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
+						transition:fade={{ duration: 200 }}
+					>
+						<div class="flex items-start gap-3">
+							<div class="mt-1">⚠️</div>
+							<div>
+								<h3 class="font-medium mb-1 text-sm">Error</h3>
+								<p class="text-xs">{error}</p>
+							</div>
+						</div>
+					</div>
+					{/if} 					
+					
+					<!-- Search Inputs -->
+					<SearchForm
+						bind:destination
+						bind:dateRange
+						bind:budget
+						bind:selectedRooms
+						bind:preferences
+						{previousPreferences}
+						onSubmit={handleSearch}
+					/>
+					
+					<!-- Search Progress Bar (when searching) -->
+					<SearchProgress
+						{progress}
+						{currentStep}
+						{currentStepName}
+						isSearching={isSearching}
+					/>
+					
+					<!-- Properties Section -->
+					<PropertyResults
+						properties={streamedProperties}
+						{propertyCount}
+						isSearching={isSearching}
+						{currentStepName}
+					/>
 				</div>
 			</div>
-			{/if} 					
-			
-			<!-- Search Inputs -->
-			<SearchForm
-				bind:destination
-				bind:dateRange
-				bind:budget
-				bind:selectedRooms
-				bind:preferences
-				{previousPreferences}
-				onSubmit={handleSearch}
-			/>
+		</ResizablePane>
 		
+		{#if showMap}
+			<!-- Resizable handle with visible grip -->
+			<ResizableHandle withHandle />
 			
-			<!-- Search Progress Bar (when searching) -->
-			<SearchProgress
-				{progress}
-				{currentStep}
-				{currentStepName}
-				isSearching={isSearching}
-			/>
-			
-			<!-- Properties Section -->
-			<PropertyResults
-				properties={streamedProperties}
-				{propertyCount}
-				isSearching={isSearching}
-				{currentStepName}
-			/>
-		</div>
-	</div>
+			<!-- Map section (right side - 1/3 of screen width) -->
+			<ResizablePane minSize={20} defaultSize={34}>
+				<div class="h-full bg-muted/40 relative flex flex-col">
+					<div class="p-3 border-b flex items-center justify-between bg-background/80">
+						<div class="flex items-center gap-2">
+							<MapPin class="h-5 w-5 text-primary" />
+							<h3 class="font-medium text-sm">Map View</h3>
+						</div>
+						<Button 
+							variant="outline" 
+							size="sm" 
+							onclick={toggleMapVisibility}
+							class="h-8 px-3 flex items-center gap-1.5"
+							aria-label="Close map"
+						>
+							<X class="h-4 w-4" />
+							<span>Close</span>
+						</Button>
+					</div>
+					
+					<div class="flex-1 flex items-center justify-center">
+						<div class="text-center p-6">
+							<div class="bg-primary/10 rounded-full p-4 inline-block mb-3">
+								<MapPin class="h-8 w-8 text-primary/70" />
+							</div>
+							<h4 class="text-lg font-medium mb-2">Map View Coming Soon</h4>
+							<p class="text-sm text-muted-foreground max-w-[250px] mx-auto mb-4">
+								We're working on a beautiful interactive map to help you find properties more easily.
+							</p>
+							<Button 
+								variant="outline" 
+								size="sm" 
+								onclick={toggleMapVisibility}
+								class="text-xs"
+							>
+								Hide Map & Get More Space
+							</Button>
+						</div>
+					</div>
+				</div>
+			</ResizablePane>
+		{:else}
+			<!-- Show a small button to restore the map -->
+			<div class="absolute top-[72px] md:top-4 right-4 z-10">
+				<Button 
+					variant="outline" 
+					size="sm" 
+					onclick={toggleMapVisibility}
+					class="flex items-center gap-1.5 shadow-sm"
+				>
+					<MapPin class="h-4 w-4" />
+					<span>Show Map</span>
+				</Button>
+			</div>
+		{/if}
+	</ResizablePaneGroup>
 </div>
-
-<!-- Click outside detector to close preference modal -->
-{#if activePreferenceModal}
-	<button 
-		class="fixed inset-0 z-0 w-full h-full border-0 bg-transparent cursor-default"
-		onclick={closePreferenceModal}
-		aria-label="Close filter preference modal"
-	></button>
-{/if} 
 
 <style>
   @keyframes fadeIn {

@@ -31,6 +31,7 @@
 		"clsx": "^2.1.1",
 		"jsdom": "^26.0.0",
 		"lucide-svelte": "^0.483.0",
+		"paneforge": "^0.0.6",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.10",

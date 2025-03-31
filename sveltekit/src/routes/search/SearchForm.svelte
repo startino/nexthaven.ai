@@ -1,16 +1,17 @@
 <!-- 
   SearchForm.svelte - Handles user input for search criteria
-  Includes destination, dates, preferences, and search button
+  Includes destination, dates, preferences as tags, and search button
 -->
 <script lang="ts">
-  import { Calendar, MessageSquare, Search, Clock, Check, AlertCircle, Sparkle } from 'lucide-svelte';
+  import { Calendar, MessageSquare, Search, Clock, Check, AlertCircle, Sparkle, X, Plus, Tag, Heart, TrendingUp, Edit2, Pen } from 'lucide-svelte';
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
+  import { Badge } from '$lib/components/ui/badge';
   import { formatDateRange, parseDateRange, isValidDate, calculateStartDate } from './dateHelpers';
   import { savePreference } from './preferences';
   import type { SavedPreference } from './types';
-  import { slide } from 'svelte/transition';
+  import { slide, fade } from 'svelte/transition';
   import { onMount } from 'svelte';
   import type { DateRange } from "bits-ui";
   import { CalendarDate, DateFormatter, type DateValue, getLocalTimeZone, today } from "@internationalized/date";
@@ -19,6 +20,7 @@
   import { RangeCalendar } from "$lib/components/ui/range-calendar/index.js";
   import { LocationCombobox } from "$lib/components/ui/combobox";
   import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
+  import { ScrollArea } from "$lib/components/ui/scroll-area";
 
   // Form inputs  
   let { destination = $bindable(''), dateRange = $bindable(''), budget = $bindable(''), 
@@ -35,9 +37,31 @@
   
   // UI state
   let showPreviousPreferences = $state(false);
-  let textareaElement: HTMLElement;
   let dateError = $state<string | null>(null);
   let showDebug = $state(false);
+  let showTagInput = $state(false);
+  let tagInputValue = $state('');
+  let selectedTags = $state<string[]>([]);
+  let editingTagIndex = $state<number | null>(null);
+  
+  // Define preset tags
+  const presetTagCategories = [
+    {
+      name: 'Your Favorites',
+      icon: Heart,
+      tags: ['Natural light', 'Spacious rooms', 'Updated bathroom', 'Furnished', 'Pet friendly']
+    },
+    {
+      name: 'Most Popular',
+      icon: TrendingUp,
+      tags: ['Modern kitchen', 'High-speed WiFi', 'Quiet neighborhood', 'Close to public transport', 'Hardwood floors']
+    },
+    {
+      name: 'Others',
+      icon: Tag,
+      tags: ['Open floor plan', 'Walk-in closet', 'Private balcony', 'Stainless steel appliances', 'Central AC', 'Garden view', 'Garage included', 'Smart home', 'Pool access', 'Gym access']
+    }
+  ];
   
   // Set up DateFormatter for displaying dates
   const df = new DateFormatter("en-US", {
@@ -82,6 +106,12 @@
     // Debug mode
     if (import.meta.env.DEV) {
       console.log('Google Maps API Key:', PUBLIC_GOOGLE_MAPS_API_KEY);
+    }
+    
+    // Parse any existing preferences into tags
+    if (preferences.trim()) {
+      const prefTags = preferences.split(',').map((tag: string) => tag.trim()).filter(Boolean);
+      selectedTags = prefTags;
     }
   });
 
@@ -173,6 +203,11 @@
     }
   });
   
+  // Update preferences string when tags change
+  $effect(() => {
+    preferences = selectedTags.join(', ');
+  });
+  
   function handleDateRangeBlur() {
     // Clear any previous error
     dateError = null;
@@ -190,16 +225,168 @@
     }
   }
   
-  function selectPreviousPreference(text: string) {
-    preferences = text;
-    showPreviousPreferences = false;
-    // Focus on the textarea container
-    setTimeout(() => {
-      if (textareaElement) {
-        const textarea = textareaElement.querySelector('textarea');
-        if (textarea) textarea.focus();
+  function addTag(tag: string) {
+    // Don't add empty tags
+    if (!tag.trim()) {
+      return;
+    }
+    
+    // Process multiple comma-separated tags
+    if (tag.includes(',')) {
+      const tags = tag.split(',');
+      // Add all non-empty tags
+      for (let i = 0; i < tags.length; i++) {
+        const tagToAdd = tags[i].trim();
+        if (tagToAdd && !selectedTags.includes(tagToAdd)) {
+          if (editingTagIndex !== null && i === 0) {
+            // Replace the first tag with the edited one
+            const newTags = [...selectedTags];
+            newTags[editingTagIndex] = tagToAdd;
+            selectedTags = newTags;
+          } else {
+            // Add additional tags
+            selectedTags = [...selectedTags, tagToAdd];
+          }
+        }
       }
-    }, 10);
+      // Reset editing state
+      editingTagIndex = null;
+    } else {
+      // Single tag processing
+      const trimmedTag = tag.trim();
+      // Skip if it's a duplicate
+      if (selectedTags.includes(trimmedTag)) {
+        editingTagIndex = null;
+        return;
+      }
+      
+      if (editingTagIndex !== null) {
+        // Replace the tag being edited
+        const newTags = [...selectedTags];
+        newTags[editingTagIndex] = trimmedTag;
+        selectedTags = newTags;
+        editingTagIndex = null;
+      } else {
+        // Add a new tag
+        selectedTags = [...selectedTags, trimmedTag];
+      }
+    }
+    
+    // Clear input for custom tags
+    tagInputValue = '';
+    
+    // Only keep input visible if we're not editing a tag
+    if (editingTagIndex === null) {
+      showTagInput = true; // Keep input visible for additional tags
+    }
+  }
+
+  function handleTagInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    
+    // Check for comma to create a new tag
+    if (value.includes(',')) {
+      const tags = value.split(',');
+      // Add all non-empty tags
+      for (let i = 0; i < tags.length - 1; i++) {
+        if (tags[i].trim()) {
+          addTag(tags[i]);
+        }
+      }
+      // Keep the text after the last comma in the input
+      tagInputValue = tags[tags.length - 1];
+    }
+  }
+  
+  function removeTag(tag: string) {
+    selectedTags = selectedTags.filter(t => t !== tag);
+  }
+  
+  function editTag(index: number) {
+    editingTagIndex = index;
+    tagInputValue = selectedTags[index];
+    showTagInput = true;
+    
+    // Focus on the input after it's rendered
+    setTimeout(() => {
+      const input = document.querySelector('[data-tag-input]') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        // Place cursor at end
+        input.selectionStart = input.selectionEnd = input.value.length;
+      }
+    }, 0);
+  }
+  
+  function cancelEditing() {
+    editingTagIndex = null;
+    tagInputValue = '';
+    showTagInput = false;
+  }
+  
+  function handleCustomTagKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (tagInputValue.trim()) {
+        addTag(tagInputValue);
+      }
+    } else if (event.key === 'Escape') {
+      cancelEditing();
+    }
+  }
+  
+  function handleTagContainerClick() {
+    if (!showTagInput) {
+      showTagInput = true;
+      setTimeout(() => {
+        const input = document.querySelector('[data-tag-input]') as HTMLInputElement;
+        if (input) input.focus();
+      }, 0);
+    }
+  }
+
+  function handleTagDoubleClick(index: number) {
+    // Set the editing index and update the input value
+    editingTagIndex = index;
+    tagInputValue = selectedTags[index];
+  }
+  
+  function handleTagEdit(event: KeyboardEvent, index: number) {
+    // Save the edited tag on Enter or when losing focus
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const target = event.target as HTMLInputElement;
+      if (target.value.trim()) {
+        // Use our improved addTag function which handles comma-separated values
+        addTag(target.value);
+      } else {
+        // If the tag is empty, just remove it
+        removeTag(selectedTags[index]);
+        editingTagIndex = null;
+      }
+    } else if (event.key === 'Escape') {
+      // Cancel editing
+      editingTagIndex = null;
+    }
+  }
+
+  function handleTagEditBlur(event: FocusEvent, index: number) {
+    const target = event.target as HTMLInputElement;
+    if (target.value.trim()) {
+      // Use our improved addTag function
+      addTag(target.value);
+    } else {
+      // If the tag is empty, just remove it
+      removeTag(selectedTags[index]);
+      editingTagIndex = null;
+    }
+  }
+  
+  function selectPreviousPreference(text: string) {
+    // Convert previous preferences to tags
+    const tags = text.split(',').map((tag: string) => tag.trim()).filter(Boolean);
+    selectedTags = [...new Set([...selectedTags, ...tags])];
+    showPreviousPreferences = false;
   }
   
   function formatTimestamp(timestamp: number): string {
@@ -231,24 +418,23 @@
     onSubmit();
   }
   
-  // Close the previous preferences dropdown when clicking outside of it
-  function handleClickOutside(event: MouseEvent) {
-    if (textareaElement && !textareaElement.contains(event.target as Node) && 
-        !(event.target as Element).closest('[data-preference-item]')) {
-      showPreviousPreferences = false;
-    }
-  }
-  
-  // Open the previous preferences dropdown when focusing on the textarea
-  function handleTextareaFocus() {
+  // Open the previous preferences dropdown
+  function togglePreviousPreferences() {
     if (previousPreferences.length) {
-      showPreviousPreferences = true;
+      showPreviousPreferences = !showPreviousPreferences;
     }
   }
   
   // Add and remove the event listener when the component mounts/unmounts
   $effect(() => {
     if (showPreviousPreferences) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (!(event.target as Element).closest('[data-preference-item]') && 
+            !(event.target as Element).closest('[data-previous-preferences-btn]')) {
+          showPreviousPreferences = false;
+        }
+      };
+      
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
@@ -264,6 +450,16 @@
   // Toggle debug mode
   function toggleDebug() {
     showDebug = !showDebug;
+  }
+
+  // Add a function to clear all tags
+  function clearAllTags() {
+    selectedTags = [];
+    showTagInput = true;
+    setTimeout(() => {
+      const input = document.querySelector('[data-tag-input]') as HTMLInputElement;
+      if (input) input.focus();
+    }, 0);
   }
 </script>
 
@@ -316,14 +512,6 @@
         onSelect={handleLocationSelect}
         class="h-12"
       />
-      <!-- {#if import.meta.env.DEV}
-        <button 
-          class="absolute right-0 -bottom-6 text-xs text-muted-foreground hover:text-primary"
-          onclick={toggleDebug}
-        >
-          Debug
-        </button>
-      {/if} -->
     </div>
   </div>
   
@@ -334,41 +522,177 @@
     </div>
   {/if}
   
-  <div class="relative" bind:this={textareaElement}>
-    <Sparkle class="absolute left-4 top-3 h-5 w-5 text-muted-foreground" />
-    <Textarea 
-      bind:value={preferences}
-      placeholder="Write your personal, potentially strange... preferences here... (if you couldn't find the right filter)"
-      onfocus={handleTextareaFocus}
-      class="w-full pl-12 py-3 text-base resize-none hover:bg-primary/10"
-    />
-<!--     
-    {#if showPreviousPreferences && previousPreferences.length > 0}
-      <div 
-        class="absolute left-0 right-0 top-full mt-1 bg-card z-10 border rounded-md shadow-md max-h-[200px] overflow-y-auto"
-        transition:slide={{ duration: 150 }}
-      >
-        <div class="p-2 border-b text-xs text-muted-foreground flex items-center gap-2">
-          <Clock size={14} />
-          <span>Previous preferences</span>
-        </div>
-        
-        <div class="divide-y">
-          {#each previousPreferences as preference}
-            <button 
-              data-preference-item
-              class="w-full text-left p-3 hover:bg-muted/50 transition-colors"
-              onclick={() => selectPreviousPreference(preference.text)}
-            >
-              <div class="flex justify-between items-start gap-3">
-                <p class="text-sm line-clamp-2">{preference.text}</p>
-                <span class="text-xs text-muted-foreground shrink-0 mt-0.5">{formatTimestamp(preference.timestamp)}</span>
+  <div class="space-y-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <Sparkle class="h-5 w-5 text-primary" />
+        <h3 class="font-medium">Your Unique Preferences</h3>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        {#if selectedTags.length > 0}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onclick={clearAllTags}
+          class="h-6 text-xs text-muted-foreground hover:text-primary"
+        >
+          Clear all
+        </Button>
+        {/if}
+        {#if previousPreferences.length > 0}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onclick={togglePreviousPreferences}
+            data-previous-preferences-btn
+            class="text-xs h-8 relative"
+          >
+            <Clock class="h-4 w-4 mr-1" />
+            <span>Previous</span>
+            {#if showPreviousPreferences}
+              <div 
+                class="absolute right-0 top-full mt-1 bg-card z-10 border rounded-md shadow-md max-h-[200px] overflow-y-auto w-64"
+                transition:slide={{ duration: 150 }}
+              >
+                <div class="p-2 border-b text-xs text-muted-foreground flex items-center gap-2">
+                  <Clock size={14} />
+                  <span>Previous preferences</span>
+                </div>
+                
+                <div class="divide-y">
+                  {#each previousPreferences as preference}
+                    <button 
+                      data-preference-item
+                      class="w-full text-left p-3 hover:bg-muted/50 transition-colors"
+                      onclick={() => selectPreviousPreference(preference.text)}
+                    >
+                      <div class="flex justify-between items-start gap-3">
+                        <p class="text-sm line-clamp-2">{preference.text}</p>
+                        <span class="text-xs text-muted-foreground shrink-0 mt-0.5">{formatTimestamp(preference.timestamp)}</span>
+                      </div>
+                    </button>
+                  {/each}
+                </div>
               </div>
-            </button>
+            {/if}
+          </Button>
+        {/if}
+      </div>
+    </div>
+    
+    <!-- Tag input area -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div 
+      class="relative border rounded-md px-3 py-2 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-colors cursor-text"
+      onclick={handleTagContainerClick}
+    >
+      <div class="flex flex-wrap gap-2 items-center min-h-[38px]">
+        {#each selectedTags as tag, index}
+          {#if editingTagIndex === index}
+            <!-- Inline edit mode for the tag - improved for better responsive behavior -->
+            <div class="inline-flex rounded-full bg-primary text-secondary-foreground border border-primary shadow-sm transition-all">
+              <Input 
+                value={tag}
+                class="border-0 shadow-none focus-visible:ring-0 h-8 text-md text-primary-foreground min-w-[80px] w-full p-0 px-2.5 rounded-full"
+                style="width: calc({tag.length}ch + 4ch);" 
+                autofocus
+                onkeydown={(e) => handleTagEdit(e, index)}
+                onblur={(e) => handleTagEditBlur(e, index)}
+                data-tag-editing
+              />
+            </div>
+          {:else}
+            <Badge  
+              class={cn(
+                "flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-sm group cursor-pointer transition-colors",
+                editingTagIndex !== null && editingTagIndex !== index ? "opacity-50" : ""
+              )}
+              ondblclick={() => handleTagDoubleClick(index)}
+            >
+              <span>{tag}</span>
+              <div class="flex items-center gap-0.5">
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  onclick={(e: MouseEvent) => {
+                    e.stopPropagation();
+                    handleTagDoubleClick(index);
+                  }}
+                  class="h-6 w-6 p-1 mx-0.5"
+                  aria-label={`Edit ${tag} tag`}
+                >
+                  <Pen class="" />
+                </Button>
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  onclick={(e: MouseEvent) => {
+                    e.stopPropagation();
+                    removeTag(tag);
+                  }}
+                  class="h-6 w-6 p-1 mx-0.5"
+                  aria-label={`Remove ${tag} tag`}
+                >
+                  <X class="" />
+                </Button>
+              </div>
+            </Badge>
+          {/if}
+        {/each}
+        
+        {#if showTagInput && editingTagIndex === null}
+          <Input 
+            bind:value={tagInputValue}
+            placeholder={selectedTags.length > 0 ? "Add or edit tag... (use Enter or comma)" : "Add tags like 'modern kitchen', 'pet friendly'..."}
+            onkeydown={handleCustomTagKeydown}
+            oninput={handleTagInput}
+            class="border-0 shadow-none focus-visible:ring-0 flex-1 h-8 min-w-[180px] text-sm"
+            data-tag-input
+          />
+        {:else if selectedTags.length === 0}
+          <span class="text-muted-foreground text-sm">Add tags like 'modern kitchen', 'pet friendly'...</span>
+        {/if}
+      </div>
+    </div>
+    <p class="text-xs text-muted-foreground mt-1">Double-click to edit tags directly or use Enter/comma to add multiple</p>
+    
+    <!-- Suggested tags section - now below the tag input -->
+    <div class="mt-3 border rounded-md p-3 pt-2 bg-background/50">
+      <!-- Preset tag categories -->
+      <ScrollArea class="max-h-[180px]">
+        <div class="space-y-3 pr-2">
+          {#each presetTagCategories as category}
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <svelte:component this={category.icon} class="h-3.5 w-3.5" />
+                <span>{category.name}</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                {#each category.tags as tag}
+                  <button 
+                    onclick={() => addTag(tag)}
+                    class={cn(
+                      "px-2 py-1 rounded-full text-xs border transition-colors",
+                      selectedTags.includes(tag) 
+                        ? "bg-primary/10 border-primary/20 text-primary" 
+                        : "bg-background border-border hover:bg-primary/5 hover:border-primary/10"
+                    )}
+                    disabled={selectedTags.includes(tag)}
+                  >
+                    {#if selectedTags.includes(tag)}
+                      <Check class="inline-block h-3 w-3 mr-1" />
+                    {/if}
+                    {tag}
+                  </button>
+                {/each}
+              </div>
+            </div>
           {/each}
         </div>
-      </div>
-    {/if} -->
+      </ScrollArea>
+    </div>
   </div>
 
   <Button 
