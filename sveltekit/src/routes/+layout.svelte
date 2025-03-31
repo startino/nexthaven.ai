@@ -5,6 +5,7 @@
 	import NavigationBar from '$lib/components/ui/NavigationBar.svelte';
 	import { collectionState, setCollections } from '$lib/stores/collections.svelte';
 	import { CollectionService } from '$lib/services/collection.service';
+	import { ToltTracker } from '$lib/components/tolt';
 
 
 	// Setup Supabase client and auth listener
@@ -61,6 +62,9 @@
 </script>
 
 <div class="min-h-screen bg-black dark text-foreground">
+	<!-- Tolt Tracker (invisible) -->
+	<ToltTracker />
+	
 	<!-- Navigation -->
 	<NavigationBar />
 

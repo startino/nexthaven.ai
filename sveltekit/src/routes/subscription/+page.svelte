@@ -43,10 +43,39 @@
 	let redirectTo = $state($page.url.searchParams.get('redirectTo') || '/search');
 
 	// Get current option based on billing period
-	let currentOption = $derived(PRICING_TIER.options.find(option => option.period === billingPeriod) || PRICING_TIER.options[0]);
+	let currentOption = $derived(PRICING_TIER.options.find(option => option.name.toLowerCase() === billingPeriod) || PRICING_TIER.options[0]);
 
-	// Calculate savings for yearly plan
-	let yearlySavings = $derived(billingPeriod === 'yearly' ? PRICING_TIER.options.find(option => option.period === 'yearly')?.savingsAmount || 0 : 0);
+	// Calculate monthly equivalent price for yearly plan
+	let calcMonthlyEquivalent = () => {
+		const yearlyOption = PRICING_TIER.options.find(option => option.name.toLowerCase() === 'yearly');
+		
+		if (yearlyOption) {
+			// Calculate approximate monthly price from yearly price (assuming format $XX)
+			const yearlyPrice = parseFloat(yearlyOption.price.replace(/[^\d.]/g, ''));
+			const monthlyEquivalent = (yearlyPrice / 12).toFixed(2);
+			return `$${monthlyEquivalent}/mo`;
+		}
+		return '';
+	};
+	
+	let monthlyEquivalent = $derived(calcMonthlyEquivalent());
+
+	// Calculate percentage saved with yearly plan
+	let calcSavingsPercentage = () => {
+		const monthlyOption = PRICING_TIER.options.find(option => option.name.toLowerCase() === 'monthly');
+		const yearlyOption = PRICING_TIER.options.find(option => option.name.toLowerCase() === 'yearly');
+		
+		if (monthlyOption && yearlyOption) {
+			const monthlyPrice = parseFloat(monthlyOption.price.replace(/[^\d.]/g, ''));
+			const yearlyPrice = parseFloat(yearlyOption.price.replace(/[^\d.]/g, ''));
+			const monthlyEquiv = yearlyPrice / 12;
+			const savingsPercent = Math.round(((monthlyPrice - monthlyEquiv) / monthlyPrice) * 100);
+			return savingsPercent > 0 ? savingsPercent : 0;
+		}
+		return 0;
+	};
+	
+	let savingsPercentage = $derived(calcSavingsPercentage());
 
 	// Handle subscription checkout
 	async function handleSubscribe() {
@@ -187,9 +216,6 @@
 									
 									<!-- Billing period selector -->
 									<div class="mt-4">
-										<div class="text-left mb-2">
-											<p class="text-primary font-medium">Choose a billing plan:</p>
-										</div>
 										<div class="flex rounded-md overflow-hidden border border-primary/30">
 											<button 
 												class="flex-1 py-2 px-4 text-sm font-medium transition-all focus:outline-none {billingPeriod === 'monthly' ? 'bg-primary/30 text-primary font-semibold' : 'bg-black/20 hover:bg-black/30 text-muted-foreground'}"
@@ -202,32 +228,28 @@
 												onclick={() => billingPeriod = 'yearly'}
 											>
 												Yearly
-												{#if PRICING_TIER.options.length > 1 && PRICING_TIER.options[1]?.savingsAmount && PRICING_TIER.options[1].savingsAmount > 0}
-													<span class="ml-1 text-xs {billingPeriod === 'yearly' ? 'bg-primaryp/30 text-primary' : 'bg-primary/10 text-primary/70'} px-2 py-0.5 rounded-full">
-														Save ${PRICING_TIER.options[1].savingsAmount}
+												{#if savingsPercentage > 0}
+													<span class="ml-1 text-xs {billingPeriod === 'yearly' ? 'gradient-primary text-black' : 'gradient-primary text-black'} px-2 py-0.5 rounded-full">
+														{monthlyEquivalent}
 													</span>
 												{/if}
 											</button>
 										</div>
-										<p class="mt-2 text-left text-muted-foreground text-sm">
-											${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'}
-											{#if billingPeriod === 'yearly' && yearlySavings > 0}
-												<span class="ml-1 text-xs text-green-400">
-													(Save ${yearlySavings})
-												</span>
+										<div class="mt-4 text-left text-muted-foreground text-sm flex flex-row items-center gap-4">
+										<!-- Display price and billing period -->
+											<h2 class="text-xl font-semibold">
+												{currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'}
+											</h2>
+											{#if billingPeriod === 'yearly' && savingsPercentage > 0}
+												<h3 class=" text-xs text-green-400 my-auto">
+													({savingsPercentage}% off monthly)
+												</h3>
 											{/if}
-										</p>
+										</div>
 									</div>
 									
 									<DialogFooter class="flex flex-col sm:flex-row sm:justify-between gap-3 mt-4">
-										<Button 
-											variant="secondary" 
-											onclick={handleContinue}
-											class="flex items-center justify-center gap-2 order-2 sm:order-1"
-										>
-											Continue with Trial
-											<ArrowRight size={16} />
-										</Button>
+
 										
 										<Button 
 											onclick={handleSubscribe}
@@ -278,9 +300,9 @@
 							onclick={() => billingPeriod = 'yearly'}
 						>
 							Yearly
-							{#if PRICING_TIER.options.length > 1 && PRICING_TIER.options[1]?.savingsAmount && PRICING_TIER.options[1].savingsAmount > 0}
+							{#if savingsPercentage > 0}
 								<span class="ml-1 text-xs {billingPeriod === 'yearly' ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'} px-2 py-0.5 rounded-full">
-									Save ${PRICING_TIER.options[1].savingsAmount}
+									{monthlyEquivalent}
 								</span>
 							{/if}
 						</button>
@@ -305,7 +327,7 @@
 					</div>
 					
 					<ul class="space-y-3 my-6">
-						{#each PRICING_TIER.features as feature}
+						{#each currentOption.features as feature}
 							<li class="flex items-center gap-2 text-sm">
 								<span class="text-primary">✓</span>
 								<span>{feature}</span>
@@ -314,11 +336,11 @@
 					</ul>
 					
 					<p class="text-xl font-bold mb-6">
-						${currentOption.price}
-						<span class="text-sm text-muted-foreground font-normal">/{billingPeriod === 'monthly' ? 'month' : 'year'}</span>
-						{#if billingPeriod === 'yearly' && yearlySavings > 0}
+						{currentOption.price}
+						<span class="text-sm text-muted-foreground font-normal">/{currentOption.priceDescription}</span>
+						{#if billingPeriod === 'yearly' && savingsPercentage > 0}
 							<span class="ml-1 text-xs text-green-400">
-								(Save ${yearlySavings})
+								({savingsPercentage}% off monthly)
 							</span>
 						{/if}
 					</p>
@@ -340,9 +362,11 @@
 					<div class="mt-4 py-2 px-3 {isInTrial ? 'bg-primary/10 border-primary/20' : 'bg-primary/10 border-primary/20'} border rounded-lg text-sm text-center">
 						{#if isInTrial}
 							<span class="font-semibold text-primary">Your free trial ends on {trialEnd}</span><br>
-							${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'} after trial
+							{currentOption.price}/{currentOption.priceDescription} after trial
+						{:else if billingPeriod === 'yearly'}
+							{currentOption.price}/{currentOption.priceDescription} (just {monthlyEquivalent})
 						{:else}
-							${currentOption.price}/{billingPeriod === 'monthly' ? 'month' : 'year'}
+							{currentOption.price}/{currentOption.priceDescription}
 						{/if}
 					</div>
 				</div>

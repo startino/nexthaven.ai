@@ -5,6 +5,7 @@ import {
 	PUBLIC_STRIPE_PRICE_YEARLY
 } from '$env/static/public';
 import { createSupabaseBrowserClient } from '$lib/supabase';
+import { getCurrentToltReferralId } from '$lib/stores/tolt';
 
 // Initialize Stripe
 let stripePromise: Promise<any> | null = null;
@@ -20,22 +21,26 @@ export interface SubscriptionStatus {
 
 // Pricing tiers - now using environment variables
 export const PRICING_TIER = {
-	name: 'Premium',
-	description: 'Everything you need to find your perfect accommodation',
-	features: ['Unlimited searches', 'Advanced property comparison'],
+	name: 'Membership',
+	description: 'Choose a subscription plan',
 	options: [
 		{
 			id: PUBLIC_STRIPE_PRICE_MONTHLY,
-			period: 'monthly',
-			price: 19.99,
-			description: 'Monthly subscription'
+			name: 'Monthly',
+			description: 'Subscribe monthly',
+			features: ['Full access to all features', 'Cancel anytime'],
+			price: '$7',
+			priceDescription: 'per month',
+			highlight: false
 		},
 		{
 			id: PUBLIC_STRIPE_PRICE_YEARLY,
-			period: 'yearly',
-			price: 49.99,
-			description: 'Annual subscription',
-			savingsAmount: 189.89
+			name: 'Yearly',
+			description: 'Subscribe yearly (16% discount)',
+			features: ['Full access to all features', 'Save 16% vs monthly'],
+			price: '$30',
+			priceDescription: 'per year',
+			highlight: true
 		}
 	]
 };
@@ -78,12 +83,16 @@ export const stripeService = {
 	 */
 	async createCheckoutSession(options: CreateCheckoutSessionOptions): Promise<CheckoutSession> {
 		try {
+			// Get the Tolt referral ID if available
+			const toltReferral = getCurrentToltReferralId();
+			
 			const response = await fetch('/api/stripe/checkout', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					priceId: options.priceId,
-					returnUrl: options.returnUrl
+					returnUrl: options.returnUrl,
+					toltReferral  // Include the Tolt referral ID
 				})
 			});
 
