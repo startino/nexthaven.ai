@@ -114,6 +114,7 @@ class EvaluateAgent:
             property_data["image"] = ""
             property_data["source"] = ""
             property_data["price"] = ""
+            property_data["name"] = ""
     
             # Create the task for this property
             task = self._evaluate_single_property(
@@ -219,9 +220,9 @@ class EvaluateAgent:
                 }}
 
                 You are forbidden from scoring a property a 0, at least give it a 1.
-                You must NOT FORGET to provide a score in your Result. Bad things will happen if you forget.
                 
                 You do not need to touch on the price aspect.
+                Some attributes like price and name have been redacted so that they don't affect your reasoning.
 
                 You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
                 This reasoning will be shown to the user to help them understand why this property received its score.
