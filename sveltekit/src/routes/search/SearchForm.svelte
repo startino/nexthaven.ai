@@ -3,7 +3,7 @@
   Includes destination, dates, preferences as tags, and search button
 -->
 <script lang="ts">
-  import { Calendar, MessageSquare, Search, Clock, Check, AlertCircle, Sparkle, X, Plus, Tag, Heart, TrendingUp, Edit2, Pen } from 'lucide-svelte';
+  import { Calendar, MessageSquare, Search, Clock, Check, AlertCircle, Sparkle, X, Plus, Tag, Heart, TrendingUp, Edit2, Pen, DollarSign } from 'lucide-svelte';
   import { Input } from '$lib/components/ui/input';
   import { Textarea } from '$lib/components/ui/textarea';
   import { Button } from '$lib/components/ui/button';
@@ -22,6 +22,7 @@
   import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { getTopFavoriteTags, trackTagsUsage } from './favourite-filters';
+  import { Slider } from '$lib/components/ui/slider';
 
   // Form inputs  
   let { destination = $bindable(''), dateRange = $bindable(''), budget = $bindable(''), 
@@ -45,6 +46,18 @@
   let selectedTags = $state<string[]>([]);
   let editingTagIndex = $state<number | null>(null);
   let favoriteUserTags = $state<string[]>([]);
+  
+  // Price range slider state
+  let priceRange = $state<[number, number]>([100, 300]);
+  const MIN_PRICE_NIGHTLY = 0;
+  const MAX_PRICE_NIGHTLY = 500;
+  const MIN_PRICE_TOTAL = 0;
+  const MAX_PRICE_TOTAL = 10000;
+  const PRICE_STEP_NIGHTLY = 10;
+  const PRICE_STEP_TOTAL = 100;
+  
+  // Budget calculation mode (nightly or total)
+  let isTotalBudget = $state(false);
   
   // Define preset tags
   const presetTagCategories = $state([
@@ -131,6 +144,108 @@
   let startValue: DateValue | undefined = $state(undefined);
   let minDate = today(getLocalTimeZone());
 
+  // Format price value for display with dollar sign
+  function formatPrice(value: number): string {
+    return `$${value.toLocaleString()}`;
+  }
+  
+  // Format raw values for the slider (without dollar sign)
+  function formatRawPrice(value: number): string {
+    return value.toLocaleString();
+  }
+  
+  // Get current min, max, and step values based on budget type
+  function getCurrentPriceConstraints() {
+    return {
+      min: isTotalBudget ? MIN_PRICE_TOTAL : MIN_PRICE_NIGHTLY,
+      max: isTotalBudget ? MAX_PRICE_TOTAL : MAX_PRICE_NIGHTLY,
+      step: isTotalBudget ? PRICE_STEP_TOTAL : PRICE_STEP_NIGHTLY
+    };
+  }
+  
+  // Update price range when switching between nightly and total
+  function updateBudgetType(isTotal: boolean) {
+    if (isTotal !== isTotalBudget) {
+      isTotalBudget = isTotal;
+      
+      // Adjust the price range based on the new budget type
+      if (isTotal) {
+        // Convert from nightly to total (rough estimation)
+        const avgNights = 7; // assume average 7 night stay
+        priceRange = [
+          Math.min(priceRange[0] * avgNights, MAX_PRICE_TOTAL), 
+          Math.min(priceRange[1] * avgNights, MAX_PRICE_TOTAL)
+        ];
+      } else {
+        // Convert from total to nightly (rough estimation)
+        const avgNights = 7; // assume average 7 night stay
+        priceRange = [
+          Math.min(Math.max(Math.round(priceRange[0] / avgNights), MIN_PRICE_NIGHTLY), MAX_PRICE_NIGHTLY),
+          Math.min(Math.max(Math.round(priceRange[1] / avgNights), MIN_PRICE_NIGHTLY), MAX_PRICE_NIGHTLY)
+        ];
+      }
+    }
+  }
+  
+  // Parse budget string into price range and budget type
+  function parseBudget(budgetStr: string): { range: [number, number], isTotal: boolean } {
+    if (!budgetStr) {
+      return { 
+        range: [100, 300], 
+        isTotal: false 
+      }; // Default values for nightly
+    }
+    
+    // Check if budget has type indicator
+    const isTotal = budgetStr.includes('total:');
+    const cleanBudgetStr = budgetStr.replace('total:', '').replace('nightly:', '');
+    
+    // Check if it's a range format like "500-3000"
+    if (cleanBudgetStr.includes('-')) {
+      const [minStr, maxStr] = cleanBudgetStr.split('-');
+      const min = parseInt(minStr);
+      const max = parseInt(maxStr);
+      
+      if (!isNaN(min) && !isNaN(max)) {
+        const currentConstraints = isTotal ? 
+          { min: MIN_PRICE_TOTAL, max: MAX_PRICE_TOTAL } : 
+          { min: MIN_PRICE_NIGHTLY, max: MAX_PRICE_NIGHTLY };
+          
+        return {
+          range: [
+            Math.max(currentConstraints.min, min),
+            Math.min(currentConstraints.max, max)
+          ],
+          isTotal
+        };
+      }
+    }
+    
+    // If it's a single value, treat it as max budget
+    const singleValue = parseInt(cleanBudgetStr);
+    if (!isNaN(singleValue)) {
+      const currentConstraints = isTotal ? 
+        { min: MIN_PRICE_TOTAL, max: MAX_PRICE_TOTAL } : 
+        { min: MIN_PRICE_NIGHTLY, max: MAX_PRICE_NIGHTLY };
+        
+      return {
+        range: [currentConstraints.min, Math.min(currentConstraints.max, singleValue)],
+        isTotal
+      };
+    }
+    
+    return { 
+      range: isTotal ? [1000, 5000] : [100, 300], 
+      isTotal 
+    }; // Different defaults based on type
+  }
+  
+  // Format budget string for the backend
+  function formatBudgetForBackend(range: [number, number], isTotal: boolean): string {
+    const prefix = isTotal ? 'total:' : 'nightly:';
+    return `${prefix}${range[0]}-${range[1]}`;
+  }
+  
   // Initialize calendar with the minimum date but no default selection
   onMount(() => {
     // We no longer set default dates here
@@ -161,6 +276,13 @@
       }
     }
 
+    // Initialize price range from budget if available
+    if (budget) {
+      const parsedBudget = parseBudget(budget);
+      priceRange = parsedBudget.range;
+      isTotalBudget = parsedBudget.isTotal;
+    }
+    
     // Debug mode
     if (import.meta.env.DEV) {
       console.log('Google Maps API Key:', PUBLIC_GOOGLE_MAPS_API_KEY);
@@ -471,6 +593,11 @@
     });
   }
   
+  // Update budget string when price range changes
+  $effect(() => {
+    budget = formatBudgetForBackend(priceRange, isTotalBudget);
+  });
+  
   // Handler for saving the preference and submitting the form
   function handleSubmit() {
     // Validate date before submitting
@@ -492,6 +619,9 @@
       // Reload the favorite tags to show the updated list next time
       loadFavoriteTags();
     }
+    
+    // Update budget with current price range values and budget type
+    budget = formatBudgetForBackend(priceRange, isTotalBudget);
     
     // Save the preference if it's non-empty and proceed with submission
     if (preferences.trim()) {
@@ -548,64 +678,137 @@
 </script>
 
 <div class="grid grid-cols-1 gap-5">
+
+  <!-- When & Where Section - Now as individual boxes -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-    <div class="relative">
-      <Popover.Root>
-        <Popover.Trigger asChild let:builder>
-          <Button
-            variant="outline"
-            class={cn(
-              "w-full h-12 justify-start text-left hover:bg-primary/10 hover:text-muted-foreground",
-              !dateRange && "text-muted-foreground",
-              dateError && "border-red-500 focus:ring-red-500"
-            )}
-            builders={[builder]}
-          >
-            <Calendar class="mr-2 h-5 w-5 text-muted-foreground" />
-            {#if dateRange}
-              {dateRange}
-            {:else}
-              Check-in - Check-out
-            {/if}
-          </Button>
-        </Popover.Trigger>
-        <Popover.Content class="w-auto p-3" align="start">
-          <div class="space-y-3">
-            <RangeCalendar
-              bind:value={calendarValue}
-              bind:startValue
-              initialFocus
-              numberOfMonths={2}
-              minValue={minDate}
-            />
+    <!-- Date Selection Box -->
+    <div class="border rounded-md p-4 bg-card">
+      <div class="flex items-center gap-2 mb-3">
+        <Calendar class="h-5 w-5 text-primary" />
+        <h3 class="font-medium">When</h3>
+        <span class="ml-auto text-sm text-muted-foreground">Choose your stay dates</span>
+      </div>
+      
+      <div class="relative">
+        <Popover.Root>
+          <Popover.Trigger asChild let:builder>
+            <Button
+              variant="outline"
+              class={cn(
+                "w-full h-12 justify-start text-left hover:bg-primary/10 hover:text-muted-foreground",
+                !dateRange && "text-muted-foreground",
+                dateError && "border-red-500 focus:ring-red-500"
+              )}
+              builders={[builder]}
+            >
+              <Calendar class="mr-2 h-5 w-5 text-muted-foreground" />
+              {#if dateRange}
+                {dateRange}
+              {:else}
+                Check-in - Check-out
+              {/if}
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content class="w-auto p-3" align="start">
+            <div class="space-y-3">
+              <RangeCalendar
+                bind:value={calendarValue}
+                bind:startValue
+                initialFocus
+                numberOfMonths={2}
+                minValue={minDate}
+              />
+            </div>
+          </Popover.Content>
+        </Popover.Root>
+        {#if dateError}
+          <div class="text-red-500 text-sm mt-1 flex items-center gap-1.5">
+            <AlertCircle size={14} />
+            <span>{dateError}</span>
           </div>
-        </Popover.Content>
-      </Popover.Root>
-      {#if dateError}
-        <div class="text-red-500 text-sm mt-1 flex items-center gap-1.5">
-          <AlertCircle size={14} />
-          <span>{dateError}</span>
-        </div>
-      {/if}
+        {/if}
+      </div>
     </div>
     
-    <div class="relative">
-      <LocationCombobox 
-        bind:value={destination}
-        placeholder="Location..."
-        onSelect={handleLocationSelect}
-        class="h-12"
-      />
-      <div class="mt-1 text-xs text-muted-foreground">
-        You can type any location or select from suggestions
+    <!-- Location Selection Box -->
+    <div class="border rounded-md p-4 bg-card">
+      <div class="flex items-center gap-2 mb-3">
+        <Search class="h-5 w-5 text-primary" />
+        <h3 class="font-medium">Where</h3>
+        <span class="ml-auto text-sm text-muted-foreground">Enter your destination</span>
+      </div>
+      
+      <div class="relative">
+        <LocationCombobox 
+          bind:value={destination}
+          placeholder="Location..."
+          onSelect={handleLocationSelect}
+          class="h-12"
+        />
+        <div class="mt-1 text-xs text-muted-foreground">
+          You can type any location or select from suggestions
+        </div>
       </div>
     </div>
   </div>
+
+    <!-- Budget Range Slider - Moved to the top -->
+    <div class="border rounded-md p-4 bg-card">
+      <div class="flex items-center gap-2 mb-3">
+        <DollarSign class="h-5 w-5 text-primary" />
+        <h3 class="font-medium">Budget Range</h3>
+        <span class="ml-auto text-sm text-muted-foreground">Drag both handles to set your minimum and maximum budget</span>
+      </div>
+      
+      <!-- Tab-like system for nightly vs total -->
+      <div class="mb-5 max-w-xl">
+        <div class="grid grid-cols-2 w-full gap-4">
+          <button
+            type="button"
+            onclick={() => updateBudgetType(false)}
+            class={cn(
+              "py-2.5 text-sm font-medium transition-colors rounded-full",
+              !isTotalBudget 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-primary/10 text-muted-foreground hover:bg-muted/80"
+            )}
+          >
+            Nightly Price
+          </button>
+          <button 
+            type="button"
+            onclick={() => updateBudgetType(true)}
+            class={cn(
+              "py-2.5 text-sm font-medium transition-colors rounded-full",
+              isTotalBudget 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-primary/10 text-muted-foreground hover:bg-primary/20"
+            )}
+          >
+            Total Stay Price
+          </button>
+        </div>
+        
+        <div class="p-4 pt-5">
+          <Slider 
+            class=" px-4 pt-1"
+            bind:value={priceRange}
+            min={isTotalBudget ? MIN_PRICE_TOTAL : MIN_PRICE_NIGHTLY}
+            max={isTotalBudget ? MAX_PRICE_TOTAL : MAX_PRICE_NIGHTLY}
+            step={isTotalBudget ? PRICE_STEP_TOTAL : PRICE_STEP_NIGHTLY}
+            formatValue={formatRawPrice}
+          />
+        
+        </div>
+      </div>
+    </div>
   
   {#if showDebug && import.meta.env.DEV}
     <div class="bg-muted p-3 rounded-md text-xs">
       <div><strong>Google Maps API Key:</strong> {PUBLIC_GOOGLE_MAPS_API_KEY || 'Not set'}</div>
       <div><strong>Current destination value:</strong> {destination || 'Not set'}</div>
+      <div><strong>Current price range:</strong> {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}</div>
+      <div><strong>Budget string:</strong> {budget}</div>
       <div class="mt-2">
         <strong>Favorite Tags Debug:</strong>
         <div class="flex gap-2 mt-1">
@@ -875,7 +1078,7 @@
 
   <Button 
     onclick={handleSubmit}
-    class="h-12 button-gradient mt-1 text-base"
+    class="h-12 button-gradient mt-4 text-base"
     disabled={!destination || !dateRange || dateError !== null}
     data-debug={`dest:${!!destination} date:${!!dateRange} err:${dateError !== null}`}
   >
