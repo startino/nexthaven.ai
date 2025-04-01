@@ -217,15 +217,12 @@ class EvaluateAgent:
                     "reasoning": <reasoning; detailed reasoning behind the score, explaining how the property matches or doesn't match the user's preferences>,
                     "score": <score; number from 1 to 100>
                 }}
-                Return your evaluation Result in the exact JSON format:
-                {{
-                    "reasoning": <reasoning; detailed reasoning behind the score, explaining how the property matches or doesn't match the user's preferences>,
-                    "score": <score; number from 1 to 100>
-                }}
 
                 You are forbidden from scoring a property a 0, at least give it a 1.
                 You must NOT FORGET to provide a score in your Result. Bad things will happen if you forget.
                 
+                You do not need to touch on the price aspect.
+
                 You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
                 This reasoning will be shown to the user to help them understand why this property received its score.
                 Be specific about which preferences were met and which weren't.
@@ -243,35 +240,7 @@ class EvaluateAgent:
                     )
                 ]
             )
-            # prompt = ChatPromptTemplate(
-            #     [
-            #         SystemMessage(
-            #             content=f"""You are a professional property analyst.
-            #     Evaluate this property against the requirements and provide a score and analysis.
-                
-            #     Analyze the property based on these criteria:
-            #     - Price: Does it match the budget?
-            #     - Location: Is it in the desired location?
-            #     - Rooms: Does it have the required number of rooms?
-            #     - Amenities: Does it have the requested amenities?
-            #     - Reviews: Are the reviews positive?
-                
-            #     Property details: {property_data}
-            #     Image information: {image_analysis}
-                
-            #     Return a property match with a score between 0-100 where 100 is a perfect match.
-            #     Your score output should be just the number.
-                
-            #     Provide objective reasoning for your score, explaining how well the property matches each criterion.
-            #     Format your reasoning as a clear list with checkmark emojis as appropriate.
-            #     """
-            #         ),
-            #         HumanMessage(
-            #             content=f"""Please evaluate this property based on these requirements: {str(user_request)}"""
-            #         )
-            #     ]
-            # )
-            
+
             # Create the evaluation chain
             chain = (
                 prompt 
