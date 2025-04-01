@@ -489,7 +489,8 @@
 			if (budget && typeof budget === 'string') {
 				console.log('Raw budget string:', budget);
 				
-				// Remove the prefix to get just the range values
+				// Check if this is a nightly or total budget
+				const isNightly = budget.startsWith('nightly:');
 				const isTotal = budget.startsWith('total:');
 				const rangeString = budget.replace(/^(nightly:|total:)/, '');
 				
@@ -502,11 +503,45 @@
 					const max = parseInt(maxStr, 10);
 					
 					if (!isNaN(min) && !isNaN(max)) {
-						// Ensure min and max are valid numbers, with min <= max, and both are integers
-						budgetValue = {
-							min: Math.max(0, Math.floor(min)),
-							max: Math.max(Math.floor(min) + 1, Math.floor(max))
-						};
+						// If this is a nightly budget, calculate the total based on nights
+						if (isNightly) {
+							// Calculate nights from date range
+							let nights = 7; // Default to 7 nights if we can't calculate
+							
+							try {
+								if (dateRange) {
+									// Try to parse dates from the range
+									const parsed = parseDateRange(dateRange);
+									if (parsed.startDate && parsed.endDate) {
+										const startDate = new Date(parsed.startDate);
+										const endDate = new Date(parsed.endDate);
+										const timeDiff = endDate.getTime() - startDate.getTime();
+										nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+										
+										// Ensure nights is at least 1 and a reasonable number
+										nights = Math.max(1, Math.min(nights, 90));
+									}
+								}
+							} catch (e) {
+								console.error('Error calculating nights from date range:', e);
+								// Keep default 7 nights
+							}
+							
+							console.log(`Converting nightly budget to total using ${nights} nights`);
+							
+							// Multiply nightly values by number of nights to get total
+							budgetValue = {
+								min: Math.max(0, Math.floor(min * nights)),
+								max: Math.max(Math.floor(min * nights) + 1, Math.floor(max * nights))
+							};
+						} else {
+							// If it's already a total budget, use as is
+							budgetValue = {
+								min: Math.max(0, Math.floor(min)),
+								max: Math.max(Math.floor(min) + 1, Math.floor(max))
+							};
+						}
+						
 						console.log('Parsed budget values:', budgetValue);
 					} else {
 						console.error('Failed to parse budget range values. Using defaults instead.', { minStr, maxStr });
@@ -528,7 +563,7 @@
 				};
 			}
 			
-			console.log('Final budget being sent to API:', budgetValue);
+			console.log('Final TOTAL budget being sent to API:', budgetValue, '(API only accepts total budgets)');
 			
 			// Set the search query to the store for use in the results
 			setSearchQuery({

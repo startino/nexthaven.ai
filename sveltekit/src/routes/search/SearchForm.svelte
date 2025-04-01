@@ -242,6 +242,8 @@
   
   // Format budget string for the backend
   function formatBudgetForBackend(range: [number, number], isTotal: boolean): string {
+    // Note: We support both nightly and total budgets in the UI
+    // But the API will convert nightly to total based on number of nights
     const prefix = isTotal ? 'total:' : 'nightly:';
     
     // Get current constraints
