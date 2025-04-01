@@ -110,6 +110,7 @@ class EvaluateAgent:
             property_data["gallery"] = []
             property_data["image"] = ""
             property_data["source"] = ""
+            property_data["price"] = ""
     
             # Create the task for this property
             task = self._evaluate_single_property(
@@ -199,18 +200,7 @@ class EvaluateAgent:
                 [
                     SystemMessage(
                         content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
-                Evaluate this property against the my requirements and return a match score and analysis.
-                
-                Analyze the property based on the following criteria:
-                - Price:
-                  - Does it match the user's budget? (Don't focus too much on nightly price, focus on the total price.)
-                  - The price is a big factor in the score, if the price is too high, the score should be quite low, unless everything else is perfect.
-                  - If the price is below the user's budget, the score can still be high.
-                - Location: Is it in the desired location?
-                - Rooms: Does it have the required number of rooms?
-                - Amenities: Does it have the requested amenities?
-                - Reviews: Are the reviews positive?
-                - Style and Vibe: Does the property match the user's style preferences?
+                Evaluate this property against the requirements and preferences and return a match score and analysis.
                 
                 Property: {property_data}
                 Image Analysis: {image_analysis}
@@ -223,7 +213,7 @@ class EvaluateAgent:
                 This reasoning will be shown to the user to help them understand why this property received its score.
                 Be specific about which preferences were met and which weren't.
                 Format this as a list of sentences, with emojis for each item.
-                Make the emojis relevant to the item (like for price, use a dollar emoji, for location, use a map emoji, 📌 for summary, etc.) and scoring of that attribute.
+                Make the emojis relevant to the item (for location, use a map emoji, 📌 for summary, etc.) and scoring of that attribute.
                 Don't use thumbsup, thumsdown, checkmark, or any generic emojis.
                 Don't use "-" or "•" or "*" or any other bullet point.
                 Use a colon ":" to separate the item and the score.

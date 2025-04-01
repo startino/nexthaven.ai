@@ -21,6 +21,7 @@
   import { LocationCombobox } from "$lib/components/ui/combobox";
   import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
   import { ScrollArea } from "$lib/components/ui/scroll-area";
+  import { getTopFavoriteTags, trackTagsUsage } from './favourite-filters';
 
   // Form inputs  
   let { destination = $bindable(''), dateRange = $bindable(''), budget = $bindable(''), 
@@ -43,25 +44,82 @@
   let tagInputValue = $state('');
   let selectedTags = $state<string[]>([]);
   let editingTagIndex = $state<number | null>(null);
+  let favoriteUserTags = $state<string[]>([]);
   
   // Define preset tags
-  const presetTagCategories = [
+  const presetTagCategories = $state([
     {
       name: 'Your Favorites',
       icon: Heart,
-      tags: ['Natural light', 'Spacious rooms', 'Updated bathroom', 'Furnished', 'Pet friendly']
+      tags: [] // Will be populated from favoriteUserTags
     },
     {
       name: 'Most Popular',
       icon: TrendingUp,
-      tags: ['Modern kitchen', 'High-speed WiFi', 'Quiet neighborhood', 'Close to public transport', 'Hardwood floors']
+      tags: ['Work area', 'Ergonomic chair', 'Modern bathroom', 'High-speed WiFi', 'Pool', 'Quiet neighborhood', 'Hardwood floors', 'Private balcony']
     },
     {
       name: 'Others',
       icon: Tag,
-      tags: ['Open floor plan', 'Walk-in closet', 'Private balcony', 'Stainless steel appliances', 'Central AC', 'Garden view', 'Garage included', 'Smart home', 'Pool access', 'Gym access']
+      tags: ['Open floor plan', 'Furnished', 'Pet friendly', 'Washer/dryer', 'Walk-in closet']
     }
-  ];
+  ]);
+  
+  // Additional tags that can be shown with "Show more"
+  const additionalOtherTags = $state([
+    'Waterfront', 'Mountain view', 'Elevator access', 'Doorman', 'Parking included', 
+    'EV charging', 'Energy efficient', 'Wheelchair accessible', 'Fitness center', 
+    'Rooftop deck', 'Storage space', 'Bike storage', 'Clubhouse', 'Tennis court',
+    'Business center', 'Guest parking', 'Concierge service', 'Smart home',
+    'Pool access', 'Garden view', 'Garage included', 'Stainless steel appliances',
+    'Air conditioning', 'Heating', 'Fireplace', 'Game room', 'Movie room',
+    'Hot tub', 'Sauna', 'Near subway', 'Near bus stop', 'Near hospital'
+  ]);
+  
+  // Number of additional tags to show at a time
+  const TAGS_PER_PAGE = 11;
+  
+  // State to track how many additional tags are currently shown
+  let visibleAdditionalTags = $state(0);
+  
+  // State to track if we're showing additional tags
+  let showAdditionalTags = $state(false);
+  
+  // Function to toggle additional tags
+  function toggleAdditionalTags() {
+    if (!showAdditionalTags) {
+      // First time showing tags - start with initial batch
+      showAdditionalTags = true;
+      if (visibleAdditionalTags === 0) {
+        visibleAdditionalTags = TAGS_PER_PAGE;
+      }
+    } else {
+      // Already showing some tags
+      if (hasMoreTagsToShow()) {
+        // Show more tags
+        visibleAdditionalTags += TAGS_PER_PAGE;
+      } else {
+        // All tags are shown, hide them
+        showAdditionalTags = false;
+        visibleAdditionalTags = 0;
+      }
+    }
+  }
+  
+  // Compute the list of additional tags that should be visible
+  function getVisibleAdditionalTags() {
+    return additionalOtherTags.slice(0, visibleAdditionalTags);
+  }
+  
+  // Check if there are more tags to show
+  function hasMoreTagsToShow() {
+    return visibleAdditionalTags < additionalOtherTags.length;
+  }
+  
+  // Update favorite tags category when the favorites list changes
+  $effect(() => {
+    presetTagCategories[0].tags = favoriteUserTags;
+  });
   
   // Set up DateFormatter for displaying dates
   const df = new DateFormatter("en-US", {
@@ -113,7 +171,15 @@
       const prefTags = preferences.split(',').map((tag: string) => tag.trim()).filter(Boolean);
       selectedTags = prefTags;
     }
+
+    // Load favorite tags from localStorage
+    loadFavoriteTags();
   });
+
+  // Function to load favorite tags
+  function loadFavoriteTags() {
+    favoriteUserTags = getTopFavoriteTags(7);
+  }
 
   // Update calendar value when dateRange changes
   $effect(() => {
@@ -225,7 +291,7 @@
     }
   }
   
-  function addTag(tag: string) {
+  function addTag(tag: string, isPresetTag = false) {
     // Don't add empty tags
     if (!tag.trim()) {
       return;
@@ -278,6 +344,12 @@
     // Only keep input visible if we're not editing a tag
     if (editingTagIndex === null) {
       showTagInput = true; // Keep input visible for additional tags
+    }
+    
+    // If this was a preset tag, track its usage immediately
+    if (isPresetTag) {
+      trackTagsUsage([tag.trim()]);
+      loadFavoriteTags();
     }
   }
 
@@ -409,6 +481,13 @@
     
     dateError = null;
     
+    // Track the used tags to update favorite tags
+    if (selectedTags.length > 0) {
+      trackTagsUsage(selectedTags);
+      // Reload the favorite tags to show the updated list next time
+      loadFavoriteTags();
+    }
+    
     // Save the preference if it's non-empty and proceed with submission
     if (preferences.trim()) {
       savePreference(preferences, previousPreferences);
@@ -519,6 +598,37 @@
     <div class="bg-muted p-3 rounded-md text-xs">
       <div><strong>Google Maps API Key:</strong> {PUBLIC_GOOGLE_MAPS_API_KEY || 'Not set'}</div>
       <div><strong>Current destination value:</strong> {destination || 'Not set'}</div>
+      <div class="mt-2">
+        <strong>Favorite Tags Debug:</strong>
+        <div class="flex gap-2 mt-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            class="h-6 text-xs"
+            onclick={() => { 
+              const demoTags = ['Modern kitchen', 'Spacious rooms', 'Hardwood floors'];
+              trackTagsUsage(demoTags);
+              loadFavoriteTags();
+            }}
+          >
+            Add Demo Tags
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            class="h-6 text-xs"
+            onclick={() => { 
+              import('./favourite-filters').then(module => {
+                module.clearFavoriteTags();
+                loadFavoriteTags();
+              });
+            }}
+          >
+            Clear Favorites
+          </Button>
+        </div>
+        <div class="mt-1"><strong>Current favorite tags:</strong> {favoriteUserTags.join(', ') || 'None'}</div>
+      </div>
     </div>
   {/if}
   
@@ -661,33 +771,93 @@
     <!-- Suggested tags section - now below the tag input -->
     <div class="mt-3 border rounded-md p-3 pt-2 bg-background/50">
       <!-- Preset tag categories -->
-      <ScrollArea class="max-h-[180px]">
-        <div class="space-y-3 pr-2">
-          {#each presetTagCategories as category}
+      <ScrollArea class="max-h-[220px] sm:max-h-[280px] md:max-h-[320px]">
+        <div class="space-y-4 pr-2">
+          {#each presetTagCategories as category, categoryIndex}
             <div class="space-y-1.5">
-              <div class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <svelte:component this={category.icon} class="h-3.5 w-3.5" />
-                <span>{category.name}</span>
-              </div>
-              <div class="flex flex-wrap gap-1.5">
-                {#each category.tags as tag}
-                  <button 
-                    onclick={() => addTag(tag)}
-                    class={cn(
-                      "px-2 py-1 rounded-full text-xs border transition-colors",
-                      selectedTags.includes(tag) 
-                        ? "bg-primary/10 border-primary/20 text-primary" 
-                        : "bg-background border-border hover:bg-primary/5 hover:border-primary/10"
-                    )}
-                    disabled={selectedTags.includes(tag)}
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <svelte:component this={category.icon} class="h-3.5 w-3.5" />
+                  <span>{category.name}</span>
+                </div>
+                
+                <!-- Show more button for the "Others" category -->
+                {#if categoryIndex === 2}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onclick={toggleAdditionalTags}
+                    class="h-5 text-[10px] py-0 px-2 text-muted-foreground hover:text-foreground flex items-center gap-1"
                   >
-                    {#if selectedTags.includes(tag)}
-                      <Check class="inline-block h-3 w-3 mr-1" />
+                    {#if !showAdditionalTags}
+                      <Plus class="h-3 w-3" />
+                      Show tags
+                    {:else if hasMoreTagsToShow()}
+                      <Plus class="h-3 w-3" />
+                      Show more ({additionalOtherTags.length - visibleAdditionalTags})
+                    {:else}
+                      <X class="h-3 w-3" />
+                      Hide extra
                     {/if}
-                    {tag}
-                  </button>
-                {/each}
+                  </Button>
+                {/if}
               </div>
+              
+              {#if categoryIndex === 0 && category.tags.length === 0}
+                <div class="text-xs text-muted-foreground px-2 py-1">
+                  Your most used tags will appear here as you search.
+                </div>
+              {:else}
+                <div class="flex flex-wrap gap-1.5">
+                  {#each category.tags as tag}
+                    <button 
+                      onclick={() => addTag(tag, true)}
+                      class={cn(
+                        "px-2 py-1 rounded-full text-xs border transition-colors",
+                        selectedTags.includes(tag) 
+                          ? "bg-primary/10 border-primary/20 text-primary" 
+                          : "bg-background border-border hover:bg-primary/5 hover:border-primary/10"
+                      )}
+                      disabled={selectedTags.includes(tag)}
+                    >
+                      {#if selectedTags.includes(tag)}
+                        <Check class="inline-block h-3 w-3 mr-1" />
+                      {/if}
+                      {tag}
+                    </button>
+                  {/each}
+                  
+                  <!-- Additional tags for "Others" category -->
+                  {#if categoryIndex === 2 && showAdditionalTags}
+                    <div transition:slide={{ duration: 200 }} class="w-full flex flex-wrap gap-1.5 pt-1.5 mt-1.5 border-t border-border/30">
+                      {#each getVisibleAdditionalTags() as tag, i}
+                        <button 
+                          transition:fade|local={{ duration: 150, delay: i * 20 }}
+                          onclick={() => addTag(tag, true)}
+                          class={cn(
+                            "px-2 py-1 rounded-full text-xs border transition-colors",
+                            selectedTags.includes(tag) 
+                              ? "bg-primary/10 border-primary/20 text-primary" 
+                              : "bg-background border-border hover:bg-primary/5 hover:border-primary/10"
+                          )}
+                          disabled={selectedTags.includes(tag)}
+                        >
+                          {#if selectedTags.includes(tag)}
+                            <Check class="inline-block h-3 w-3 mr-1" />
+                          {/if}
+                          {tag}
+                        </button>
+                      {/each}
+                      
+                      {#if !hasMoreTagsToShow() && additionalOtherTags.length > 0}
+                        <div transition:fade|local class="w-full text-[10px] text-muted-foreground/70 text-center mt-2 italic">
+                          All {additionalOtherTags.length} tags shown
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
+                </div>
+              {/if}
             </div>
           {/each}
         </div>
@@ -704,4 +874,15 @@
     <Search class="h-5 w-5 mr-2" />
     Discover Properties
   </Button>
+  
+  {#if import.meta.env.DEV}
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      onclick={toggleDebug}
+      class="absolute top-0 right-0 text-xs opacity-50 hover:opacity-100"
+    >
+      {showDebug ? 'Hide Debug' : 'Show Debug'}
+    </Button>
+  {/if}
 </div> 
