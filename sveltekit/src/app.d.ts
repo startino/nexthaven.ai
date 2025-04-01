@@ -8,9 +8,35 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			supabase: SupabaseClient<Database>;
-			getSession(): Promise<Session | null>;
+			session: Session | null;
+			getSession: () => Promise<Session | null>;
+			subscriptionStatus: {
+				isActive: boolean;
+				planId?: string;
+				planName?: string;
+				currentPeriodEnd?: string;
+				isInTrial?: boolean;
+				trialEnd?: string;
+			};
+			isTrialEligible: boolean;
+			hasExpiredTrial: boolean;
+			isAnonymous: boolean;
 		}
-		// interface PageData {}
+		interface PageData {
+			session: Session | null;
+			supabase: SupabaseClient<Database>;
+			subscriptionStatus?: {
+				isActive: boolean;
+				planId?: string;
+				planName?: string;
+				currentPeriodEnd?: string;
+				isInTrial?: boolean;
+				trialEnd?: string;
+			};
+			isTrialEligible?: boolean;
+			hasExpiredTrial?: boolean;
+			isAnonymous?: boolean;
+		}
 		// interface PageState {}
 		// interface Platform {}
 	}
@@ -32,10 +58,7 @@ declare global {
 				interface AutocompleteService {
 					getPlacePredictions(
 						request: AutocompletionRequest,
-						callback?: (
-							predictions: AutocompletePrediction[],
-							status: PlacesServiceStatus
-						) => void
+						callback?: (predictions: AutocompletePrediction[], status: PlacesServiceStatus) => void
 					): Promise<AutocompletionResponse>;
 				}
 

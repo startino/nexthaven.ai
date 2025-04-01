@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
-	import { LogOut, User, CreditCard, Crown, Search, History, Home, Folder, Menu, X } from 'lucide-svelte';
+	import { LogOut, User, CreditCard, Crown, Search, History, Home, Folder, Menu, X, ArrowUp, AlertTriangle, Bug } from 'lucide-svelte';
 	import { TrialBadge } from '$lib/components/trial-badge';
 	import * as Sheet from '$lib/components/ui/sheet';
 
@@ -10,8 +10,42 @@
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
 	}
+	import { isAnonymousUser } from '$lib/supabase/auth';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 
-	console.log("page.data", page.data);
+	// Check if user is anonymous
+	let isAnonymous = $state(false);
+	
+	// Run this on component initialization
+	onMount(() => {
+		checkAnonymousStatus();
+		
+		// Debug log
+		console.log('[NavBar] Initial mount, checking anonymous status');
+	});
+	
+	// Also run this when page data changes
+	$effect(() => {
+		if (page.data) {
+			checkAnonymousStatus();
+		}
+	});
+	
+	// Function to check if user is anonymous
+	function checkAnonymousStatus() {
+		// Check if the session and user exist
+		if (page.data?.session?.user) {
+			// Use isAnonymousUser function
+			isAnonymous = isAnonymousUser(page.data.session.user);
+		} else {
+			isAnonymous = false;
+		}
+	}
+	
+	function handleSignUp() {
+		goto('/signup?convert=true');
+	}
 </script>
 
 <header class="w-full bg-white/5 backdrop-blur-md py-3 px-6 border-b border-white/10 fixed top-0 z-50">

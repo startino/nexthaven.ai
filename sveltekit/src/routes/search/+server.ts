@@ -1,33 +1,49 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { isAnonymousUser } from '$lib/supabase/auth';
+import {
+	checkAnonymousSearchLimit,
+	incrementAnonymousSearchCount
+} from '$lib/utils/anonymousSearch';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const { supabase } = locals;
-
-	// Check if the user is authenticated
-	const {
-		data: { session }
-	} = await supabase.auth.getSession();
-
+	const session = await locals.getSession();
 	if (!session) {
-		return json({ success: false, message: 'Unauthorized' }, { status: 401 });
+		return json({ success: false, message: 'Authentication required' }, { status: 401 });
 	}
 
 	try {
-		const requestData = await request.json();
-		const searchQuery = requestData.searchQuery;
+		const { supabase } = locals;
+		const body = await request.json();
+		const searchQuery = body.searchQuery;
 
-		if (!searchQuery) {
-			return json({ success: false, message: 'Search query is required' }, { status: 400 });
-		}
-
-		// Parse the search query JSON
+		// Parse the search data from the searchQuery string
 		const searchData = JSON.parse(searchQuery);
 
-		// Check if we already have an existing search with the same criteria
+		// Check if user is anonymous and has reached their search limit
+		if (isAnonymousUser(session.user)) {
+			const { hasReachedLimit, remainingSearches } = await checkAnonymousSearchLimit(
+				supabase,
+				session.user
+			);
+
+			if (hasReachedLimit) {
+				return json(
+					{
+						success: false,
+						limitReached: true,
+						message:
+							'Anonymous users are limited to 1 search. Please create an account to continue.'
+					},
+					{ status: 403 }
+				);
+			}
+		}
+
+		// Check for a recent identical search to avoid duplicates
 		const { data: existingSearches, error: searchError } = await supabase
 			.from('search_history')
-			.select('id')
+			.select('id, created_at')
 			.eq('user_id', session.user.id)
 			.eq('destination', searchData.query)
 			.eq('date_range', searchData.date)
@@ -56,6 +72,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (updateError) {
 				console.error('Error updating existing search:', updateError);
 			} else {
+				// If user is anonymous, increment their search count
+				if (isAnonymousUser(session.user)) {
+					await incrementAnonymousSearchCount(supabase, session.user.id);
+				}
+
 				return json({
 					success: true,
 					searchId: updatedSearch.id,
@@ -83,6 +104,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		if (insertError) {
 			console.error('Error saving search history:', insertError);
 			return json({ success: false, message: 'Failed to save search history' }, { status: 500 });
+		}
+
+		// If user is anonymous, increment their search count
+		if (isAnonymousUser(session.user)) {
+			await incrementAnonymousSearchCount(supabase, session.user.id);
 		}
 
 		return json({

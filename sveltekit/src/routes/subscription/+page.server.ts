@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load = (async ({ locals, url }) => {
 	const session = await locals.getSession();
 
 	// Redirect to login if not authenticated
@@ -34,4 +34,4 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			isTrialEligible
 		};
 	}
-};
+}) satisfies PageServerLoad;

@@ -10,7 +10,7 @@
   import { Badge } from '$lib/components/ui/badge';
   import { formatDateRange, parseDateRange, isValidDate, calculateStartDate } from './dateHelpers';
   import { savePreference } from './preferences';
-  import type { SavedPreference } from './types';
+  import type { SavedPreference, SearchFormParams } from './types';
   import { slide, fade } from 'svelte/transition';
   import { onMount } from 'svelte';
   import type { DateRange } from "bits-ui";
@@ -24,18 +24,23 @@
   import { getTopFavoriteTags, trackTagsUsage } from './favourite-filters';
   import { Slider } from '$lib/components/ui/slider';
 
-  // Form inputs  
-  let { destination = $bindable(''), dateRange = $bindable(''), budget = $bindable(''), 
-        selectedRooms = $bindable(1), preferences = $bindable(''), 
-        previousPreferences, onSubmit } = $props<{
-    destination: string;
-    dateRange: string;
-    budget: string;
-    selectedRooms: number;
-    preferences: string;
-    previousPreferences: SavedPreference[];
-    onSubmit: () => Promise<void>;
-  }>();
+  // Form inputs
+  let {
+    destination = '',
+    dateRange = '',
+    budget = '600',
+    selectedRooms = 1,
+    preferences = '',
+    isLoading = false,
+    previousPreferences = [],
+    onSubmit = () => {},
+    anonymousSearchInfo = {
+      isAnonymous: false,
+      hasReachedLimit: false,
+      remainingSearches: 1,
+      searchCount: 0
+    }
+  } = $props();
   
   // UI state
   let showPreviousPreferences = $state(false);
@@ -671,7 +676,7 @@
       savePreference(preferences, previousPreferences);
     }
     
-    // Actually submit the form
+    // Actually submit the form with all form params
     onSubmit();
   }
   
@@ -1121,12 +1126,21 @@
 
   <Button 
     onclick={handleSubmit}
-    class="h-12 button-gradient mt-4 text-base"
-    disabled={!destination || !dateRange || dateError !== null}
-    data-debug={`dest:${!!destination} date:${!!dateRange} err:${dateError !== null}`}
+    class={cn(
+      "h-12 mt-1 text-base",
+      anonymousSearchInfo.hasReachedLimit 
+        ? "bg-yellow-600 hover:bg-yellow-700 text-white" 
+        : "button-gradient"
+    )}
+    disabled={!destination || !dateRange || dateError !== null || isLoading}
+    data-debug={`dest:${!!destination} date:${!!dateRange} err:${dateError !== null} anonymous:${anonymousSearchInfo.isAnonymous} limit:${anonymousSearchInfo.hasReachedLimit}`}
   >
     <Search class="h-5 w-5 mr-2" />
-    Discover Properties
+    {#if anonymousSearchInfo.hasReachedLimit}
+      Create Account to Continue
+    {:else}
+      Discover Properties
+    {/if}
   </Button>
   
   {#if import.meta.env.DEV}
@@ -1138,5 +1152,16 @@
     >
       {showDebug ? 'Hide Debug' : 'Show Debug'}
     </Button>
+  {/if}
+
+  {#if anonymousSearchInfo.isAnonymous}
+    <div class="mt-3 text-xs flex items-center gap-1.5" class:text-yellow-500={!anonymousSearchInfo.hasReachedLimit} class:text-red-500={anonymousSearchInfo.hasReachedLimit}>
+      <AlertCircle class="h-3.5 w-3.5" />
+      {#if anonymousSearchInfo.hasReachedLimit}
+        <span>You've used your free search as an anonymous user. Create an account to get a full 14-day trial with unlimited searches.</span>
+      {:else}
+        <span>You have {anonymousSearchInfo.remainingSearches} search{anonymousSearchInfo.remainingSearches !== 1 ? 'es' : ''} remaining as an anonymous user.</span>
+      {/if}
+    </div>
   {/if}
 </div> 

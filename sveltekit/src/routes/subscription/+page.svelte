@@ -3,7 +3,7 @@
 	import { stripeService, PRICING_TIER } from '$lib/services/stripe';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { CheckCircle, AlertCircle, Crown, ArrowRight, CreditCard } from 'lucide-svelte';
+	import { CheckCircle, AlertCircle, Crown, ArrowRight, CreditCard, UserPlus } from 'lucide-svelte';
 	import { Separator } from '$lib/components/ui/separator';
 	import { goto } from '$app/navigation';
 	import { TrialBadge } from '$lib/components/trial-badge';
@@ -22,6 +22,7 @@
 	
 	// Subscription status
 	let isSubscribed = $state(data.subscriptionStatus?.isActive || false);
+	let isAnonymous = $state($page.data.isAnonymous || false);
 	let planName = $state(data.subscriptionStatus?.planName || '');
 	let currentPeriodEnd = $state(data.subscriptionStatus?.currentPeriodEnd
 		? new Date(data.subscriptionStatus.currentPeriodEnd).toLocaleDateString()
@@ -123,6 +124,12 @@
 		goto(redirectTo);
 	}
 	
+	// Handle navigation to create a permanent account
+	function handleCreateAccount() {
+		// Navigate to signup page with convert=true to indicate conversion from anonymous
+		goto(`/signup?convert=true&redirectTo=${encodeURIComponent(redirectTo || '/subscription')}`);
+	}
+	
 	// Effect to check for redirectTo in URL params when the page loads or changes
 	$effect(() => {
 		const urlRedirectTo = $page.url.searchParams.get('redirectTo');
@@ -172,29 +179,119 @@
 				<div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
 				<p class="mt-2">Processing your request...</p>
 			</div>
+		
+		<!-- Anonymous User Section -->
+		{:else if isAnonymous}
+			<div class="text-center">
+				<h1 class="text-2xl font-bold mb-4">Create a Permanent Account</h1>
+				<div class="mb-6 p-4 bg-amber-900/20 border border-amber-600/30 rounded-lg max-w-xl mx-auto">
+					<p class="text-amber-200">
+						You're currently using a temporary anonymous account. To subscribe to a premium plan, 
+						you'll need to create a permanent account first.
+					</p>
+				</div>
+				
+				<div class="bg-card border border-border rounded-lg p-8 max-w-xl mx-auto">
+					<div class="flex flex-col items-center gap-6">
+						<div class="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+							<UserPlus size={32} class="text-primary" />
+						</div>
+						
+						<div class="text-center max-w-md">
+							<h2 class="text-xl font-semibold mb-2">Benefits of a Permanent Account</h2>
+							<ul class="text-left space-y-2 mb-6">
+								<li class="flex items-start gap-2">
+									<span class="text-primary mt-1">✓</span>
+									<span>Access to premium features and subscription options</span>
+								</li>
+								<li class="flex items-start gap-2">
+									<span class="text-primary mt-1">✓</span>
+									<span>Save your favorite properties and searches</span>
+								</li>
+								<li class="flex items-start gap-2">
+									<span class="text-primary mt-1">✓</span>
+									<span>Retain your current data when you upgrade</span>
+								</li>
+								<li class="flex items-start gap-2">
+									<span class="text-primary mt-1">✓</span>
+									<span>Secure access from any device</span>
+								</li>
+							</ul>
+							
+							<Button 
+								class="w-full button-gradient" 
+								onclick={handleCreateAccount}
+							>
+								Create a Permanent Account
+							</Button>
+							
+							<p class="mt-4 text-sm text-muted-foreground">
+								Your temporary data will be transferred to your new account.
+							</p>
+						</div>
+					</div>
+				</div>
+				
+				<div class="mt-8">
+					<Button variant="outline" onclick={handleContinue}>
+						Continue with Temporary Account
+					</Button>
+				</div>
+			</div>
+		<!-- Subscribed User Section -->	
 		{:else if isSubscribed}
-			<!-- Content for subscribed users -->
-			<div class="mx-auto max-w-3xl p-6 bg-card rounded-xl border">
-				<div class="text-left mb-6">					
-					<h2 class="text-2xl font-bold mb-2">
-						{#if isInTrial}
-							Free Trial <span class="">Active</span>
-						{:else}
-							Premium Subscription Active
-						{/if} 
-					</h2>
-					<p class="text-muted-foreground text-sm mb-2">You have access to all premium features!</p>
+			<div class="text-center mb-8">
+				<div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+					<CheckCircle class="h-6 w-6 text-green-600" />
+				</div>
+				<h1 class="text-2xl font-bold">You're Subscribed!</h1>
+				<p class="text-muted-foreground mt-2">Thank you for being a premium subscriber.</p>
+				
+				<div class="mt-8 inline-block px-6 py-3 bg-card border border-border rounded-md">
+					<div class="flex flex-col items-start gap-1">
+						<div class="flex items-center justify-between w-full">
+							<span class="text-sm text-muted-foreground">Current Plan:</span>
+							<span class="font-semibold">{planName || 'Premium'}</span>
+						</div>
+						{#if currentPeriodEnd}
+							<div class="flex items-center justify-between w-full">
+								<span class="text-sm text-muted-foreground">Renewal Date:</span>
+								<span>{currentPeriodEnd}</span>
+							</div>
+						{/if}
+					</div>
+				</div>
+				
+				<div class="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+					<button 
+						type="button"
+						class="px-6 py-3 bg-gradient-to-r from-primaryp to-purple-600 text-white rounded-lg hover:from-secondary hover:to-secondary transition-all shadow-md"
+						onclick={handleManageSubscription}
+						disabled={isLoading}
+					>
+						{isLoading ? 'Loading...' : 'Manage Subscription'}
+					</button>
 					
-					{#if planName !== 'Free Trial' && planName != null}
-						<p class="text-sm text-primary">Plan: {planName}</p>
-					{/if}
+					<button 
+						type="button"
+						class="px-6 py-3 bg-card border border-border rounded-lg hover:bg-card/80 transition-all"
+						onclick={handleContinue}
+					>
+						Continue to App
+					</button>
+				</div>
+			</div>
+			
+		<!-- Trial User Section -->
+		{:else if isInTrial}
+			<div class="text-center">
+				<h1 class="text-2xl font-bold mb-4">Premium Trial</h1>
+				<p class="mb-8">You're currently enjoying your premium trial period.</p>
+				
+				<div class="flex flex-col items-center gap-4 mb-8">
+					<TrialBadge trialEndDate={data.subscriptionStatus?.trialEnd || ''} />
 					
-					{#if currentPeriodEnd && !isInTrial}
-						<p class="text-sm text-primary mb-4">Current period ends: {currentPeriodEnd}</p>
-					{/if}
-					
-					{#if isInTrial && trialEnd}
-						<!-- Enhanced trial information -->
+					{#if !isAnonymous}
 						<div class="mt-6 mb-6 w-full max-w-lg">
 							<div class="my-2 flex flex-col items-start gap-6">
 								<TrialBadge trialEndDate={data.subscriptionStatus?.trialEnd || ''} variant="large" />

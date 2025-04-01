@@ -4,14 +4,25 @@
 	import { Label } from "$lib/components/ui/label";
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { goto } from "$app/navigation";
+	import { Separator } from "$lib/components/ui/separator";
+	import { createSupabaseBrowserClient } from "$lib/supabase/client";
+	import { isAnonymousUser } from "$lib/supabase/auth";
 
 	let { data } = $props();
-	const { supabase } = data;
+	const supabase = createSupabaseBrowserClient();
 	
 	let email = $state("");
 	let password = $state("");
 	let isLoading = $state(false);
 	let errorMessage = $state("");
+	
+	// Check if user is already using an anonymous account
+	let isCurrentlyAnonymous = $state(false);
+	
+	$effect(async () => {
+		const { data: { session } } = await supabase.auth.getSession();
+		isCurrentlyAnonymous = session?.user ? isAnonymousUser(session.user) : false;
+	});
 	
 	async function handleLogin() {
 		isLoading = true;
@@ -36,7 +47,13 @@
 	<Card class="w-full max-w-md">
 		<CardHeader>
 			<CardTitle class="text-2xl text-center text-gradient">Sign In</CardTitle>
-			<CardDescription class="text-center">Enter your credentials to access your account</CardDescription>
+			<CardDescription class="text-center">
+				{#if isCurrentlyAnonymous}
+					You're using a temporary account. Sign in to access your data permanently.
+				{:else}
+					Enter your credentials to access your account
+				{/if}
+			</CardDescription>
 		</CardHeader>
 		<CardContent>
 			<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); handleLogin(); }}>
@@ -55,6 +72,22 @@
 					{isLoading ? 'Signing in...' : 'Sign In'}
 				</Button>
 			</form>
+			
+			{#if isCurrentlyAnonymous}
+				<div class="mt-6 p-3 bg-primary/10 rounded-lg border border-primary/20">
+					<p class="text-sm">
+						<strong>You're using a temporary account.</strong> <br>
+						Create a permanent account to keep your data and settings beyond the trial period.
+					</p>
+					<Button 
+						variant="outline" 
+						class="w-full mt-3" 
+						onclick={() => goto('/signup?convert=true')}
+					>
+						Upgrade to Permanent Account
+					</Button>
+				</div>
+			{/if}
 		</CardContent>
 		<CardFooter class="flex flex-col space-y-4">
 			<div class="text-sm text-center">

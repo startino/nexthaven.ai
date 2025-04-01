@@ -4,10 +4,52 @@
 	import { Label } from "$lib/components/ui/label";
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "$lib/components/ui/card";
 	import { goto } from "$app/navigation";
-	import { User, Mail, Key } from "lucide-svelte";
+	import { User, Mail, Key, ArrowUp, AlertTriangle } from "lucide-svelte";
+	import { isAnonymousUser } from "$lib/supabase/auth";
+	import { onMount } from "svelte";
 
 	let { data } = $props();
 	const { supabase, session } = data;
+	
+	// Check if the current user is anonymous
+	let isAnonymous = $state(false);
+	
+	// More reliable check using onMount and direct session data
+	onMount(async () => {
+		// Check directly if the email follows the anonymous pattern or has the is_anonymous flag
+		if (session?.user) {
+			// Use isAnonymousUser function first
+			isAnonymous = isAnonymousUser(session.user);
+			
+			// Additional direct checks if the function didn't detect it
+			if (!isAnonymous) {
+				const email = session.user.email || '';
+				const metadata = session.user.user_metadata || {};
+				const appMetadata = session.user.app_metadata || {};
+				
+				// Log for debugging
+				console.log("Direct anonymous check:", {
+					email,
+					metadata,
+					appMetadata
+				});
+				
+				// Check common patterns for anonymous users
+				if (
+					email.endsWith('@anonymous.user') || 
+					email.includes('anon') ||
+					metadata.is_anonymous === true ||
+					appMetadata.provider === 'anonymous' ||
+					!email.includes('@') // Some anonymous users might not have an email at all
+				) {
+					console.log("Detected anonymous user through direct checks");
+					isAnonymous = true;
+				}
+			}
+			
+			console.log("Final anonymous state:", isAnonymous);
+		}
+	});
 	
 	let email = $state(session?.user?.email || "");
 	let name = $state(session?.user?.user_metadata?.name || "");
@@ -19,6 +61,10 @@
 	let errorMessage = $state("");
 	let profileUpdateSuccess = $state("");
 	let profileUpdateError = $state("");
+	
+	function handleSignUp() {
+		goto('/signup?convert=true');
+	}
 	
 	async function handlePasswordChange() {
 		isLoading = true;
@@ -80,6 +126,48 @@
 <div class="container mx-auto py-8 px-4">
 	<div class="max-w-3xl mx-auto">		
 		<div class="space-y-6">
+			{#if isAnonymous}
+				<!-- Anonymous Account Warning -->
+				<Card class="bg-gradient-to-r from-amber-900/30 to-amber-800/20 border border-amber-500/30">
+					<CardHeader>
+						<CardTitle class="flex items-center gap-2 text-amber-400">
+							<AlertTriangle size={20} />
+							Temporary Account
+						</CardTitle>
+						<CardDescription class="text-amber-300/80">
+							You're currently using a temporary account with limited access
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div class="space-y-4">
+							<p class="text-sm">
+								Your temporary account provides basic access, but has some limitations:
+							</p>
+							<ul class="list-disc pl-5 text-sm space-y-1">
+								<li>Your data will be lost if you clear your browser data or use a different device</li>
+								<li>Some premium features are not available</li>
+								<li>Trial period is limited</li>
+							</ul>
+							<div class="bg-amber-500/10 p-4 rounded-lg border border-amber-500/30">
+								<div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+									<div>
+										<h3 class="font-medium text-base text-amber-400 mb-1">Create a permanent account</h3>
+										<p class="text-sm">Sign up now to keep all your data and unlock full access.</p>
+									</div>
+									<Button 
+										onclick={handleSignUp}
+										class="w-full sm:w-auto flex items-center gap-2"
+									>
+										<ArrowUp size={16} />
+										Sign Up
+									</Button>
+								</div>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			{/if}
+			
 			<!-- Profile Info -->
 			<Card class="bg-card max-w-3xl">
 				<CardHeader>
@@ -90,7 +178,7 @@
 					<CardDescription>View and manage your profile details</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form class="space-y-4" on:submit|preventDefault={updateProfile}>
+					<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); updateProfile(); }}>
 						<div class="space-y-2">
 							<Label for="name">Name</Label>
 							<Input id="name" type="text" bind:value={name} placeholder="Your name" />
@@ -103,7 +191,9 @@
 							<Label for="email">Email</Label>
 							<Input id="email" type="email" value={email} disabled class="bg-muted" />
 							<p class="text-xs text-muted-foreground">
-								This is the email address associated with your account.
+								{isAnonymous 
+									? "This is a temporary email. Sign up to set your own email address." 
+									: "This is the email address associated with your account."}
 							</p>
 						</div>
 						
@@ -122,43 +212,69 @@
 				</CardContent>
 			</Card>
 			
-			<!-- Change Password -->
-			<Card>
-				<CardHeader>
-					<CardTitle class="flex items-center gap-2">
-						<Key size={20} />
-						Change Password
-					</CardTitle>
-					<CardDescription>Update your account password</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<form class="space-y-4" on:submit|preventDefault={handlePasswordChange}>
-						<div class="space-y-2">
-							<Label for="newPassword">New Password</Label>
-							<Input id="newPassword" type="password" bind:value={newPassword} required />
-							<p class="text-xs text-muted-foreground">
-								Must be at least 6 characters.
-							</p>
+			<!-- Change Password (only for non-anonymous users) -->
+			{#if !isAnonymous}
+				<Card>
+					<CardHeader>
+						<CardTitle class="flex items-center gap-2">
+							<Key size={20} />
+							Change Password
+						</CardTitle>
+						<CardDescription>Update your account password</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); handlePasswordChange(); }}>
+							<div class="space-y-2">
+								<Label for="newPassword">New Password</Label>
+								<Input id="newPassword" type="password" bind:value={newPassword} required />
+								<p class="text-xs text-muted-foreground">
+									Must be at least 6 characters.
+								</p>
+							</div>
+							<div class="space-y-2">
+								<Label for="confirmPassword">Confirm New Password</Label>
+								<Input id="confirmPassword" type="password" bind:value={confirmPassword} required />
+							</div>
+							
+							{#if errorMessage}
+								<p class="text-sm text-red-500">{errorMessage}</p>
+							{/if}
+							
+							{#if successMessage}
+								<p class="text-sm text-green-500">{successMessage}</p>
+							{/if}
+							
+							<Button type="submit" class="button-gradient" disabled={isLoading}>
+								{isLoading ? 'Updating...' : 'Update Password'}
+							</Button>
+						</form>
+					</CardContent>
+				</Card>
+			{:else}
+				<!-- Password section for anonymous users -->
+				<Card class="border border-gray-700/50">
+					<CardHeader>
+						<CardTitle class="flex items-center gap-2 text-gray-400">
+							<Key size={20} />
+							Account Security
+						</CardTitle>
+						<CardDescription>Set a password for your account</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div class="p-4 bg-gray-800/40 rounded-lg">
+							<p class="text-sm">You'll be able to set a password after creating a permanent account.</p>
+							<Button 
+								onclick={handleSignUp}
+								variant="outline" 
+								class="mt-4"
+							>
+								Sign Up Now
+							</Button>
 						</div>
-						<div class="space-y-2">
-							<Label for="confirmPassword">Confirm New Password</Label>
-							<Input id="confirmPassword" type="password" bind:value={confirmPassword} required />
-						</div>
-						
-						{#if errorMessage}
-							<p class="text-sm text-red-500">{errorMessage}</p>
-						{/if}
-						
-						{#if successMessage}
-							<p class="text-sm text-green-500">{successMessage}</p>
-						{/if}
-						
-						<Button type="submit" class="button-gradient" disabled={isLoading}>
-							{isLoading ? 'Updating...' : 'Update Password'}
-						</Button>
-					</form>
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
+			{/if}
+			
 		</div>
 	</div>
 </div> 

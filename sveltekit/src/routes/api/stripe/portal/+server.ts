@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { SECRET_STRIPE_KEY } from '$env/static/private';
 import { PUBLIC_SITE_URL } from '$env/static/public';
+import { isAnonymousUser } from '$lib/supabase/auth';
 
 // Initialize Stripe
 const stripe = new Stripe(SECRET_STRIPE_KEY, {
@@ -14,6 +15,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const userSession = await locals.getSession();
 	if (!userSession?.user) {
 		error(401, 'Unauthorized');
+	}
+
+	// Check if user is anonymous
+	if (isAnonymousUser(userSession.user)) {
+		error(
+			403,
+			'Anonymous users cannot manage subscription plans. Please create a permanent account first.'
+		);
 	}
 
 	try {

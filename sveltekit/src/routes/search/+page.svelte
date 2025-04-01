@@ -23,12 +23,13 @@
 	import { X, MapPin } from 'lucide-svelte';
 		
 	// Import utilities
-	import { TEMPLATE_TEXT, loadPreviousPreferences } from './preferences';
+	import { TEMPLATE_TEXT, loadPreviousPreferences, savePreference } from './preferences';
 	import { parseDateRange, calculateStartDate, formatDateRange, isValidDate } from './dateHelpers';
+	import { saveSearchToSupabaseAndNavigate } from './searchData';
 	import { fade } from 'svelte/transition';
 	
 	// Import necessary types
-	import type { SavedPreference } from './types';
+	import type { SavedPreference, SearchFormParams } from './types';
 	
 	// Define interface for page data
 	interface PageData {
@@ -37,11 +38,23 @@
 		session?: any;
 		supabase?: any;
 		searchId?: string;
+		anonymousSearchInfo?: {
+			isAnonymous: boolean;
+			hasReachedLimit: boolean;
+			remainingSearches: number;
+			searchCount: number;
+		};
 	}
 	
 	// Get data from loader
 	let { data } = $props<{ data: PageData }>();
 	let searchId = $derived(data.searchId);
+	let anonymousSearchInfo = $derived(data.anonymousSearchInfo || {
+		isAnonymous: false,
+		hasReachedLimit: false,
+		remainingSearches: 1,
+		searchCount: 0
+	});
 	
 	// Local state
 	let destination = $state('');
@@ -449,28 +462,25 @@
 	}
 	
 	// Handle form submission for search
-	async function handleSearch() {
-		// Add debugging logs
-		console.log('Search button clicked with destination:', destination);
-		console.log('Destination type:', typeof destination, 'Length:', destination ? destination.length : 0);
-		
-		// Validate inputs
-		if (!destination || destination.trim() === '') {
+	async function handleSearch({ destination, dateRange, budget, selectedRooms, preferences, selectedPropertyType, selectedAmenities }: SearchFormParams) {
+		// Validation checks
+		if (!destination) {
 			setError('Please enter a location');
 			return;
 		}
 		
 		if (!dateRange) {
-			setError('Please enter dates for your stay');
+			setError('Please select dates for your trip');
 			return;
 		}
 		
-		if (!isValidDate(dateRange)) {
-			setError('Please enter valid dates for your stay');
+		if (anonymousSearchInfo.hasReachedLimit) {
+			setError('Anonymous users are limited to 1 search. Please create an account to continue.');
+			goto('/signup?redirect=/search');
 			return;
 		}
 		
-		// Reset error state
+		// Reset error and set loading state
 		setError(null);
 		
 		// Start the loading state and reset all search-related state variables
@@ -488,12 +498,6 @@
 			progressInterval = undefined;
 		}
 		
-		// Save user preference if not empty
-		if (preferences) {
-			previousPreferences = loadPreviousPreferences();
-		}
-		
-		// Prepare the search API query
 		try {
 			// Prepare budget value - parse from format like "nightly:70-200" or "total:500-2000"
 			let budgetValue = {
@@ -581,13 +585,13 @@
 			
 			console.log('Final TOTAL budget being sent to API:', budgetValue, '(API only accepts total budgets)');
 			
-			// Set the search query to the store for use in the results
+			// Save search query to store for use on results page
 			setSearchQuery({
 				destination,
 				dateRange,
 				budget: budgetValue,
 				preferences,
-				filters: {} // Removed filters, using tags instead
+				filters: {} // Using preferences instead of filters
 			});
 			
 			// Start the search session using queryProperties
@@ -614,9 +618,9 @@
 			// Set up SSE events connection for realtime updates
 			setupEventStream(sessionId);
 		} catch (error) {
-			console.error('Error starting search:', error);
+			console.error('Error during search:', error);
 			isSearching = false;
-			setError('Failed to start search. Please try again.');
+			setError('An error occurred during your search. Please try again.');
 		}
 	}
 	
@@ -650,13 +654,23 @@
 					
 					<!-- Search Inputs -->
 					<SearchForm
-						bind:destination
-						bind:dateRange
-						bind:budget
-						bind:selectedRooms
-						bind:preferences
+						{destination}
+						{dateRange}
+						{budget}
+						{preferences}
+						{selectedRooms}
 						{previousPreferences}
-						onSubmit={handleSearch}
+						isLoading={isSearching}
+						{anonymousSearchInfo}
+						onSubmit={() => handleSearch({
+							destination,
+							dateRange,
+							budget,
+							selectedRooms,
+							preferences,
+							selectedPropertyType: null,
+							selectedAmenities: []
+						})}
 					/>
 					
 					<!-- Search Progress Bar (when searching) -->
