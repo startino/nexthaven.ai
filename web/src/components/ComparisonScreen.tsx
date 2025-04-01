@@ -112,9 +112,14 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
               </div>
             )}
             {property.reasoning && (
-              <p className="text-xs text-gray-300 italic line-clamp-2 mt-2">
-               {property.reasoning.split('.')[0]}.
-              </p>
+              <div 
+                className="text-xs text-gray-300 italic line-clamp-2 mt-2"
+                dangerouslySetInnerHTML={{ 
+                  __html: property.reasoning.includes('<') 
+                    ? property.reasoning.split('</p>')[0] + '</p>' 
+                    : property.reasoning.split('.')[0] + '.'
+                }}
+              />
             )}
           </div>
           <ScoreCircle score={property.score} />
@@ -279,7 +284,10 @@ function ComparisonScreen({ properties, onWinnerSelected, onBack }: ComparisonSc
                   {selectedProperty.reasoning && (
                     <div className="space-y-3 p-4 bg-white/5 rounded-xl">
                       <h3 className="text-lg sm:text-xl font-semibold text-white/90">Match Analysis</h3>
-                      <p className="text-gray-300 leading-relaxed whitespace-pre-line text-sm sm:text-base">{selectedProperty.reasoning}</p>
+                      <div 
+                        className="text-gray-300 leading-relaxed text-sm sm:text-base"
+                        dangerouslySetInnerHTML={{ __html: selectedProperty.reasoning }}
+                      />
                     </div>
                   )}
 

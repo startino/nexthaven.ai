@@ -204,7 +204,7 @@ class EvaluateAgent:
                 [
                     SystemMessage(
                         content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
-                Evaluate this property against the requirements and preferences and return a match score and analysis.
+                Evaluate this property against the user's requirements and preferences and return a match score and analysis.
                 
                 Property: {property_data}
                 Image Analysis: {image_analysis}
@@ -215,25 +215,30 @@ class EvaluateAgent:
 
                 Return your evaluation Result in the exact JSON format:
                 {{
-                    "reasoning": <reasoning; detailed reasoning behind the score, explaining how the property matches or doesn't match the user's preferences>,
+                    "reasoning": <reasoning; detailed reasoning behind the score, explaining to the user why the property matches or doesn't match the their preferences>,
                     "score": <score; number from 1 to 100>
                 }}
+                Write your reasoning first. Then provide the score.
 
                 You are forbidden from scoring a property a 0, at least give it a 1.
                 
                 You do not need to touch on the price aspect.
                 Some attributes like price and name have been redacted so that they don't affect your reasoning.
 
-                You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
+                You must provide detailed reasoning for your score, explaining to the user why the property matches or doesn't match the their preferences.
                 This reasoning will be shown to the user to help them understand why this property received its score.
                 Be specific about which preferences were met and which weren't.
-                Format this as a list of sentences, with emojis for each item.
+                Format this as a list of sentences, with emojis for each item, in HTML format. Only use <p>, <strong>, tags.
                 Make the emojis relevant to the item (for location, use a map emoji, 📌 for summary, etc.) and scoring of that attribute.
                 Don't use thumbsup, thumsdown, checkmark, or any generic emojis.
                 Don't use "-" or "•" or "*" or any other bullet point.
                 Use a colon ":" to separate the item and the score.
                 Each item should be on a new line.
+
                 Start with their most unique and important preferences.
+                Don't give a summary. Don't repeat the same items.
+
+                For individual item ratings, score them out of 10 and format it as `<strong><emoji> <item>: <score>/10 </strong> - <explanation>`
                 """
                     ),
                     HumanMessage(

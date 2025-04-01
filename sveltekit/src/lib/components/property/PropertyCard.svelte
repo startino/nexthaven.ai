@@ -7,6 +7,7 @@
   import { createEventDispatcher } from 'svelte';
   import { AddToCollection } from '$lib/components/folder';
   import { Skeleton } from '$lib/components/ui/skeleton';
+  import { HtmlContent } from '$lib/components/ui/html-content';
 
   // Props
   let { property, showCollectionButton = true, isLoading = false } = $props<{ 
@@ -165,7 +166,9 @@
             <Skeleton class="h-4 w-3/4" />
           </div>
         {:else}
-          <span class="text-foreground/90 line-clamp-2">{property.reasoning}</span>
+          <div class="text-foreground/90 line-clamp-2 w-full">
+            <HtmlContent content={property.reasoning} />
+          </div>
         {/if}
       </div>
     </CardContent>

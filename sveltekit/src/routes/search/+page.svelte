@@ -352,6 +352,12 @@
 			progress = 0;
 			targetProgress = 0;
 			currentStep = 0;
+			currentStepName = undefined; // Explicitly reset the current step name
+			
+			// Clear any existing progress interval
+			if (progressInterval) {
+				clearInterval(progressInterval);
+			}
 			
 			// Start tracking progress
 			progressInterval = setInterval(updateProgressSmooth, 100);
@@ -467,10 +473,20 @@
 		// Reset error state
 		setError(null);
 		
-		// Start the loading state
+		// Start the loading state and reset all search-related state variables
 		isSearching = true;
 		progress = 0;
 		targetProgress = 0;
+		currentStep = 0;
+		currentStepName = undefined; // Explicitly reset the current step name to ensure loading indicators start fresh
+		streamedProperties = []; // Reset properties from previous search
+		propertyCount = 0; // Reset property count
+		
+		// Clear any existing progress interval
+		if (progressInterval) {
+			clearInterval(progressInterval);
+			progressInterval = undefined;
+		}
 		
 		// Save user preference if not empty
 		if (preferences) {

@@ -158,8 +158,7 @@
       {:else}
         <div class="text-sm text-muted-foreground flex items-center gap-1">
           <span class="flex items-center gap-1">
-            <Clock class="h-4 w-4" />
-            <span>Processing properties...</span>
+            <span>Our team is working on making the search faster!</span>
           </span>
         </div>
       {/if}

@@ -9,6 +9,7 @@
   import { AddToCollection } from '$lib/components/folder';
   import { page } from '$app/stores';
   import { CollectionService } from '$lib/services/collection.service';
+  import { HtmlContent } from '$lib/components/ui/html-content';
   
   // Props - simplified
   let { 
@@ -232,9 +233,10 @@
               <div class="flex-1">
                 <h3 class="text-lg font-medium mb-3">Why this property matches your preferences:</h3>
                 <div class="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                  <div class="text-sm whitespace-pre-line leading-relaxed">
-                    {property.reasoning}
-                  </div>
+                  <HtmlContent 
+                    content={property.reasoning} 
+                    className="text-sm leading-relaxed"
+                  />
                 </div>
                 
                 <div class="mt-4 space-y-2">
