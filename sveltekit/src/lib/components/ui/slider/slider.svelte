@@ -302,28 +302,37 @@
   </div>
   
   <!-- Editable input fields for min/max values -->
-  <div class="flex justify-between mt-1">
-    <div class="flex flex-row gap-1 items-center">
-        $
-      <Input
-        type="text"
-        bind:value={minInputValue}
-        onblur={() => handleInputBlur('min')}
-        onkeydown={(e) => handleInputKeyDown(e, 'min')}
-      class="w-20 place-items-center text-center"
-      aria-label="Minimum value"
-      />
+  <div class="flex justify-between mt-4">
+    <!-- Minimum value section -->
+    <div class="flex flex-col">
+      <label class="text-sm text-muted-foreground mb-1 text-center">Minimum</label>
+      <div class="relative">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2">$</span>
+        <Input
+          type="text"
+          bind:value={minInputValue}
+          onblur={() => handleInputBlur('min')}
+          onkeydown={(e) => handleInputKeyDown(e, 'min')}
+          class="w-32 pl-8 pr-4 rounded-full text-center"
+          aria-label="Minimum value"
+        />
+      </div>
     </div>
-    <div class="flex flex-row gap-1 items-center">
-        $
-      <Input
-        type="text"
-        bind:value={maxInputValue}
-        onblur={() => handleInputBlur('max')}
-        onkeydown={(e) => handleInputKeyDown(e, 'max')}
-        class="w-20 place-items-center text-center"
-        aria-label="Maximum value"
-      />
+    
+    <!-- Maximum value section -->
+    <div class="flex flex-col">
+      <label class="text-sm text-muted-foreground mb-1 text-center">Maximum</label>
+      <div class="relative">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2">$</span>
+        <Input
+          type="text"
+          bind:value={maxInputValue}
+          onblur={() => handleInputBlur('max')}
+          onkeydown={(e) => handleInputKeyDown(e, 'max')}
+          class="w-32 pl-8 pr-4 rounded-full text-center"
+          aria-label="Maximum value"
+        />
+      </div>
     </div>
   </div>
 </div> 

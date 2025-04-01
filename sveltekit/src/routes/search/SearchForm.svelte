@@ -50,9 +50,9 @@
   // Price range slider state
   let priceRange = $state<[number, number]>([100, 300]);
   const MIN_PRICE_NIGHTLY = 0;
-  const MAX_PRICE_NIGHTLY = 500;
+  const MAX_PRICE_NIGHTLY = 350;
   const MIN_PRICE_TOTAL = 0;
-  const MAX_PRICE_TOTAL = 10000;
+  const MAX_PRICE_TOTAL = 8000;
   const PRICE_STEP_NIGHTLY = 10;
   const PRICE_STEP_TOTAL = 100;
   
@@ -773,7 +773,7 @@
                 : "bg-primary/10 text-muted-foreground hover:bg-muted/80"
             )}
           >
-            Nightly Price
+            Nightly
           </button>
           <button 
             type="button"
@@ -785,7 +785,7 @@
                 : "bg-primary/10 text-muted-foreground hover:bg-primary/20"
             )}
           >
-            Total Stay Price
+            Total
           </button>
         </div>
         
