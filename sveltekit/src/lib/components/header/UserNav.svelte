@@ -10,6 +10,7 @@
 	import { User, LogOut, Settings, CreditCard, Folder } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { isAnonymousUser } from '$lib/supabase/auth';
 
 	// Get user information from session
 	let userName = $derived(
@@ -19,6 +20,9 @@
 	);
 	
 	let userEmail = $derived($page.data.session?.user?.email || '');
+	
+	// Check if the user is anonymous
+	let isAnonymous = $derived($page.data.session?.user ? isAnonymousUser($page.data.session.user) : false);
 
 	async function handleSignOut() {
 		const { supabase } = $page.data;
@@ -57,9 +61,11 @@
 			<span>My Saved Properties</span>
 		</DropdownMenuItem>
 		<DropdownMenuSeparator />
-		<DropdownMenuItem on:click={handleSignOut}>
-			<LogOut class="mr-2 h-4 w-4" />
-			<span>Log out</span>
-		</DropdownMenuItem>
+		{#if !isAnonymous}
+			<DropdownMenuItem on:click={handleSignOut}>
+				<LogOut class="mr-2 h-4 w-4" />
+				<span>Log out</span>
+			</DropdownMenuItem>
+		{/if}
 	</DropdownMenuContent>
 </DropdownMenu> 

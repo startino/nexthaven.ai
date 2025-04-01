@@ -7,11 +7,18 @@
 	import { Separator } from "$lib/components/ui/separator";
 	import { createSupabaseBrowserClient } from "$lib/supabase/client";
 	import { isAnonymousUser } from "$lib/supabase/auth";
+	import { page } from "$app/stores";
+	import { CheckCircle } from "lucide-svelte";
 
 	let { data } = $props();
 	const supabase = createSupabaseBrowserClient();
 	
-	let email = $state("");
+	// Check for conversion success in URL parameters
+	let isConversionSuccess = $state($page.url.searchParams.get('conversion') === 'success');
+	let redirectTo = $state($page.url.searchParams.get('redirectTo') || '/');
+	
+	// Pre-fill email from URL if available (useful after account conversion)
+	let email = $state($page.url.searchParams.get('email') || "");
 	let password = $state("");
 	let isLoading = $state(false);
 	let errorMessage = $state("");
@@ -19,9 +26,13 @@
 	// Check if user is already using an anonymous account
 	let isCurrentlyAnonymous = $state(false);
 	
-	$effect(async () => {
-		const { data: { session } } = await supabase.auth.getSession();
-		isCurrentlyAnonymous = session?.user ? isAnonymousUser(session.user) : false;
+	// Fix: Use a non-async function in $effect
+	$effect(() => {
+		// Use immediately invoked function expression for async code
+		(async () => {
+			const { data: { session } } = await supabase.auth.getSession();
+			isCurrentlyAnonymous = session?.user ? isAnonymousUser(session.user) : false;
+		})();
 	});
 	
 	async function handleLogin() {
@@ -39,7 +50,8 @@
 			return;
 		}
 		
-		goto("/");
+		// Redirect to the specified redirectTo URL or default to home
+		goto(redirectTo);
 	}
 </script>
 
@@ -56,6 +68,17 @@
 			</CardDescription>
 		</CardHeader>
 		<CardContent>
+			{#if isConversionSuccess}
+				<div class="mb-6 p-4 bg-green-100/20 border border-green-500/30 rounded-lg flex items-start gap-3">
+					<CheckCircle class="text-green-500 shrink-0 mt-0.5" size={18} />
+					<div>
+						<p class="text-sm text-green-400 font-medium">Account upgraded successfully!</p>
+						<p class="text-xs text-green-400/80 mt-1">
+							Please check your email for a verification link, then sign in with your new credentials to continue.
+						</p>
+					</div>
+				</div>
+			{/if}
 			<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); handleLogin(); }}>
 				<div class="space-y-2">
 					<Label for="email">Email</Label>

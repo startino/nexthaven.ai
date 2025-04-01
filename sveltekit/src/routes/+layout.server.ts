@@ -7,14 +7,25 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 		depends('supabase:auth');
 
 		// Get data from locals (already processed in hooks.server.ts)
-		const { session, subscriptionStatus, isTrialEligible, isAnonymous, hasExpiredTrial } = locals;
+		const {
+			session,
+			subscriptionStatus,
+			isTrialEligible,
+			isAnonymous,
+			hasExpiredTrial,
+			anonymousSearchInfo
+		} = locals;
+
+		// Log what we're sending to the client
+		console.log('layout.server.ts anonymousSearchInfo:', anonymousSearchInfo);
 
 		return {
 			session,
 			subscriptionStatus,
 			isTrialEligible,
 			isAnonymous,
-			hasExpiredTrial
+			hasExpiredTrial,
+			anonymousSearchInfo
 			// Don't return the supabase client as it's not serializable
 		};
 	} catch (error) {
@@ -24,7 +35,8 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
 			subscriptionStatus: { isActive: false },
 			isTrialEligible: false,
 			isAnonymous: false,
-			hasExpiredTrial: false
+			hasExpiredTrial: false,
+			anonymousSearchInfo: null
 			// Don't return the supabase client as it's not serializable
 		};
 	}

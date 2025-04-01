@@ -104,7 +104,7 @@ export async function saveSearchToSupabaseAndNavigate(
 			console.error('Error saving search to Supabase:', result.message);
 
 			// Check if this is due to anonymous search limit
-			if (result.limitReached) {
+			if (response.status === 403 && result.limitReached) {
 				return {
 					success: false,
 					limitReached: true,
@@ -120,9 +120,6 @@ export async function saveSearchToSupabaseAndNavigate(
 			console.log('Search saved with ID:', result.searchId);
 
 			// After saving to Supabase, navigate using goto which preserves state better
-			const searchIdParam = result.searchId ? `?searchId=${result.searchId}` : '';
-			console.log('Navigating to loading page with params:', searchIdParam);
-			goto('/loading' + searchIdParam);
 
 			return { success: true };
 		}

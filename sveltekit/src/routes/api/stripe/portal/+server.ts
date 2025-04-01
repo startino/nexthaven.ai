@@ -83,6 +83,30 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// Use provided returnUrl or default to subscription page
 		const portalReturnUrl = returnUrl || `${baseUrl}/subscription`;
 
+		// Deactivate any active trials when user accesses the portal
+		// Users might upgrade directly from the portal, bypassing our checkout
+		try {
+			const { error: deactivateError } = await locals.supabase
+				.from('user_trials')
+				.update({ is_active: false })
+				.eq('user_id', userSession.user.id);
+
+			if (deactivateError) {
+				console.warn(
+					'Warning: Could not deactivate existing trials when accessing portal:',
+					deactivateError
+				);
+			} else {
+				console.log(
+					'Successfully deactivated trials for user accessing portal:',
+					userSession.user.id
+				);
+			}
+		} catch (trialError) {
+			console.error('Error deactivating trials when accessing portal:', trialError);
+			// Continue anyway - don't fail portal access just because trial deactivation failed
+		}
+
 		// Create portal session
 		const session = await stripe.billingPortal.sessions.create({
 			customer: customerData.stripe_customer_id,

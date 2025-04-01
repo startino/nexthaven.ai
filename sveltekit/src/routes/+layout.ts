@@ -3,10 +3,27 @@ import { signInAnonymously } from '$lib/supabase/auth';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import type { LayoutLoad } from './$types';
+import { ANONYMOUS_SEARCH_LIMIT } from '$lib/utils/anonymousSearch';
+
+// Importing anonymousSearch utilities - will be created if they don't exist
+import {
+	ensureCompleteAnonymousSearchInfo,
+	getDefaultAnonymousSearchInfo
+} from './search/anonymousSearch';
 
 export const load: LayoutLoad = async ({ data, depends, url }) => {
 	depends('supabase:auth');
 	depends('subscription:status');
+
+	// Check if this is a page refresh specifically for anonymous search info
+	const isRefreshForAnonInfo = url.searchParams.has('refresh_anon_info');
+	if (isRefreshForAnonInfo && browser) {
+		// Remove the parameter to keep the URL clean
+		const cleanUrl = new URL(window.location.href);
+		cleanUrl.searchParams.delete('refresh_anon_info');
+		window.history.replaceState({}, '', cleanUrl.toString());
+		console.log('Detected page refresh for anonymous search info');
+	}
 
 	const supabase = createSupabaseBrowserClient();
 
@@ -30,7 +47,7 @@ export const load: LayoutLoad = async ({ data, depends, url }) => {
 		if (!isAuthRoute) {
 			console.log('No session found, signing in anonymously...');
 
-			// Set loading state
+			// Set loading state immediately
 			isSigningInAnonymously = true;
 
 			try {
@@ -38,30 +55,41 @@ export const load: LayoutLoad = async ({ data, depends, url }) => {
 
 				if (error) {
 					console.error('Error signing in anonymously:', error);
+					// Keep isSigningInAnonymously true so UI can show appropriate message
 				} else if (anonSession) {
 					console.log('Successfully signed in anonymously');
 
-					// Reload the page to get the new session
-					// This prevents issues with stale session data
-					window.location.reload();
+					// Return data for the time before the refresh happens
 					return {
 						supabase,
 						session: anonSession,
 						subscriptionStatus: data.subscriptionStatus,
 						isAnonymous: true,
-						isSigningInAnonymously: true
+						isSigningInAnonymously: true,
+						hasExpiredTrial: data.hasExpiredTrial,
+						isTrialEligible: data.isTrialEligible,
+						// Pass a default anonymousSearchInfo for new anonymous users
+						anonymousSearchInfo: getDefaultAnonymousSearchInfo(true)
 					};
 				}
 			} catch (err) {
 				console.error('Failed to sign in anonymously:', err);
-			} finally {
-				isSigningInAnonymously = false;
+				// Don't reset isSigningInAnonymously here - let layout handle timing
 			}
 		}
 	}
 
 	// Pass the anonymous flag from server to client
 	const isAnonymous = data.isAnonymous || false;
+
+	// Ensure anonymousSearchInfo is always defined using our utility
+	const anonymousSearchInfo = ensureCompleteAnonymousSearchInfo(
+		data.anonymousSearchInfo,
+		isAnonymous
+	);
+
+	// Log what we're passing to components
+	console.log('layout.ts anonymousSearchInfo:', anonymousSearchInfo);
 
 	return {
 		supabase,
@@ -70,6 +98,7 @@ export const load: LayoutLoad = async ({ data, depends, url }) => {
 		isTrialEligible: data.isTrialEligible,
 		hasExpiredTrial: data.hasExpiredTrial,
 		isAnonymous,
-		isSigningInAnonymously
+		isSigningInAnonymously,
+		anonymousSearchInfo
 	};
 };

@@ -58,6 +58,7 @@ export type PortalSession = {
 interface CreateCheckoutSessionOptions {
 	priceId: string;
 	returnUrl?: string;
+	bypassAnonymousCheck?: boolean;
 }
 
 interface CreatePortalSessionOptions {
@@ -85,14 +86,15 @@ export const stripeService = {
 		try {
 			// Get the Tolt referral ID if available
 			const toltReferral = getCurrentToltReferralId();
-			
+
 			const response = await fetch('/api/stripe/checkout', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					priceId: options.priceId,
 					returnUrl: options.returnUrl,
-					toltReferral  // Include the Tolt referral ID
+					toltReferral, // Include the Tolt referral ID
+					bypassAnonymousCheck: options.bypassAnonymousCheck
 				})
 			});
 

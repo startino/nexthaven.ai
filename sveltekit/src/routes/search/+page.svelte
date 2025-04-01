@@ -4,29 +4,29 @@
 -->
 <script lang="ts">
 	import { setSearchQuery, clearStore, setError, getErrorMessage, setProperties } from '$lib/stores/properties.svelte';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import type { SubscriptionStatus } from '$lib/utils/subscription';
-	import { propertyService } from '$lib/services/api';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { streamEvents } from '$lib/event';
 	import { subscribeToEvent, type PropertyEvaluationEventData, type PropertyEvaluationStep } from '$lib/event';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
-	
+	import { propertyService } from '$lib/services/api';
 	// Import components
 	import SearchForm from './SearchForm.svelte';
 	import PropertyResults from './PropertyResults.svelte';
 	import SearchProgress from './SearchProgress.svelte';
 	import { ResizablePane, ResizablePaneGroup, ResizableHandle } from '$lib/components/ui/resizable';
 	import { Button } from '$lib/components/ui/button';
-	import { X, MapPin } from 'lucide-svelte';
+	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { X, MapPin, Clock, Search, Check } from 'lucide-svelte';
+	import { searchQuotaState } from '$lib/stores/search-quota.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
 		
 	// Import utilities
-	import { TEMPLATE_TEXT, loadPreviousPreferences, savePreference } from './preferences';
+	import { loadPreviousPreferences, savePreference } from './preferences';
 	import { parseDateRange, calculateStartDate, formatDateRange, isValidDate } from './dateHelpers';
 	import { saveSearchToSupabaseAndNavigate } from './searchData';
-	import { fade } from 'svelte/transition';
+	import { fade, fly, scale } from 'svelte/transition';
+	import { ensureCompleteAnonymousSearchInfo } from './anonymousSearch';
 	
 	// Import necessary types
 	import type { SavedPreference, SearchFormParams } from './types';
@@ -34,7 +34,15 @@
 	// Define interface for page data
 	interface PageData {
 		popularDestinations: Array<{ name: string; id?: string; image?: string }>;
-		subscriptionStatus?: SubscriptionStatus;
+		subscriptionStatus?: {
+			isActive: boolean;
+			planId?: string;
+			planName?: string;
+			currentPeriodEnd?: string;
+			isInTrial?: boolean;
+			trialEnd?: string;
+			isAnonymous?: boolean;
+		};
 		session?: any;
 		supabase?: any;
 		searchId?: string;
@@ -48,20 +56,48 @@
 	
 	// Get data from loader
 	let { data } = $props<{ data: PageData }>();
+	
 	let searchId = $derived(data.searchId);
-	let anonymousSearchInfo = $derived(data.anonymousSearchInfo || {
-		isAnonymous: false,
-		hasReachedLimit: false,
-		remainingSearches: 1,
-		searchCount: 0
+	
+	// Use the utility to ensure we have complete anonymousSearchInfo
+	const isAnonymous = data.subscriptionStatus?.isAnonymous || false;
+	
+	// Log all the data we received from the server
+	console.log("Raw data received in +page.svelte:", {
+		searchId: data.searchId,
+		isAnonymous: isAnonymous,
+		subscriptionStatus: data.subscriptionStatus,
+		anonymousSearchInfo: data.anonymousSearchInfo
+	});
+	
+	
+	// Check if we should show the search screen or account creation screen
+	// Anonymous users should be able to search if they haven't reached their limit
+	let showSearchScreen = $derived(!searchQuotaState.hasReachedLimit);
+	let showLimitReachedDialog = $state(false);
+	// Ensure the showSearchScreen state is updated whenever hasReachedLimit changes
+	$effect(() => {
+		if (searchQuotaState.hasReachedLimit && showSearchScreen) {
+			console.log('Limit reached, hiding search screen');
+			showSearchScreen = false;
+		}
+	});
+	
+	// Log important state info for debugging
+	$effect(() => {
+		console.log('Page data loaded:', {
+			isAnonymous: searchQuotaState.isAnonymous,
+			hasReachedLimit: searchQuotaState.hasReachedLimit,
+			remainingSearches: searchQuotaState.remainingSearches,
+			searchCount: searchQuotaState.searchCount,
+			showSearchScreen
+		});
 	});
 	
 	// Local state
 	let destination = $state('');
 	let dateRange = $state('');
-	let startDate = $state('');
-	let selectedTimeFrame = $state('');
-	let duration = $state('');
+
 	let budget = $state('600');
 	let selectedRooms = $state(1);
 	let preferences = $state('');
@@ -75,22 +111,10 @@
 	let targetProgress = $state(0);
 	let currentStep = $state(0);
 	let currentStepName = $state<PropertyEvaluationStep | undefined>(undefined);
-	let sessionId = $state<string | null>(null);
 	let propertyCount = $state(0);
 	let streamedProperties = $state<UnifiedProperty[]>([]);
 	let progressInterval: ReturnType<typeof setInterval> | undefined;
 	
-	// Define step ranges for progress tracking
-	const stepProgressRanges = [
-		{ min: 0, max: 13 }, // Step 1: 0-13%
-		{ min: 13, max: 25 }, // Step 2: 13-25%
-		{ min: 25, max: 38 }, // Step 3: 25-38%
-		{ min: 38, max: 50 }, // Step 4: 38-50%
-		{ min: 50, max: 63 }, // Step 5: 50-63%
-		{ min: 63, max: 75 }, // Step 6: 63-75%
-		{ min: 75, max: 88 }, // Step 7: 75-88%
-		{ min: 88, max: 100 } // Step 8: 88-100%
-	];
 	
 	// Create an effect to clear the error after a timeout
 	$effect(() => {
@@ -190,65 +214,6 @@
 			if (progressInterval) clearInterval(progressInterval);
 		};
 	});
-	
-	function selectDestination(dest: string) {
-		destination = dest;
-	}
-	
-	function selectTimeFrame(time: string) {
-		selectedTimeFrame = time;
-		startDate = calculateStartDate(time);
-		updateDateRange();
-	}
-	
-	function selectDuration(time: string) {
-		duration = time;
-		updateDateRange();
-	}
-	
-	function updateDateRange() {
-		dateRange = formatDateRange(selectedTimeFrame, duration);
-	}
-	
-	function handleDateRangeBlur() {
-		const result = parseDateRange(dateRange);
-		if (result.timeFrame) {
-			selectedTimeFrame = result.timeFrame;
-		}
-		if (result.duration) {
-			duration = result.duration;
-		}
-	}
-	
-	// Function to setup event stream for property updates
-	function setupEventStream(sessionId: string) {
-		// Set up the evaluation endpoint URL
-		const apiUrl = `${PUBLIC_API_URL}/properties/evaluate`;
-		
-		// Ensure preferences are properly formatted and used
-		const tagsPreferences = preferences.trim();
-		console.log("Sending tag preferences to backend:", tagsPreferences);
-		
-		// Construct the request body
-		const requestBody = {
-			session_id: sessionId,
-			preferences: tagsPreferences || ''
-		};
-		
-		// Make the request
-		const response = fetch(apiUrl, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(requestBody)
-		});
-		
-		// Set up subscription for property evaluation events
-		const unsubscribe = subscribeToEvent('property_evaluation', handlePropertyEvaluationEvent);
-		
-		// Start streaming events from the response
-		streamEvents(response);
-	}
-	
 	// Function to start or resume a search
 	async function resumeSearch() {
 		// Implement logic to resume a search based on searchId
@@ -325,13 +290,29 @@
 			// Mark search as complete
 			setTimeout(() => {
 				isSearching = false;
-				// No redirection to compare page - we'll show results right here
+				
+				// Check if anonymous user has now reached their limit
+				if (searchQuotaState.isAnonymous && searchQuotaState.hasReachedLimit) {
+					console.log('Search complete and user has reached limit - showing upgrade screen');
+					// Give a brief moment to see the results before showing the upgrade screen
+					setTimeout(() => {
+						showSearchScreen = false;
+					}, 3000);
+				}
 			}, 1000);
 		}
 		
 		// Handle completed status even if no results
 		if (data.status === 'completed') {
 			targetProgress = 100;
+			
+			// Check anonymous user status after search completes
+			if (searchQuotaState.isAnonymous) {
+				// If they've reached their limit, make sure UI state reflects this
+				if (searchQuotaState.remainingSearches === 0 || searchQuotaState.hasReachedLimit) {
+					searchQuotaState.hasReachedLimit = true;
+				}
+			}
 			
 			// If we have no properties, show an error
 			if (streamedProperties.length === 0) {
@@ -341,6 +322,15 @@
 				// Finalize the search process
 				setTimeout(() => {
 					isSearching = false;
+					
+					// Check if anonymous user has now reached their limit
+					if (searchQuotaState.isAnonymous && searchQuotaState.hasReachedLimit) {
+						console.log('Search complete and user has reached limit - showing upgrade screen');
+						// Give a brief moment to see the results before showing the upgrade screen
+						setTimeout(() => {
+							showSearchScreen = false;
+						}, 3000);
+					}
 				}, 1000);
 			}
 		}
@@ -353,134 +343,67 @@
 		}
 	}
 	
-	// Start the property evaluation process
-	async function startPropertyEvaluation(searchQueryJson: string) {
-		try {
-			// Parse the search query
-			const parsedQuery = JSON.parse(searchQueryJson);
-			
-			// Reset state
-			streamedProperties = [];
-			propertyCount = 0;
-			progress = 0;
-			targetProgress = 0;
-			currentStep = 0;
-			currentStepName = undefined; // Explicitly reset the current step name
-			
-			// Clear any existing progress interval
-			if (progressInterval) {
-				clearInterval(progressInterval);
-			}
-			
-			// Start tracking progress
-			progressInterval = setInterval(updateProgressSmooth, 100);
-			
-			// Make a request to create a new session
-			sessionId = await queryProperties(parsedQuery);
-			
-			if (sessionId) {
-				console.log('Created session ID:', sessionId);
-				
-				// Set up SSE events connection for realtime updates
-				setupEventStream(sessionId);
-			} else {
-				throw new Error('Failed to create a session');
-			}
-		} catch (error) {
-			console.error('Failed to start property evaluation:', error);
-			const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-			setError(`Error: ${errorMessage}`);
-			isSearching = false;
-		}
+
+	// Function to setup event stream for property updates
+	function setupEventStream(sessionId: string) {
+		// Set up the evaluation endpoint URL
+		const apiUrl = `${PUBLIC_API_URL}/properties/evaluate`;
+		
+		// Ensure preferences are properly formatted and used
+		const tagsPreferences = preferences.trim();
+		console.log("Sending tag preferences to backend:", tagsPreferences);
+		
+		// Construct the request body
+		const requestBody = {
+			session_id: sessionId,
+			preferences: tagsPreferences || ''
+		};
+		
+		// Make the request
+		const response = fetch(apiUrl, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(requestBody)
+		});
+		
+		// Set up subscription for property evaluation events
+		const unsubscribe = subscribeToEvent('property_evaluation', handlePropertyEvaluationEvent);
+		
+		// Start streaming events from the response
+		streamEvents(response);
 	}
 	
-	// Custom API function for querying properties
-	async function queryProperties(payload: {
-		query: string;
-		date: string;
-		budget: {
-			min: number;
-			max: number;
-		};
-		adults: number;
-		children: number;
-		number_of_rooms: number;
-	}) {
-		try {
-			const apiUrl = `${PUBLIC_API_URL}/properties/query`;
-			
-			// Add timeout to prevent hanging
-			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 15000); // 15-second timeout
-			
-			try {
-				// Transform request to match React app's approach
-				const requestBody = {
-					query: payload.query,
-					date: payload.date,
-					budget: {
-						min: payload.budget.min,
-						max: payload.budget.max
-					},
-					adults: payload.adults,
-					children: payload.children,
-					number_of_rooms: payload.number_of_rooms
-				};
-				
-				const response = await fetch(apiUrl, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(requestBody),
-					signal: controller.signal
-				});
-				
-				clearTimeout(timeoutId);
-				
-				if (!response.ok) {
-					const errorText = await response.text();
-					throw new Error(`Property query failed: ${response.status} ${errorText}`);
-				}
-				
-				const data = await response.json();
-				
-				if (data.status !== 'processing') {
-					throw new Error(`Property query failed: ${data.message}`);
-				}
-				
-				return data.session_id;
-			} catch (fetchError: any) {
-				if (fetchError.name === 'AbortError') {
-					throw new Error('Property query timed out after 15 seconds');
-				}
-				throw fetchError;
-			}
-		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-			setError(`Failed to start property search: ${errorMessage}`);
-			throw err;
-		}
-	}
 	
 	// Handle form submission for search
 	async function handleSearch({ destination, dateRange, budget, selectedRooms, preferences, selectedPropertyType, selectedAmenities }: SearchFormParams) {
-		// Validation checks
-		if (!destination) {
+		// Add debugging logs
+		console.log('Search button clicked with destination:', destination);
+		console.log('Destination type:', typeof destination, 'Length:', destination ? destination.length : 0);
+		
+		// First check if the user has already reached their limit
+		if (searchQuotaState.isAnonymous && searchQuotaState.hasReachedLimit) {
+			console.log('Search blocked: Anonymous user has already reached their search limit');
+			showLimitReachedDialog = true;
+			return;
+		}
+		
+		// Validate inputs
+		if (!destination || destination.trim() === '') {
 			setError('Please enter a location');
 			return;
 		}
 		
 		if (!dateRange) {
-			setError('Please select dates for your trip');
+			setError('Please enter dates for your stay');
 			return;
 		}
 		
-		if (anonymousSearchInfo.hasReachedLimit) {
-			setError('Anonymous users are limited to 1 search. Please create an account to continue.');
-			goto('/signup?redirect=/search');
+		if (!isValidDate(dateRange)) {
+			setError('Please enter valid dates for your stay');
 			return;
 		}
 		
-		// Reset error and set loading state
+		// Reset error state
 		setError(null);
 		
 		// Start the loading state and reset all search-related state variables
@@ -498,6 +421,12 @@
 			progressInterval = undefined;
 		}
 		
+		// Save user preference if not empty
+		if (preferences) {
+			previousPreferences = loadPreviousPreferences();
+		}
+		
+		// Prepare the search API query
 		try {
 			// Prepare budget value - parse from format like "nightly:70-200" or "total:500-2000"
 			let budgetValue = {
@@ -585,16 +514,75 @@
 			
 			console.log('Final TOTAL budget being sent to API:', budgetValue, '(API only accepts total budgets)');
 			
-			// Save search query to store for use on results page
+			// Set the search query to the store for use in the results
 			setSearchQuery({
 				destination,
 				dateRange,
 				budget: budgetValue,
 				preferences,
-				filters: {} // Using preferences instead of filters
+				filters: {} // Removed filters, using tags instead
 			});
 			
-			// Start the search session using queryProperties
+			// FIRST: Save search to database to increment search count for anonymous users
+			// This uses the server-side endpoint that increments the search count
+			try {
+				const searchQueryObj = {
+					query: destination,
+					date: dateRange,
+					budget: budgetValue,
+					adults: selectedRooms * 2,
+					children: 0,
+					number_of_rooms: selectedRooms,
+					preferences: preferences || ''
+				};
+				
+				console.log('Saving search to increment counter:', searchQueryObj);
+				
+				const saveResponse = await fetch('/search', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ searchQuery: JSON.stringify(searchQueryObj) })
+				});
+				
+				const saveResult = await saveResponse.json();
+				console.log('Search saved result:', saveResult);
+				
+				// If we hit the limit for anonymous users, show error and stop
+				if (!saveResponse.ok && saveResult.limitReached) {
+					isSearching = false;
+					setError(saveResult.message || 'You have reached your search limit. Please create an account to continue.');
+					
+					// Update anonymous user state to reflect limit reached
+					searchQuotaState.hasReachedLimit = true;
+					searchQuotaState.remainingSearches = 0;
+
+					// Show the limit reached screen after a short delay
+					setTimeout(() => {
+						showSearchScreen = false;
+					}, 1500);
+					
+					return;
+				}
+				
+				// For anonymous users, check if this search will be their last allowed search
+				if (searchQuotaState.isAnonymous) {
+					// If they had exactly 1 search remaining before this search, they'll have 0 after
+					if (searchQuotaState.remainingSearches === 1) {
+						// Update the local state to reflect they've reached their limit
+						searchQuotaState.remainingSearches = 0;
+						searchQuotaState.hasReachedLimit = true;
+						searchQuotaState.searchCount = searchQuotaState.searchCount + 1;
+						
+						// We'll continue with this search but show the limit message after it completes
+						console.log('This is the last allowed search for this anonymous user. Will show upgrade message after completion.');
+					}
+				}
+			} catch (saveError) {
+				console.error('Error saving search to increment counter:', saveError);
+				// Continue with search even if saving fails
+			}
+			
+			// SECOND: Start the actual search session using queryProperties
 			const requestBody = {
 				query: destination,
 				date: dateRange,
@@ -609,18 +597,66 @@
 			
 			const response = await propertyService.queryProperties(requestBody);
 			
-			sessionId = response.session_id;
-			console.log('Search session started with ID:', sessionId);
+			
+			console.log('Search session started with ID:', response.session_id);
 			
 			// Set up the progress animation
 			progressInterval = setInterval(updateProgressSmooth, 30);
 			
 			// Set up SSE events connection for realtime updates
-			setupEventStream(sessionId);
+			setupEventStream(response.session_id);
+			
+			// Check if we need to show the limit reached UI after search completes
+			if (searchQuotaState.isAnonymous && searchQuotaState.hasReachedLimit) {
+				// Set up a listener to handle the end of search
+				const searchCompleteListener = () => {
+					// When the search is complete, update the UI to show limit reached
+					if (!isSearching && searchQuotaState.hasReachedLimit) {
+						console.log('Search completed, showing limit reached message');
+						// Short timeout to allow results to display briefly
+						setTimeout(() => {
+							showSearchScreen = false;
+						}, 3000);
+					}
+				};
+				
+				// Check search status periodically
+				const checkInterval = setInterval(() => {
+					searchCompleteListener();
+					if (!isSearching) {
+						clearInterval(checkInterval);
+					}
+				}, 1000);
+			}
 		} catch (error) {
-			console.error('Error during search:', error);
+			console.error('Error starting search:', error);
 			isSearching = false;
-			setError('An error occurred during your search. Please try again.');
+			
+			// Check if the error might be related to the anonymous search limit
+			if (searchQuotaState.isAnonymous) {
+				if (searchQuotaState.remainingSearches <= 1) {
+					// If they had 1 or 0 searches remaining, they've likely hit their limit
+					console.log('Error during search - anonymous user assumed to have reached limit');
+					
+					// Set appropriate error message
+					setError('You have reached your search limit. Please create an account to continue searching.');
+					
+					// Update anonymous user state
+					searchQuotaState.hasReachedLimit = true;
+					searchQuotaState.remainingSearches = 0;
+					
+					// Show the upgrade screen
+					setTimeout(() => {
+						showSearchScreen = false;
+					}, 1500);
+				} else {
+					// Regular error for anonymous users with searches remaining
+					setError('Failed to start search. Please try again or create an account for better results.');
+				}
+			} else {
+				// Standard error for regular users
+				setError('Failed to start search. Please try again.');
+			}
 		}
 	}
 	
@@ -630,7 +666,7 @@
 	}
 </script>
 
-<div class="w-full h-screen overflow-hidden">
+<div class="w-full h-screen overflow-hidden" transition:fade={{ duration: 300 }}>
 	<ResizablePaneGroup direction="horizontal" class="h-full">
 		<!-- Left sidebar with search inputs and results -->
 		<ResizablePane minSize={20} defaultSize={showMap ? 66 : 100}>
@@ -661,16 +697,7 @@
 						{selectedRooms}
 						{previousPreferences}
 						isLoading={isSearching}
-						{anonymousSearchInfo}
-						onSubmit={() => handleSearch({
-							destination,
-							dateRange,
-							budget,
-							selectedRooms,
-							preferences,
-							selectedPropertyType: null,
-							selectedAmenities: []
-						})}
+						onSubmit={handleSearch}
 					/>
 					
 					<!-- Search Progress Bar (when searching) -->
@@ -753,14 +780,70 @@
 		{/if}
 	</ResizablePaneGroup>
 </div>
+<!-- Anonymous limit reached screen - simplified with shadcn -->
+<Dialog.Root bind:open={showLimitReachedDialog}>
+
+	<Dialog.Content class="max-w-md w-full">
+		<Card class="overflow-hidden border-primary/10">
+			<CardHeader class="bg-primary/5 border-b">
+				<CardTitle class="flex items-center gap-2">
+					<Search class="h-5 w-5 text-primary" />
+					<span>Free Search Used</span>
+				</CardTitle>
+			</CardHeader>
+			
+			<CardContent class="pt-6">
+				<div class="space-y-4">
+					<div>
+						<h3 class="text-xl font-medium mb-2">Create an account to continue</h3>
+						<CardDescription class="text-base">
+							You've used your free anonymous search. Create an account now to unlock the full experience.
+						</CardDescription>
+					</div>
+					
+					<div class="bg-muted/50 rounded-lg p-4 border">
+						<h4 class="font-medium mb-2">With an account, you'll get:</h4>
+						<ul class="space-y-2">
+							<li class="flex items-start gap-2 text-sm">
+								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+								<span>Full 14-day trial with <strong>unlimited searches</strong></span>
+							</li>
+							<li class="flex items-start gap-2 text-sm">
+								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+								<span>Save your favorite properties for later comparison</span>
+							</li>
+							<li class="flex items-start gap-2 text-sm">
+								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+								<span>Personalized recommendations based on your preferences</span>
+							</li>
+							<li class="flex items-start gap-2 text-sm">
+								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+								<span>Access to search filters and tools</span>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</CardContent>
+			
+			<CardFooter class="flex flex-col sm:flex-row gap-3 border-t pt-4 pb-4 bg-muted/20">
+				<Button href="/signup?redirect=/search" class="w-full sm:w-auto">
+					Create Free Account
+				</Button>
+				<Button href="/login?redirect=/search" variant="outline" class="w-full sm:w-auto">
+					Sign In
+				</Button>
+				
+				<p class="text-xs text-muted-foreground mt-3 sm:ml-auto sm:mt-auto">
+					No credit card required
+				</p>
+			</CardFooter>
+		</Card>
+	</Dialog.Content>
+</Dialog.Root>
 
 <style>
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-  }
-  
-  .animate-fadeIn {
-    animation: fadeIn 0.3s ease-out forwards;
   }
 </style> 

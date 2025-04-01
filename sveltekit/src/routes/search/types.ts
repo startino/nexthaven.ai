@@ -1,6 +1,16 @@
 // types.ts - Centralized type definitions for search functionality
 
 /**
+ * Anonymous search information for tracking search limits
+ */
+export interface AnonymousSearchInfo {
+	isAnonymous: boolean;
+	hasReachedLimit: boolean;
+	remainingSearches: number;
+	searchCount: number;
+}
+
+/**
  * Date range representation with start and end dates
  */
 export interface DateRange {

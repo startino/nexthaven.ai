@@ -14,37 +14,25 @@
 	// Check if the current user is anonymous
 	let isAnonymous = $state(false);
 	
-	// More reliable check using onMount and direct session data
+	// Check user anonymous status on mount
 	onMount(async () => {
-		// Check directly if the email follows the anonymous pattern or has the is_anonymous flag
+		// Check if the user is anonymous by directly looking at the is_anonymous flag
 		if (session?.user) {
-			// Use isAnonymousUser function first
-			isAnonymous = isAnonymousUser(session.user);
+			const userMetadata = session.user.user_metadata || {};
 			
-			// Additional direct checks if the function didn't detect it
-			if (!isAnonymous) {
-				const email = session.user.email || '';
-				const metadata = session.user.user_metadata || {};
-				const appMetadata = session.user.app_metadata || {};
-				
-				// Log for debugging
-				console.log("Direct anonymous check:", {
-					email,
-					metadata,
-					appMetadata
-				});
-				
-				// Check common patterns for anonymous users
-				if (
-					email.endsWith('@anonymous.user') || 
-					email.includes('anon') ||
-					metadata.is_anonymous === true ||
-					appMetadata.provider === 'anonymous' ||
-					!email.includes('@') // Some anonymous users might not have an email at all
-				) {
-					console.log("Detected anonymous user through direct checks");
-					isAnonymous = true;
-				}
+			// Log metadata for debugging
+			console.log("User metadata for anonymous check:", userMetadata);
+			
+			// Primary check: look at the is_anonymous flag we explicitly set
+			// When a user is converted, we set is_anonymous to false
+			if (userMetadata.is_anonymous === true) {
+				isAnonymous = true;
+			} else if (userMetadata.is_anonymous === false) {
+				// Explicitly set to false - this user was converted
+				isAnonymous = false;
+			} else {
+				// Fall back to the comprehensive check for users who don't have the flag set
+				isAnonymous = isAnonymousUser(session.user);
 			}
 			
 			console.log("Final anonymous state:", isAnonymous);

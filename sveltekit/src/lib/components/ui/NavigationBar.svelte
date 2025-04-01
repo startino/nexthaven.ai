@@ -42,10 +42,6 @@
 			isAnonymous = false;
 		}
 	}
-	
-	function handleSignUp() {
-		goto('/signup?convert=true');
-	}
 </script>
 
 <header class="w-full bg-white/5 backdrop-blur-md py-3 px-6 border-b border-white/10 fixed top-0 z-50">
@@ -149,18 +145,20 @@
 					<User size={18} />
 				</Button>
 				
-				<!-- Sign out button -->
-				<form action="/logout" method="POST">
-					<Button
-						variant="ghost"
-						class="bg-card"
-						size="icon"
-						title="Sign Out"
-						type="submit"
-					>
-						<LogOut size={18} />
-					</Button>
-				</form>
+				<!-- Sign out button - only shown for non-anonymous users -->
+				{#if !isAnonymous}
+					<form action="/logout" method="POST">
+						<Button
+							variant="ghost"
+							class="bg-card"
+							size="icon"
+							title="Sign Out"
+							type="submit"
+						>
+							<LogOut size={18} />
+						</Button>
+					</form>
+				{/if}
 			{:else}
 				<!-- Login/Signup buttons -->
 				<Button
@@ -248,16 +246,18 @@
 						<span>Account</span>
 					</Button>
 					
-					<form action="/logout" method="POST" class="w-full">
-						<Button
-							variant="ghost"
-							class="flex items-center justify-center gap-2 w-full"
-							type="submit"
-						>
-							<LogOut size={18} />
-							<span>Sign Out</span>
-						</Button>
-					</form>
+					{#if !isAnonymous}
+						<form action="/logout" method="POST" class="w-full">
+							<Button
+								variant="ghost"
+								class="flex items-center justify-center gap-2 w-full"
+								type="submit"
+							>
+								<LogOut size={18} />
+								<span>Sign Out</span>
+							</Button>
+						</form>
+					{/if}
 				</div>
 			{:else}
 				<div class="flex flex-col gap-2">

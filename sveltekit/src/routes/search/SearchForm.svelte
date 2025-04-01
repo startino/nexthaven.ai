@@ -23,8 +23,9 @@
   import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { getTopFavoriteTags, trackTagsUsage } from './favourite-filters';
   import { Slider } from '$lib/components/ui/slider';
+  import { searchQuotaState } from '$lib/stores/search-quota.svelte';
 
-  // Form inputs
+  // Get props using Svelte 5 syntax
   let {
     destination = '',
     dateRange = '',
@@ -34,12 +35,6 @@
     isLoading = false,
     previousPreferences = [],
     onSubmit = () => {},
-    anonymousSearchInfo = {
-      isAnonymous: false,
-      hasReachedLimit: false,
-      remainingSearches: 1,
-      searchCount: 0
-    }
   } = $props();
   
   // UI state
@@ -417,6 +412,31 @@
     preferences = selectedTags.join(', ');
   });
   
+  // Effect to prevent search when limit is reached
+  $effect(() => {
+    if (searchQuotaState.hasReachedLimit) {
+      // If limit is reached, we'll disable search functionality
+      console.log('Anonymous user has reached search limit, disabling search form');
+      
+      // Disable all interactive form elements when limit is reached
+      setTimeout(() => {
+        // This runs after the component is updated
+        const form = document.querySelector('form') as HTMLFormElement;
+        if (form) {
+          // Find all interactive elements
+          const interactiveElements = form.querySelectorAll('button, input, select, textarea');
+          // Disable them
+          interactiveElements.forEach(el => {
+            if (el instanceof HTMLElement) {
+              el.setAttribute('disabled', 'true');
+              el.style.pointerEvents = 'none';
+            }
+          });
+        }
+      }, 0);
+    }
+  });
+  
   function handleDateRangeBlur() {
     // Clear any previous error
     dateError = null;
@@ -620,7 +640,10 @@
   });
   
   // Handler for saving the preference and submitting the form
-  function handleSubmit() {
+  function handleSubmit(e?: Event) {
+    // Prevent default form submission if called from a form event
+    if (e) e.preventDefault();
+    
     // Validate date before submitting
     if (dateRange && !isValidDate(dateRange)) {
       dateError = "Please enter a valid date format or select from time period options";
@@ -676,8 +699,16 @@
       savePreference(preferences, previousPreferences);
     }
     
-    // Actually submit the form with all form params
-    onSubmit();
+    // Actually pass all form parameters to parent component's submit handler
+    onSubmit({
+      destination,
+      dateRange,
+      budget,
+      selectedRooms,
+      preferences,
+      selectedPropertyType: null,
+      selectedAmenities: []
+    });
   }
   
   // Open the previous preferences dropdown
@@ -725,7 +756,7 @@
   }
 </script>
 
-<div class="grid grid-cols-1 gap-5">
+<form class="grid grid-cols-1 gap-5">
 
   <!-- When & Where Section - Now as individual boxes -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1125,43 +1156,31 @@
   </div>
 
   <Button 
+    type="submit"
     onclick={handleSubmit}
     class={cn(
-      "h-12 mt-1 text-base",
-      anonymousSearchInfo.hasReachedLimit 
-        ? "bg-yellow-600 hover:bg-yellow-700 text-white" 
-        : "button-gradient"
+      "h-12 mt-1 text-base"
     )}
     disabled={!destination || !dateRange || dateError !== null || isLoading}
-    data-debug={`dest:${!!destination} date:${!!dateRange} err:${dateError !== null} anonymous:${anonymousSearchInfo.isAnonymous} limit:${anonymousSearchInfo.hasReachedLimit}`}
   >
-    <Search class="h-5 w-5 mr-2" />
-    {#if anonymousSearchInfo.hasReachedLimit}
-      Create Account to Continue
+    <Search class={searchQuotaState.hasReachedLimit ? "h-0 w-0" : "h-5 w-5 mr-2"} />
+    {#if searchQuotaState.isAnonymous}
+      Use Your Free Search
     {:else}
       Discover Properties
     {/if}
   </Button>
-  
-  {#if import.meta.env.DEV}
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      onclick={toggleDebug}
-      class="absolute top-0 right-0 text-xs opacity-50 hover:opacity-100"
-    >
-      {showDebug ? 'Hide Debug' : 'Show Debug'}
-    </Button>
-  {/if}
 
-  {#if anonymousSearchInfo.isAnonymous}
-    <div class="mt-3 text-xs flex items-center gap-1.5" class:text-yellow-500={!anonymousSearchInfo.hasReachedLimit} class:text-red-500={anonymousSearchInfo.hasReachedLimit}>
+  {#if searchQuotaState.isAnonymous}
+    <div class="mt-3 text-xs flex items-center gap-1.5" class:text-yellow-500={searchQuotaState.remainingSearches > 1} class:text-amber-600={searchQuotaState.remainingSearches === 1} class:text-red-500={searchQuotaState.hasReachedLimit}>
       <AlertCircle class="h-3.5 w-3.5" />
-      {#if anonymousSearchInfo.hasReachedLimit}
-        <span>You've used your free search as an anonymous user. Create an account to get a full 14-day trial with unlimited searches.</span>
+      {#if searchQuotaState.hasReachedLimit}
+        <span>You've used your free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> to get a full 14-day trial with unlimited searches.</span>
+      {:else if searchQuotaState.remainingSearches === 1}
+        <span>This is your last free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> for unlimited searches.</span>
       {:else}
-        <span>You have {anonymousSearchInfo.remainingSearches} search{anonymousSearchInfo.remainingSearches !== 1 ? 'es' : ''} remaining as an anonymous user.</span>
+        <span>You have {searchQuotaState.remainingSearches} search{searchQuotaState.remainingSearches !== 1 ? 'es' : ''} remaining as an anonymous user.</span>
       {/if}
     </div>
   {/if}
-</div> 
+</form> 

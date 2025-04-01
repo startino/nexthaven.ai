@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button";
-	import { isAnonymousUser } from "$lib/supabase/auth";
 	import { goto } from "$app/navigation";
 	
 	interface SubscriptionStatus {
@@ -33,7 +32,7 @@
 			return;
 		}
 		
-		// For anonymous users, we still need at least their email to identify them
+		// For proper user tracking, we need at least their email
 		if (!userEmail) {
 			showBanner = false;
 			return;
@@ -51,8 +50,8 @@
 		showBanner = daysRemaining <= 7;
 	});
 	
-	function handleSignUp() {
-		goto('/signup?convert=true');
+	function handleUpgrade() {
+		goto('/subscription');
 	}
 </script>
 
@@ -64,21 +63,21 @@
 					<span class="text-red-400 font-semibold">
 						Your trial has expired
 					</span>
-					<span class="text-sm hidden sm:inline">- You still have access to basic features, but sign up to unlock premium features</span>
+					<span class="text-sm hidden sm:inline">- Upgrade now to unlock premium features and continue your experience</span>
 				{:else if daysRemaining <= 2}
 					<span class="text-red-500 font-semibold">
 						{daysRemaining === 0 ? 'Your trial ends today!' : `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left in your trial!`}
 					</span>
-					<span class="text-sm hidden sm:inline">- Sign up now to keep your data and settings</span>
+					<span class="text-sm hidden sm:inline">- Upgrade now to keep access to all features</span>
 				{:else}
 					<span class="text-primary font-semibold">
 						{daysRemaining} days left in your trial
 					</span>
-					<span class="text-sm hidden sm:inline">- Sign up now to keep your data and settings</span>
+					<span class="text-sm hidden sm:inline">- Upgrade now to continue after your trial ends</span>
 				{/if}
 			</div>
-			<Button onclick={handleSignUp} size="sm" variant={hasExpiredTrial ? "destructive" : "default"}>
-				{hasExpiredTrial ? 'Upgrade Now' : 'Sign Up Now'}
+			<Button onclick={handleUpgrade} size="sm" variant={hasExpiredTrial ? "destructive" : "default"}>
+				Upgrade Now
 			</Button>
 		</div>
 	</div>

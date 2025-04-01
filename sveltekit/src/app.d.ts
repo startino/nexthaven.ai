@@ -17,10 +17,17 @@ declare global {
 				currentPeriodEnd?: string;
 				isInTrial?: boolean;
 				trialEnd?: string;
+				isAnonymous?: boolean;
 			};
 			isTrialEligible: boolean;
 			hasExpiredTrial: boolean;
 			isAnonymous: boolean;
+			anonymousSearchInfo?: {
+				isAnonymous: boolean;
+				hasReachedLimit: boolean;
+				remainingSearches: number;
+				searchCount: number;
+			};
 		}
 		interface PageData {
 			session: Session | null;
@@ -32,10 +39,17 @@ declare global {
 				currentPeriodEnd?: string;
 				isInTrial?: boolean;
 				trialEnd?: string;
+				isAnonymous?: boolean;
 			};
 			isTrialEligible?: boolean;
 			hasExpiredTrial?: boolean;
 			isAnonymous?: boolean;
+			anonymousSearchInfo?: {
+				isAnonymous: boolean;
+				hasReachedLimit: boolean;
+				remainingSearches: number;
+				searchCount: number;
+			};
 		}
 		// interface PageState {}
 		// interface Platform {}

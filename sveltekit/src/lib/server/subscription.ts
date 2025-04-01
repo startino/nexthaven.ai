@@ -6,6 +6,7 @@ import type {
 	CheckSubscriptionStatus,
 	IsEligibleForTrial
 } from '$lib/utils/subscription';
+import type { Database } from '$lib/types/database.types';
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(SECRET_STRIPE_KEY, {
@@ -17,29 +18,39 @@ const stripe = new Stripe(SECRET_STRIPE_KEY, {
  * This is the server-side implementation
  */
 export const checkSubscriptionStatus: CheckSubscriptionStatus = async (
-	supabase: SupabaseClient,
+	supabase: SupabaseClient<Database>,
 	userId: string
 ): Promise<SubscriptionStatus> => {
 	try {
-		// First check if user has an active subscription from a payment provider
-		const { data: subscription, error: subscriptionError } = await supabase
-			.from('subscriptions')
-			.select('*')
+		// First check if user has a Stripe customer ID
+		const { data: customer, error: customerError } = await supabase
+			.from('customers')
+			.select('stripe_customer_id')
 			.eq('user_id', userId)
-			.eq('status', 'active')
-			.order('created_at', { ascending: false })
-			.limit(1)
 			.single();
 
-		if (subscription) {
-			// User has an active paid subscription
-			return {
-				isActive: true,
-				planId: subscription.price_id,
-				planName: subscription.plan_name,
-				currentPeriodEnd: subscription.current_period_end,
-				isInTrial: false
-			};
+		if (customer?.stripe_customer_id) {
+			// User has a Stripe customer ID, check for active subscriptions in Stripe
+			const subscriptions = await stripe.subscriptions.list({
+				customer: customer.stripe_customer_id,
+				status: 'active',
+				expand: ['data.plan.product']
+			});
+
+			if (subscriptions.data.length > 0) {
+				// User has an active paid subscription
+				const subscription = subscriptions.data[0];
+				const plan = subscription.items.data[0].plan;
+				const product = plan.product as Stripe.Product;
+
+				return {
+					isActive: true,
+					planId: plan.id,
+					planName: product.name,
+					currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+					isInTrial: false
+				};
+			}
 		}
 
 		// If no active subscription, check if they have an active trial
@@ -86,13 +97,46 @@ export const checkSubscriptionStatus: CheckSubscriptionStatus = async (
 
 /**
  * Checks if a user is eligible for a free trial
- * Users are eligible if they haven't used a trial before
+ * Users are eligible if they haven't used a trial before AND they are not anonymous
  */
 export const isEligibleForTrial: IsEligibleForTrial = async (
 	supabase: SupabaseClient,
 	userId: string
 ): Promise<boolean> => {
 	try {
+		// First check if this is an anonymous user - anonymous users are never eligible for trials
+		try {
+			// Try to get user data to check if they're anonymous
+			const { data: userData } = await supabase.auth.admin.getUserById(userId);
+
+			if (userData?.user?.user_metadata) {
+				const metadata = userData.user.user_metadata;
+				// If user is marked as anonymous, they're not eligible for trial
+				if (metadata.is_anonymous === true || metadata.provider === 'anonymous') {
+					console.log('User is anonymous, not eligible for trial:', userId);
+					return false;
+				}
+			}
+		} catch (adminError) {
+			// If admin API fails, try fallback with session
+			console.log('Admin API not available for trial check, using fallback');
+			try {
+				const {
+					data: { session }
+				} = await supabase.auth.getSession();
+
+				if (session?.user?.id === userId && session?.user?.user_metadata) {
+					const metadata = session.user.user_metadata;
+					if (metadata.is_anonymous === true || metadata.provider === 'anonymous') {
+						console.log('User is anonymous (session check), not eligible for trial:', userId);
+						return false;
+					}
+				}
+			} catch (sessionError) {
+				console.error('Error checking user anonymity via session:', sessionError);
+			}
+		}
+
 		// Check if user has used a trial before
 		const { data, error } = await supabase.from('user_trials').select('*').eq('user_id', userId);
 
