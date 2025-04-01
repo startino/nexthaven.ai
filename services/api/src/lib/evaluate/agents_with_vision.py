@@ -48,7 +48,7 @@ from langsmith import traceable
 
 class EvaluateAgent:
     def __init__(self):
-        self.llm = gpt_4o_mini()
+        self.llm = gemini_flash_2()
         self.vision_llm = gemini_flash_2()
 
     @traceable(run_type="llm")
