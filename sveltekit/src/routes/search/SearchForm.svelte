@@ -50,9 +50,9 @@
   // Price range slider state
   let priceRange = $state<[number, number]>([100, 300]);
   const MIN_PRICE_NIGHTLY = 0;
-  const MAX_PRICE_NIGHTLY = 350;
+  const MAX_PRICE_NIGHTLY = 250;
   const MIN_PRICE_TOTAL = 0;
-  const MAX_PRICE_TOTAL = 8000;
+  const MAX_PRICE_TOTAL = 5000;
   const PRICE_STEP_NIGHTLY = 10;
   const PRICE_STEP_TOTAL = 100;
   
@@ -69,7 +69,7 @@
     {
       name: 'Most Popular',
       icon: TrendingUp,
-      tags: ['Work area', 'Ergonomic chair', 'Modern bathroom', 'High-speed WiFi', 'Pool', 'Quiet neighborhood', 'Hardwood floors', 'Private balcony']
+      tags: ['Condo', 'Studio apartment', 'Hostel', 'Co-living', 'Modern & clean', 'Rustic & cozy', 'Modern bathroom', 'High-speed WiFi', 'Pool', 'Quiet neighborhood', 'Hardwood floors', 'Private balcony']
     },
     {
       name: 'Others',
@@ -243,7 +243,21 @@
   // Format budget string for the backend
   function formatBudgetForBackend(range: [number, number], isTotal: boolean): string {
     const prefix = isTotal ? 'total:' : 'nightly:';
-    return `${prefix}${range[0]}-${range[1]}`;
+    
+    // Get current constraints
+    const currentMin = isTotal ? MIN_PRICE_TOTAL : MIN_PRICE_NIGHTLY;
+    const currentMax = isTotal ? MAX_PRICE_TOTAL : MAX_PRICE_NIGHTLY;
+    
+    // Ensure we have valid numbers for min and max - force as integers
+    const min = Number.isFinite(range[0]) ? Math.max(currentMin, Math.floor(range[0])) : currentMin;
+    const max = Number.isFinite(range[1]) ? Math.min(currentMax, Math.floor(range[1])) : currentMax;
+    
+    // Ensure min is not greater than max
+    const validMin = Math.min(min, max);
+    const validMax = Math.max(min, max);
+    
+    // Return properly formatted budget string
+    return `${prefix}${validMin}-${validMax}`;
   }
   
   // Initialize calendar with the minimum date but no default selection
@@ -620,8 +634,35 @@
       loadFavoriteTags();
     }
     
+    // Get current constraints
+    const currentMin = isTotalBudget ? MIN_PRICE_TOTAL : MIN_PRICE_NIGHTLY;
+    const currentMax = isTotalBudget ? MAX_PRICE_TOTAL : MAX_PRICE_NIGHTLY;
+    
+    // Validate price range before formatting
+    const validPriceRange: [number, number] = [
+      Number.isFinite(priceRange[0]) ? Math.max(currentMin, Math.floor(priceRange[0])) : currentMin,
+      Number.isFinite(priceRange[1]) ? Math.min(currentMax, Math.floor(priceRange[1])) : currentMax
+    ];
+    
+    // Ensure min is not greater than max
+    if (validPriceRange[0] > validPriceRange[1]) {
+      validPriceRange[0] = validPriceRange[1];
+    }
+    
+    // Log the raw price range for debugging
+    console.log('Price range before formatting:', validPriceRange, typeof validPriceRange[0], typeof validPriceRange[1]);
+    
     // Update budget with current price range values and budget type
-    budget = formatBudgetForBackend(priceRange, isTotalBudget);
+    budget = formatBudgetForBackend(validPriceRange, isTotalBudget);
+    
+    // Double-check for valid format of budget string - add failsafe
+    if (!budget.match(/^(nightly|total):\d+-\d+$/)) {
+      console.error('Invalid budget format detected, using fallback values:', budget);
+      budget = isTotalBudget ? 'total:1000-5000' : 'nightly:100-250';
+    }
+    
+    // Log the budget string for debugging
+    console.log('Submitting with budget:', budget);
     
     // Save the preference if it's non-empty and proceed with submission
     if (preferences.trim()) {
@@ -966,7 +1007,7 @@
         {#if showTagInput && editingTagIndex === null}
           <Input 
             bind:value={tagInputValue}
-            placeholder={selectedTags.length > 0 ? "Add or edit tag... (use Enter or comma)" : "Add tags like 'modern kitchen', 'pet friendly'..."}
+            placeholder={selectedTags.length > 0 ? "Add or edit tag... (use Enter or comma)" : "Add your own unique tags like 'no tile floor' or 'king-size bed'..."}
             onkeydown={handleCustomTagKeydown}
             oninput={handleTagInput}
             class="border-0 shadow-none focus-visible:ring-0 flex-1 h-8 min-w-[180px] text-sm"

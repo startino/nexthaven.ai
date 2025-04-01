@@ -479,11 +479,56 @@
 		
 		// Prepare the search API query
 		try {
-			// Prepare budget value
-			const budgetValue = {
-				min: 50, // Minimum default
-				max: budget ? parseInt(budget) : 600 // Default of 600
+			// Prepare budget value - parse from format like "nightly:70-200" or "total:500-2000"
+			let budgetValue = {
+				min: 50,  // Default minimum
+				max: 600  // Default maximum
 			};
+			
+			// Parse the budget string from SearchForm component
+			if (budget && typeof budget === 'string') {
+				console.log('Raw budget string:', budget);
+				
+				// Remove the prefix to get just the range values
+				const isTotal = budget.startsWith('total:');
+				const rangeString = budget.replace(/^(nightly:|total:)/, '');
+				
+				// Parse the range values
+				if (rangeString.includes('-')) {
+					const [minStr, maxStr] = rangeString.split('-');
+					
+					// Convert to integers with parseInt
+					const min = parseInt(minStr, 10);
+					const max = parseInt(maxStr, 10);
+					
+					if (!isNaN(min) && !isNaN(max)) {
+						// Ensure min and max are valid numbers, with min <= max, and both are integers
+						budgetValue = {
+							min: Math.max(0, Math.floor(min)),
+							max: Math.max(Math.floor(min) + 1, Math.floor(max))
+						};
+						console.log('Parsed budget values:', budgetValue);
+					} else {
+						console.error('Failed to parse budget range values. Using defaults instead.', { minStr, maxStr });
+					}
+				} else {
+					console.error('Budget string does not contain range separator. Using defaults.', rangeString);
+				}
+			} else {
+				console.warn('No budget string provided. Using default budget values:', budgetValue);
+			}
+			
+			// Final validation check to ensure budget has valid integers
+			if (!Number.isInteger(budgetValue.min) || !Number.isInteger(budgetValue.max) ||
+				budgetValue.min < 0 || budgetValue.max <= 0 || budgetValue.min >= budgetValue.max) {
+				console.error('Invalid budget values detected, resetting to defaults:', budgetValue);
+				budgetValue = {
+					min: 50,
+					max: 600
+				};
+			}
+			
+			console.log('Final budget being sent to API:', budgetValue);
 			
 			// Set the search query to the store for use in the results
 			setSearchQuery({
@@ -495,14 +540,19 @@
 			});
 			
 			// Start the search session using queryProperties
-			const response = await propertyService.queryProperties({
+			const requestBody = {
 				query: destination,
 				date: dateRange,
 				budget: budgetValue,
 				adults: selectedRooms * 2, // Assume 2 adults per room
 				children: 0,
 				number_of_rooms: selectedRooms
-			});
+			};
+			
+			// Log the complete request
+			console.log('Full API request payload:', JSON.stringify(requestBody));
+			
+			const response = await propertyService.queryProperties(requestBody);
 			
 			sessionId = response.session_id;
 			console.log('Search session started with ID:', sessionId);
