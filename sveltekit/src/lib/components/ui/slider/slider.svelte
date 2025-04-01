@@ -304,7 +304,7 @@
   <!-- Editable input fields for min/max values -->
   <div class="flex justify-between mt-4">
     <!-- Minimum value section -->
-    <div class="flex flex-col">
+    <div class="flex flex-col -translate-x-3.5">
       <label class="text-sm text-muted-foreground mb-1 text-center">Minimum</label>
       <div class="relative">
         <span class="absolute left-4 top-1/2 -translate-y-1/2">$</span>

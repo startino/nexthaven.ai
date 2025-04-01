@@ -789,7 +789,7 @@
           </button>
         </div>
         
-        <div class="p-4 pt-5">
+        <div class="pt-5">
           <Slider 
             class=" px-4 pt-1"
             bind:value={priceRange}
