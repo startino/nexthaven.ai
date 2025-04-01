@@ -450,7 +450,7 @@
 		
 		// Validate inputs
 		if (!destination || destination.trim() === '') {
-			setError('Please enter a destination');
+			setError('Please enter a location');
 			return;
 		}
 		

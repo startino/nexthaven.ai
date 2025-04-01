@@ -173,7 +173,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {#if properties.length > 0}
           {#each properties as property, i}
-            <div class="transition-all duration-500 ease-in-out animate-fadeIn animate-scaleIn" style="animation-delay: {i * 150}ms">
+            <div class="w-full transition-all duration-500 ease-in-out animate-fadeIn animate-scaleIn" style="animation-delay: {i * 150}ms">
               <PropertyCard 
                 property={property}
                 on:select={handlePropertySelect}
@@ -185,7 +185,7 @@
         
         <!-- Generate placeholder PropertyCards for the remaining count -->
         {#each Array(Math.min(8, Math.max(4, propertyCount - properties.length))) as _, i}
-          <div class="transition-all duration-500 ease-in-out animate-fadeIn animate-scaleIn" style="animation-delay: {(properties.length + i) * 150}ms">
+          <div class="w-full transition-all duration-500 ease-in-out animate-fadeIn animate-scaleIn" style="animation-delay: {(properties.length + i) * 150}ms">
             <PropertyCard 
               property={createPlaceholderProperty(i)}
               isLoading={true}
@@ -197,10 +197,12 @@
       <!-- Results state: Use the PropertyCard component with a responsive grid layout -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {#each properties as property}
-          <PropertyCard 
-            property={property}
-            on:select={handlePropertySelect}
-          />
+          <div class="w-full">
+            <PropertyCard 
+              property={property}
+              on:select={handlePropertySelect}
+            />
+          </div>
         {/each}
       </div>
     {/if}

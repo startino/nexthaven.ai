@@ -34,10 +34,10 @@
 </script>
 
 <button 
-  class="relative cursor-pointer transform transition-all duration-300 hover:-translate-y-1"
+  class="relative cursor-pointer w-full transform transition-all duration-300 hover:-translate-y-1"
   onclick={() => dispatch('select', property)}
 >
-  <Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-primary/20 transition-all h-[450px] flex flex-col">
+  <Card class="overflow-hidden bg-card border-border text-foreground hover:shadow-xl hover:shadow-primary/20 transition-all h-[450px] w-full flex flex-col">
     <div class="relative h-56 overflow-hidden">
       {#if isPending(property.media?.main_image) || isLoading}
         <div class="w-full h-full bg-muted animate-pulse"></div>

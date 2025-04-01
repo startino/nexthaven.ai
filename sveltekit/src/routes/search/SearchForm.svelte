@@ -481,6 +481,11 @@
     
     dateError = null;
     
+    // Clean up destination text if needed
+    if (destination) {
+      destination = destination.trim();
+    }
+    
     // Track the used tags to update favorite tags
     if (selectedTags.length > 0) {
       trackTagsUsage(selectedTags);
@@ -591,6 +596,9 @@
         onSelect={handleLocationSelect}
         class="h-12"
       />
+      <div class="mt-1 text-xs text-muted-foreground">
+        You can type any location or select from suggestions
+      </div>
     </div>
   </div>
   

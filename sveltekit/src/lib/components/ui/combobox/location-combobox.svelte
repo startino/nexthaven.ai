@@ -347,6 +347,19 @@
   }
 
   function handleBlur(event: FocusEvent) {
+    // Update the value with whatever the user has typed
+    if (inputValue !== value && inputValue.trim() !== '') {
+      value = inputValue;
+      
+      // If onSelect callback exists, call it with the manually entered location
+      if (onSelect && inputValue.trim()) {
+        onSelect({
+          description: inputValue,
+          place_id: 'manual-entry'
+        });
+      }
+    }
+    
     // Delay closing the dropdown to allow click events to fire first
     setTimeout(() => {
       isOpen = false;
@@ -410,7 +423,7 @@
       onclick={toggleDropdown}
       aria-expanded={isOpen}
       class="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
-      tabindex="-1"
+      tabindex={-1}
       aria-controls="location-dropdown"
     >
       <ChevronsUpDown class="h-4 w-4 opacity-50" />

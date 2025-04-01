@@ -1,3 +1,4 @@
+import math
 import time
 import logging
 import asyncio
@@ -43,12 +44,14 @@ from src.models.unified_property import (
     MediaModel,
 )
 
+from langsmith import traceable
 
 class EvaluateAgent:
     def __init__(self):
         self.llm = gpt_4o_mini()
         self.vision_llm = gemini_flash_2()
 
+    @traceable(run_type="llm")
     async def evaluate(
         self,
         user_request: GeneratedRequirement,
@@ -181,7 +184,7 @@ class EvaluateAgent:
             logging.warning("No properties were successfully processed")
             return []
     
-    async def _evaluate_single_property(self, property_index: int, property_data: dict, image_analysis: str, user_request: GeneratedRequirement) -> dict:
+    async def _evaluate_single_property(self, property_index: int, property_data: dict, image_analysis: str, user_request: GeneratedRequirement) -> Result | None:
         """
         Evaluate a single property using LLM
         
@@ -208,6 +211,20 @@ class EvaluateAgent:
                 Return a property match with a score between 0-100 where 100 is a perfect match.
                 Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
                 Your score output should be just the number, no other text.
+
+                Return your evaluation Result in the exact JSON format:
+                {{
+                    "reasoning": <reasoning; detailed reasoning behind the score, explaining how the property matches or doesn't match the user's preferences>,
+                    "score": <score; number from 1 to 100>
+                }}
+                Return your evaluation Result in the exact JSON format:
+                {{
+                    "reasoning": <reasoning; detailed reasoning behind the score, explaining how the property matches or doesn't match the user's preferences>,
+                    "score": <score; number from 1 to 100>
+                }}
+
+                You are forbidden from scoring a property a 0, at least give it a 1.
+                You must NOT FORGET to provide a score in your Result. Bad things will happen if you forget.
                 
                 You must provide detailed reasoning for your score, explaining how well the property matches each aspect of the user's preferences.
                 This reasoning will be shown to the user to help them understand why this property received its score.
@@ -276,7 +293,10 @@ class EvaluateAgent:
                     logging.error(f"Unexpected result format for property {property_index}: {result}")
                     return None
                 
-                return result[0]["args"]
+                # Convert the result to a Result object
+                result_obj = Result(**result[0]["args"])
+
+                return result_obj
                 
             except asyncio.TimeoutError:
                 logging.warning(f"Evaluation of property {property_index} timed out")
@@ -359,17 +379,6 @@ class EvaluateAgent:
                     if detail.name:
                         amenities.append(detail.name)
 
-        # Calculate average review score
-        avg_score = 0
-        if property_data.categoryReviews:
-            scores = [
-                review.score
-                for review in property_data.categoryReviews
-                if review.score is not None
-            ]
-            if scores:
-                avg_score = sum(scores) / len(scores)
-
         result = {
             "name": property_data.name,
             "url": property_data.url,
@@ -379,10 +388,9 @@ class EvaluateAgent:
             "amenities": amenities[:10],
             "reviews": [
                 {"title": review.title, "score": review.score}
-                for review in property_data.categoryReviews[:5]
+                for review in property_data.categoryReviews
                 if review.title
             ],
-            "score": f"{avg_score:.1f}/10" if avg_score else "No reviews",
             "image": property_data.image,
             "description": property_data.description,
             "gallery": property_data.gallery,
@@ -402,11 +410,6 @@ class EvaluateAgent:
                 if value.title:
                     amenities.append(value.title)
 
-        # Calculate average review score
-        avg_score = 0
-        if property_data.rating and property_data.rating.guestSatisfaction:
-            avg_score = property_data.rating.guestSatisfaction
-
         # Extract images
         image_urls = [img.imageUrl for img in property_data.images if img.imageUrl]
         main_image = (
@@ -425,6 +428,7 @@ class EvaluateAgent:
                     "".join(filter(lambda x: x.isdigit() or x == ".", price_str))
                 )
             except:
+                logging.error(f"Error extracting price from {price_str}")
                 price_value = None
 
         # Get location
@@ -444,7 +448,6 @@ class EvaluateAgent:
             "rooms": room_count,
             "amenities": amenities[:10],
             "reviews": [],  # No direct review titles in Airbnb model
-            "score": f"{avg_score:.1f}/10" if avg_score else "No reviews",
             "image": main_image,
             "description": property_data.description,
             "gallery": image_urls,
@@ -456,7 +459,7 @@ class EvaluateAgent:
     def _create_unified_property(
         self,
         property_data: BookingApifyResponse | AirbnbApifyResponse,
-        evaluation_result: Dict[str, Any],
+        evaluation_result: Result,
     ) -> UnifiedProperty:
         """Convert property data and evaluation result to a UnifiedProperty object"""
         # Determine source
@@ -556,25 +559,29 @@ class EvaluateAgent:
                 amenities=amenities,
             ),
             media=MediaModel(main_image=main_image, gallery=gallery),
-            score=self._parse_score(evaluation_result.get("score", "0")),
-            reasoning=evaluation_result.get("reasoning", ""),
+            score=self._parse_score(evaluation_result.score),
+            reasoning=evaluation_result.reasoning,
             raw_data=property_data,
         )
 
         return unified_property
 
-    def _parse_score(self, score_str: str) -> Union[int, float]:
-        """Convert a score string to a numeric value (int or float)"""
+    def _parse_score(self, score_str: int | str | None) -> int:
+        """Handle the parsing and error handling of the score from evaluation result"""
+        if score_str is None:
+            logging.error(f"Score didn't exist in evaluation result")
+            return 999
         try:
             # First try to convert to int
             return int(score_str)
         except ValueError:
             try:
                 # If that fails, try to convert to float
-                return float(score_str)
+                return int(math.floor(float(score_str)))
             except ValueError:
-                # If all conversions fail, return 0
-                return 0
+                # If all conversions fail, return 999 (error)
+                logging.error(f"Error parsing score: {score_str}")
+                return 999
 
 
 if __name__ == "__main__":

@@ -26,12 +26,18 @@
 </script>
 
 {#if variant === 'small'}
-	<div class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-medium">
+	<a 
+		href="/subscription" 
+		class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-medium hover:bg-primary/30 transition-colors"
+	>
 		<Crown size={14} class="text-primary mr-2" /> {daysRemaining} day{daysRemaining === 1 ? '' : 's'} left in trial
-	</div>
+	</a>
 {:else}
-	<div class="flex flex-col items-start text-left justify-center rounded-lg">
+	<a 
+		href="/subscription"
+		class="flex flex-col items-start text-left justify-center rounded-lg hover:opacity-90 transition-opacity"
+	>
 		<p class="text-lg font-bold"> {daysRemaining} day{daysRemaining === 1 ? '' : 's'} remaining</p>
 		<p class="text-sm ">Subscribe to continue access after trial ends</p>
-	</div>
+	</a>
 {/if} 
