@@ -88,7 +88,7 @@
 	<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 		<div class="flex justify-between items-center">
 			<button 
-				on:click={() => goto('/search')}
+				onclick={() => goto('/search')}
 				class="flex items-center gap-2 text-muted-foreground hover:text-foreground"
 			>
 				<ArrowLeft size={20} />
@@ -102,7 +102,7 @@
 				{#each properties as property}
 					<PropertyCard 
 						property={property}
-						on:select={handlePropertySelect}
+						onselect={handlePropertySelect}
 					/>
 				{/each}
 			</div>
@@ -121,7 +121,7 @@
 <PropertyGallery
 	property={selectedProperty}
 	showGallery={showGallery}
-	on:close={closeGallery}
-	on:book={() => selectedProperty && selectProperty(selectedProperty)}
-	on:save={() => selectedProperty && saveProperty(selectedProperty)}
+	onclose={closeGallery}
+	onbook={() => selectedProperty && selectProperty(selectedProperty)}
+	onsave={() => selectedProperty && saveProperty(selectedProperty)}
 /> 

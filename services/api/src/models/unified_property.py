@@ -1,6 +1,10 @@
 from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field
 
+class Coordinates(BaseModel):
+    lat: float | None
+    lng: float | None
+
 class PricingModel(BaseModel):
     total: float
 
@@ -28,6 +32,7 @@ class UnifiedProperty(BaseModel):
 
     # Location Information
     location: str
+    coordinates: Coordinates
 
     # Pricing Information
     pricing: PricingModel

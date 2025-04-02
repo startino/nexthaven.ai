@@ -133,8 +133,8 @@ class BookingApifyAgent:
                         checkIn=item.get("checkIn", ""),
                         checkOut=item.get("checkOut", ""),
                         location=Location(
-                            lat=item.get("location", {}).get("lat", 0),
-                            lng=item.get("location", {}).get("lng", 0),
+                            lat=float(item.get("location", {}).get("lat", 0)),
+                            lng=float(item.get("location", {}).get("lng", 0)),
                         ),
                         address=Address(
                             full=item.get("address", {}).get("full", ""),
@@ -203,8 +203,8 @@ if __name__ == "__main__":
         adults=3,
         children=0,
         minMaxPrice="0-2000",
-        checkIn="2025-02-28",
-        checkOut="2025-03-13",
+        checkIn="2025-04-11",
+        checkOut="2025-04-20",
     )
 
     # Run the async function in a new event loop

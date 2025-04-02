@@ -6,47 +6,33 @@
   import { Badge } from '$lib/components/ui/badge';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { ArrowLeft, ExternalLink } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
 
   // Props
   let { 
     property,
     backText = "Back",
     showBackButton = true,
-    onback = undefined
+    onback,
+    back
   } = $props<{ 
     property: UnifiedProperty, 
     backText?: string,
     showBackButton?: boolean,
-    onback?: () => void
-  }>();
-
-  // Event dispatcher
-  const dispatch = createEventDispatcher<{
-    back: void;
+    onback?: () => void,
+    back?: () => void
   }>();
 
   // Handle back button click
   function handleBack() {
     if (onback) {
-      // Call the Svelte 5 style handler if provided
+      // Use primary callback prop
       onback();
-    } else {
-      // Fall back to Svelte 4 style event dispatch
-      dispatch('back');
+    } else if (back) {
+      // Use alternative callback prop name
+      back();
     }
   }
 
-  // Control body scroll
-  $effect(() => {
-    // Prevent scrolling on the main page when booking view is open
-    document.body.style.overflow = 'hidden';
-    
-    return () => {
-      // Re-enable scrolling when component is unmounted
-      document.body.style.overflow = '';
-    };
-  });
 </script>
 
 <div class="fixed inset-0 bg-background z-50 flex flex-col">

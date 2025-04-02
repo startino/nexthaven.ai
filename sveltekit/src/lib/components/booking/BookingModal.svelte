@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { UnifiedProperty } from '$lib/types/unified-property';
   import { Button } from '$lib/components/ui/button';
   import { Card, CardContent } from '$lib/components/ui/card';
@@ -8,20 +7,17 @@
   // Props
   let { 
     property,
-    open = false
+    open = false,
+    onclose
   } = $props<{ 
     property: UnifiedProperty | null,
-    open: boolean 
-  }>();
-
-  // Event dispatcher
-  const dispatch = createEventDispatcher<{
-    close: void;
+    open: boolean,
+    onclose?: () => void
   }>();
 
   // Function to close the modal
   function closeModal() {
-    dispatch('close');
+    if (onclose) onclose();
   }
   
   // Function to handle clicking outside the modal
@@ -49,12 +45,12 @@
 </style>
 
 {#if open && property}
-  <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" on:click={handleOutsideClick}>
+  <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onclick={handleOutsideClick}>
     <div class="w-full max-w-5xl bg-black rounded-xl shadow-2xl flex flex-col">
       <!-- Header - Fixed -->
       <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black sticky top-0 z-10">
         <h2 class="text-xl font-bold text-white">{property.name}</h2>
-        <Button variant="ghost" class="text-white h-9 w-9 p-0" on:click={closeModal}>
+        <Button variant="ghost" class="text-white h-9 w-9 p-0" onclick={closeModal}>
           <X size={20} />
         </Button>
       </div>

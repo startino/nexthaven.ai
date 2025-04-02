@@ -199,7 +199,7 @@
 					</form>
 				</CardContent>
 			</Card>
-			
+		
 			<!-- Change Password (only for non-anonymous users) -->
 			{#if !isAnonymous}
 				<Card>

@@ -135,9 +135,14 @@
       
       <div class="flex gap-2">
         {#if property}
-          <div onclick={(e) => e.stopPropagation()} class="z-10">
+          <button 
+            onclick={(e) => e.stopPropagation()} 
+            class="z-10"
+            aria-label="Add to collection"
+            role="button"
+          >
             <AddToCollection property={property} />
-          </div>
+          </button>
         {:else}
           <Button
             onclick={handleSave}
