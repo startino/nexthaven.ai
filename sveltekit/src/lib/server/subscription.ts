@@ -6,6 +6,7 @@ import type {
 	CheckSubscriptionStatus,
 	IsEligibleForTrial
 } from '$lib/utils/subscription';
+import type { Database } from '$lib/types/database.types';
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(SECRET_STRIPE_KEY, {
@@ -13,150 +14,141 @@ const stripe = new Stripe(SECRET_STRIPE_KEY, {
 });
 
 /**
- * Modified checkSubscriptionStatus to also check for active trials
- * Returns subscription status details including trial status
+ * Checks if a user has an active subscription or is in a trial period
+ * This is the server-side implementation
  */
 export const checkSubscriptionStatus: CheckSubscriptionStatus = async (
-	supabase: SupabaseClient,
+	supabase: SupabaseClient<Database>,
 	userId: string
 ): Promise<SubscriptionStatus> => {
 	try {
-		// Default status
-		let subscriptionStatus: SubscriptionStatus = { isActive: false };
-		let hasPaidSubscription = false;
-
-		// Get the customer ID from the database
-		const { data: customerData, error: customerError } = await supabase
+		// First check if user has a Stripe customer ID
+		const { data: customer, error: customerError } = await supabase
 			.from('customers')
 			.select('stripe_customer_id')
 			.eq('user_id', userId)
 			.single();
 
-		if (!customerError && customerData?.stripe_customer_id) {
-			try {
-				// Verify the customer exists in Stripe
-				await stripe.customers.retrieve(customerData.stripe_customer_id);
+		if (customer?.stripe_customer_id) {
+			// User has a Stripe customer ID, check for active subscriptions in Stripe
+			const subscriptions = await stripe.subscriptions.list({
+				customer: customer.stripe_customer_id,
+				status: 'active',
+				expand: ['data.plan.product']
+			});
 
-				// Fetch active subscriptions from Stripe
-				const subscriptions = await stripe.subscriptions.list({
-					customer: customerData.stripe_customer_id,
-					status: 'active',
-					expand: ['data.plan.product']
-				});
+			if (subscriptions.data.length > 0) {
+				// User has an active paid subscription
+				const subscription = subscriptions.data[0];
+				const plan = subscription.items.data[0].plan;
+				const product = plan.product as Stripe.Product;
 
-				// If user has active subscriptions, mark as active
-				if (subscriptions.data.length > 0) {
-					hasPaidSubscription = true;
-					const subscription = subscriptions.data[0];
-					const plan = subscription.items.data[0].plan;
-					const product = plan.product as Stripe.Product;
-
-					subscriptionStatus = {
-						isActive: true,
-						planId: plan.id,
-						planName: product.name,
-						currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-						isInTrial: subscription.status === 'trialing',
-						trialEnd: subscription.trial_end
-							? new Date(subscription.trial_end * 1000).toISOString()
-							: undefined
-					};
-
-					// If user has an active subscription, deactivate any free trial
-					await supabase
-						.from('user_trials')
-						.update({ is_active: false })
-						.eq('user_id', userId)
-						.eq('is_active', true);
-				}
-			} catch (stripeErr) {
-				// Handle case where customer exists in our DB but not in Stripe
-				if (
-					stripeErr instanceof Stripe.errors.StripeError &&
-					stripeErr.type === 'StripeInvalidRequestError' &&
-					(stripeErr.raw as any)?.code === 'resource_missing'
-				) {
-					console.log('Customer exists in DB but not in Stripe, showing as inactive');
-				} else {
-					// For other errors, log but don't throw
-					console.error('Stripe error while checking subscription:', stripeErr);
-				}
+				return {
+					isActive: true,
+					planId: plan.id,
+					planName: product.name,
+					currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+					isInTrial: false
+				};
 			}
 		}
 
-		// Only check for free trial if no active paid subscription was found
-		if (!hasPaidSubscription) {
-			// Check if user has an active trial
-			const { data: trialData, error: trialError } = await supabase
-				.from('user_trials')
-				.select('*')
-				.eq('user_id', userId)
-				.eq('is_active', true)
-				.single();
+		// If no active subscription, check if they have an active trial
+		const { data: trial, error: trialError } = await supabase
+			.from('user_trials')
+			.select('*')
+			.eq('user_id', userId)
+			.eq('is_active', true)
+			.single();
 
-			// If there's an active trial, user has access
-			if (!trialError && trialData) {
-				const trialEnd = new Date(trialData.trial_end);
-				const now = new Date();
+		if (trial) {
+			// Check if the trial has expired
+			const trialEnd = new Date(trial.trial_end);
+			const now = new Date();
+			const isTrialActive = trialEnd > now;
 
-				// If trial hasn't expired
-				if (trialEnd > now) {
-					subscriptionStatus = {
-						isActive: true,
-						planName: 'Free Trial',
-						currentPeriodEnd: trialData.trial_end,
-						isInTrial: true,
-						trialEnd: trialData.trial_end
-					};
-				} else {
-					// Trial has expired, update it as inactive
-					await supabase.from('user_trials').update({ is_active: false }).eq('user_id', userId);
-				}
+			if (isTrialActive) {
+				// User has an active trial
+				return {
+					isActive: true,
+					isInTrial: true,
+					trialEnd: trial.trial_end
+				};
+			} else {
+				// Trial has expired but is marked as active - update it
+				await supabase.from('user_trials').update({ is_active: false }).eq('id', trial.id);
+
+				// Return inactive status
+				return {
+					isActive: false,
+					isInTrial: false,
+					trialEnd: trial.trial_end
+				};
 			}
 		}
 
-		return subscriptionStatus;
+		// No active subscription or trial
+		return { isActive: false };
 	} catch (error) {
 		console.error('Error checking subscription status:', error);
-		// Default to inactive on error to avoid blocking functionality
 		return { isActive: false };
 	}
 };
 
 /**
- * Check if a user is eligible for a free trial
- * Users are eligible if they've never had a subscription before
+ * Checks if a user is eligible for a free trial
+ * Users are eligible if they haven't used a trial before AND they are not anonymous
  */
 export const isEligibleForTrial: IsEligibleForTrial = async (
 	supabase: SupabaseClient,
 	userId: string
 ): Promise<boolean> => {
-	// Check if the user has any subscription records in Stripe
-	const { data: customerData, error: customerError } = await supabase
-		.from('customers')
-		.select('stripe_customer_id')
-		.eq('user_id', userId)
-		.single();
-
-	// If no customer record exists, they're eligible
-	if (customerError || !customerData?.stripe_customer_id) {
-		return true;
-	}
-
-	// If they have a customer ID, check if they've ever had a subscription
 	try {
-		// Check for any subscriptions (active, canceled, or past_due)
-		const subscriptions = await stripe.subscriptions.list({
-			customer: customerData.stripe_customer_id,
-			status: 'all',
-			limit: 1
-		});
+		// First check if this is an anonymous user - anonymous users are never eligible for trials
+		try {
+			// Try to get user data to check if they're anonymous
+			const { data: userData } = await supabase.auth.admin.getUserById(userId);
 
-		// If they have no subscription history, they're eligible
-		return subscriptions.data.length === 0;
+			if (userData?.user?.user_metadata) {
+				const metadata = userData.user.user_metadata;
+				// If user is marked as anonymous, they're not eligible for trial
+				if (metadata.is_anonymous === true || metadata.provider === 'anonymous') {
+					console.log('User is anonymous, not eligible for trial:', userId);
+					return false;
+				}
+			}
+		} catch (adminError) {
+			// If admin API fails, try fallback with session
+			console.log('Admin API not available for trial check, using fallback');
+			try {
+				const {
+					data: { session }
+				} = await supabase.auth.getSession();
+
+				if (session?.user?.id === userId && session?.user?.user_metadata) {
+					const metadata = session.user.user_metadata;
+					if (metadata.is_anonymous === true || metadata.provider === 'anonymous') {
+						console.log('User is anonymous (session check), not eligible for trial:', userId);
+						return false;
+					}
+				}
+			} catch (sessionError) {
+				console.error('Error checking user anonymity via session:', sessionError);
+			}
+		}
+
+		// Check if user has used a trial before
+		const { data, error } = await supabase.from('user_trials').select('*').eq('user_id', userId);
+
+		if (error) {
+			console.error('Error checking trial eligibility:', error);
+			return false;
+		}
+
+		// User is eligible if they have no trial records
+		return data.length === 0;
 	} catch (error) {
-		// If there's an error (like customer not found in Stripe), they're eligible
-		console.error('Error checking trial eligibility:', error);
-		return true;
+		console.error('Error in isEligibleForTrial:', error);
+		return false;
 	}
 };

@@ -1,29 +1,43 @@
 import type { LayoutServerLoad } from './$types';
-import { checkSubscriptionStatus } from '$lib/server/subscription';
 
 export const load: LayoutServerLoad = async ({ locals, depends }) => {
 	try {
 		// Tell SvelteKit this data depends on subscription status
 		depends('subscription:status');
+		depends('supabase:auth');
 
-		const session = await locals.getSession();
+		// Get data from locals (already processed in hooks.server.ts)
+		const {
+			session,
+			subscriptionStatus,
+			isTrialEligible,
+			isAnonymous,
+			hasExpiredTrial,
+			anonymousSearchInfo
+		} = locals;
 
-		// Check subscription status if user is logged in
-		let subscriptionStatus = null;
-		if (session?.user) {
-			subscriptionStatus = await checkSubscriptionStatus(locals.supabase, session.user.id);
-			console.log('subscriptionStatus', subscriptionStatus);
-		}
+		// Log what we're sending to the client
+		console.log('layout.server.ts anonymousSearchInfo:', anonymousSearchInfo);
 
 		return {
 			session,
-			subscriptionStatus
+			subscriptionStatus,
+			isTrialEligible,
+			isAnonymous,
+			hasExpiredTrial,
+			anonymousSearchInfo
+			// Don't return the supabase client as it's not serializable
 		};
 	} catch (error) {
 		console.error('Error in layout.server.ts:', error);
 		return {
 			session: null,
-			subscriptionStatus: null
+			subscriptionStatus: { isActive: false },
+			isTrialEligible: false,
+			isAnonymous: false,
+			hasExpiredTrial: false,
+			anonymousSearchInfo: null
+			// Don't return the supabase client as it's not serializable
 		};
 	}
 };

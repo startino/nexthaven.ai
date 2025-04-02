@@ -32,6 +32,44 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		switch (type) {
 			case 'customer.subscription.created':
 				console.log('New subscription created:', (data.object as Stripe.Subscription).id);
+				// When a subscription is created, deactivate any trials for this customer
+				try {
+					const subscription = data.object as Stripe.Subscription;
+
+					// Get the customer ID from the subscription
+					const customerId = subscription.customer as string;
+
+					// Find the user ID associated with this customer
+					const { data: customerData, error: customerError } = await locals.supabase
+						.from('customers')
+						.select('user_id')
+						.eq('stripe_customer_id', customerId)
+						.single();
+
+					if (customerError) {
+						console.error('Error finding user for customer:', customerError);
+					} else if (customerData?.user_id) {
+						// Deactivate any trials for this user
+						const { error: deactivateError } = await locals.supabase
+							.from('user_trials')
+							.update({ is_active: false })
+							.eq('user_id', customerData.user_id);
+
+						if (deactivateError) {
+							console.error(
+								'Error deactivating trials for user with new subscription:',
+								deactivateError
+							);
+						} else {
+							console.log(
+								'Successfully deactivated trials for user with new subscription:',
+								customerData.user_id
+							);
+						}
+					}
+				} catch (err) {
+					console.error('Error processing subscription created webhook:', err);
+				}
 				break;
 			case 'customer.subscription.updated':
 				console.log('Subscription updated:', (data.object as Stripe.Subscription).id);
