@@ -10,7 +10,7 @@ from apify_client import ApifyClient
 from src.models.airbnb_apify import (
     AirbnbApifyRequest,
     AirbnbApifyResponse,
-    Coordinates,
+    AirbnbCoordinates,
     Rating,
     HouseRules,
     RuleGroup,
@@ -169,7 +169,7 @@ class AirbnbApifyAgent:
         """
         try:
             # Extract coordinates
-            coordinates = Coordinates(
+            coordinates = AirbnbCoordinates(
                 latitude=item.get("coordinates", {}).get("latitude", 0),
                 longitude=item.get("coordinates", {}).get("longitude", 0),
             )

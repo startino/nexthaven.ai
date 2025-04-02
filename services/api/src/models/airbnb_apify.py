@@ -31,9 +31,9 @@ class AirbnbApifyRequest(BaseModel):
     pets: Optional[int] = Field(default=None, description="Number of pets")
     proxyConfiguration: Optional[Dict[str, Any]] = Field(default=None, description="Proxy configuration")
 
-class Coordinates(BaseModel):
-    latitude: float | None
-    longitude: float | None
+class AirbnbCoordinates(BaseModel):
+    latitude: float
+    longitude: float
 
 class Rating(BaseModel):
     accuracy: Optional[float] = None
@@ -150,7 +150,7 @@ class AirbnbApifyResponse(BaseModel):
     Response model for the Airbnb Apify scraper.
     """
     id: str
-    coordinates: Coordinates
+    coordinates: AirbnbCoordinates
     description: Optional[str] = ""
     descriptionOriginalLanguage: Optional[str] = None
     title: str

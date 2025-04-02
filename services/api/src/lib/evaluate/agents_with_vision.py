@@ -508,7 +508,7 @@ Please provide a detailed, thorough analysis of both aspects, clearly separating
             description = property_data.description
             url = property_data.url
             location = property_data.address.full if property_data.address else ""
-            coordinates = property_data.location if property_data.location else ""
+            coordinates: Coordinates = Coordinates(lat=property_data.location.lat, lng=property_data.location.lng)
 
             # Extract pricing
             if isinstance(property_data.price, str):
@@ -542,7 +542,7 @@ Please provide a detailed, thorough analysis of both aspects, clearly separating
             description = property_data.description if property_data.description else ""
             url = property_data.url
             location = property_data.location if property_data.location else ""
-            coordinates = property_data.coordinates if property_data.coordinates else ""
+            coordinates: Coordinates = Coordinates(lat=property_data.coordinates.latitude, lng=property_data.coordinates.longitude)
 
             # Extract pricing
             if isinstance(property_data.price, str):
