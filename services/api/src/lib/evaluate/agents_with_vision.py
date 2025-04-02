@@ -7,6 +7,7 @@ import httpx
 from io import BytesIO
 from typing import List, Dict, Any, Union
 import openai  # Import for exception handling
+import random
 
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -38,6 +39,7 @@ from src.models.result import Result, Property
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
 from src.models.unified_property import (
     UnifiedProperty,
+    Coordinates,
     PricingModel,
     CapacityModel,
     FeaturesModel,
@@ -78,16 +80,18 @@ class EvaluateAgent:
             for i, prop in enumerate(properties):
                 # Handle both Booking.com and Airbnb property types
                 if isinstance(prop, BookingApifyResponse) and prop.gallery:
-                    image_tasks.append(self._analyze_images(prop.gallery))
+                    image_tasks.append(self._analyze_images(prop.gallery, user_request))
                 elif isinstance(prop, AirbnbApifyResponse) and prop.images:
                     # Extract image URLs from Airbnb images
                     image_urls = [img.imageUrl for img in prop.images if img.imageUrl]
                     if image_urls:
-                        image_tasks.append(self._analyze_images(image_urls))
+                        image_tasks.append(self._analyze_images(image_urls, user_request))
                     else:
                         image_tasks.append(None)
                 else:
                     image_tasks.append(None)
+                    
+            start_time = time.time()
 
             # Wait for all image analyses to complete
             image_results = await asyncio.gather(
@@ -102,7 +106,10 @@ class EvaluateAgent:
                     result_index += 1
                 else:
                     image_analyses[f"property_{i}"] = "No images available for analysis."
-
+                    
+            end_time = time.time()
+            logging.info(f"Image analysis completed in {end_time - start_time:.2f} seconds")
+            
         # Create evaluation tasks for each property
         evaluation_tasks = []
         for i, prop in enumerate(properties):
@@ -125,10 +132,26 @@ class EvaluateAgent:
             )
             evaluation_tasks.append(task)
         
-        # Run all evaluation tasks concurrently with a timeout
-        logging.info(f"Starting parallel evaluation of {len(properties)} properties using asyncio.gather")
+        # Process in batches instead of all at once to prevent rate limiting
+        logging.info(f"Starting batch processing of {len(properties)} properties")
         start_time = time.time()
-        results = await asyncio.gather(*evaluation_tasks, return_exceptions=True)
+        
+        # Use a semaphore to limit the total number of concurrent evaluations
+        # This prevents overwhelming the API while still allowing parallel batch processing
+        max_concurrent_total = 15  # Maximum concurrent evaluations across all batches
+        semaphore = asyncio.Semaphore(max_concurrent_total)
+        
+        # Create a limited version of the evaluation function
+        async def limited_evaluation(task):
+            async with semaphore:
+                return await task
+        
+        # Process all properties in a more optimized parallel approach
+        # Instead of processing batches sequentially, we wrap each task with the semaphore
+        # and run all of them in parallel, but with a concurrency limit applied via semaphore
+        tasks = [limited_evaluation(task) for task in evaluation_tasks]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
         end_time = time.time()
         logging.info(f"Completed parallel evaluation in {end_time - start_time:.2f} seconds")
         
@@ -209,6 +232,8 @@ class EvaluateAgent:
                 Property: {property_data}
                 Image Analysis: {image_analysis}
                 
+                Pay careful attention to both the Generic Image Analysis (which describes the overall property style and features) and the User Preference-Centric Analysis (which specifically examines how well the property matches the user's stated preferences). Use insights from both analyses when evaluating how well the property aligns with the user's requirements, especially regarding style and feel.
+                
                 Return a property match with a score between 0-100 where 100 is a perfect match.
                 Weight the scores towards these numbers: 98%, 85%, 75%, 65%, 55%, 45%, 35%
                 Your score output should be just the number, no other text.
@@ -246,7 +271,6 @@ class EvaluateAgent:
                     )
                 ]
             )
-
             # Create the evaluation chain
             chain = (
                 prompt 
@@ -254,11 +278,11 @@ class EvaluateAgent:
                 | JsonOutputToolsParser(return_id=True)
             )
             
-            # Execute with timeout to avoid hanging
+            # Execute with 30 second timeout to meet our target
             try:
                 result = await asyncio.wait_for(
                     chain.ainvoke({}), 
-                    timeout=90 # With too many request errors, LLM retries after 60 seconds
+                    timeout=30 # Reduced to 30s target
                 )
                 
                 logging.info(f"Successfully evaluated property {property_index}")
@@ -274,7 +298,7 @@ class EvaluateAgent:
                 return result_obj
                 
             except asyncio.TimeoutError:
-                logging.warning(f"Evaluation of property {property_index} timed out")
+                logging.warning(f"Evaluation of property {property_index} timed out after 30 seconds")
                 return None
                 
         except openai.BadRequestError as e:
@@ -303,25 +327,56 @@ class EvaluateAgent:
             logging.error(f"Unexpected error evaluating property {property_index}: {str(e)}")
             return None
     
-    async def _analyze_images(self, image_urls: List[str], max_images: int = 6) -> str:
-        """Analyze property images using vision model"""
+    async def _analyze_images(self, image_urls: List[str], user_request: GeneratedRequirement, max_images: int = 15) -> str:
+        """
+        Analyze property images using vision model - combined generic and preference analysis
+        
+        Args:
+            image_urls: List of image URLs to analyze
+            user_request: User's requirements to consider for preference-centric analysis
+            max_images: Maximum number of images to analyze
+            
+        Returns:
+            String containing combined image analysis
+        """
         if not image_urls:
             return "No images available for analysis."
 
-        # Limit the number of images to analyze
-        image_urls = image_urls[:max_images]
-
-        # Create prompt for vision model
+        # Randomly select images up to max_images
+        # We select them randomly as the order of images is likely to be grouped by things like room, bathroom, nearby attractions, etc.
+        if len(image_urls) > max_images:
+            selected_urls = random.sample(image_urls, max_images)
+        else:
+            selected_urls = image_urls.copy()
+            
+        # Extract user preferences for the prompt
+        preferences_text = "Not specified"
+        if user_request and user_request.preferences:
+            preferences_text = user_request.preferences
+            
+        # Create a combined prompt that addresses both generic and preference-specific analysis
         messages = [
             HumanMessage(
                 content=[
                     {
                         "type": "text",
-                        "text": "Analyze these property images and describe the style, vibe, and aesthetic of the property. Focus on decor, design elements, ambiance, and overall feel. Is it modern, traditional, minimalist, luxurious, cozy, etc.?",
+                        "text": f"""Analyze these property images comprehensively in two parts:
+
+PART 1 - GENERIC ANALYSIS:
+Describe the style, vibe, and aesthetic of the property. Focus on decor, design elements, ambiance, and overall feel. Is it modern, traditional, minimalist, luxurious, cozy, etc.? What are the key visual features of this property?
+
+PART 2 - USER PREFERENCE MATCH:
+The user has specified these preferences: '{preferences_text}'
+Analyze if the property matches these specific preferences. Which visual elements align with or contradict the user's stated preferences?
+Be highly descriptive and specifc about the details found in the images; it's like you're making the image come to life through your analysis.
+If the images don't contain the information to make a determination, say "Images don't contain information to make a determination for [insert preference here]"
+
+Please provide a detailed, thorough analysis of both aspects, clearly separating the two parts in your response.
+""",
                     },
                     *[
                         {"type": "image_url", "image_url": {"url": url}}
-                        for url in image_urls
+                        for url in selected_urls
                         if url
                     ],
                 ]
@@ -330,7 +385,7 @@ class EvaluateAgent:
 
         # Get analysis from vision model
         response = await self.vision_llm.ainvoke(messages)
-        return f"Image Analysis: {response.content}"
+        return response.content
 
     def _simplify_property(
         self, property_data: BookingApifyResponse | AirbnbApifyResponse
@@ -453,6 +508,7 @@ class EvaluateAgent:
             description = property_data.description
             url = property_data.url
             location = property_data.address.full if property_data.address else ""
+            coordinates = property_data.location if property_data.location else ""
 
             # Extract pricing
             if isinstance(property_data.price, str):
@@ -486,6 +542,7 @@ class EvaluateAgent:
             description = property_data.description if property_data.description else ""
             url = property_data.url
             location = property_data.location if property_data.location else ""
+            coordinates = property_data.coordinates if property_data.coordinates else ""
 
             # Extract pricing
             if isinstance(property_data.price, str):
@@ -521,6 +578,7 @@ class EvaluateAgent:
             name=name,
             description=description,
             location=location if location else "",  # Ensure location is never None
+            coordinates=Coordinates(lat=coordinates.lat, lng=coordinates.lng) if coordinates else Coordinates(lat=None, lng=None),
             pricing=PricingModel(
                 total=(
                     float(total.price.replace("$", "").replace(",", ""))
@@ -557,6 +615,7 @@ class EvaluateAgent:
                 # If all conversions fail, return 999 (error)
                 logging.error(f"Error parsing score: {score_str}")
                 return 999
+
 
 
 if __name__ == "__main__":
@@ -596,19 +655,25 @@ if __name__ == "__main__":
     all_properties = booking_properties + airbnb_properties
     
     # Use the asyncio version
-    start_time = time.time()
-    evaluate_agent = EvaluateAgent()
-    response = asyncio.run(
-        evaluate_agent.evaluate(generate_requirement, all_properties)
-    )
-    end_time = time.time()
+    async def main():
+        start_time = time.time()
+        evaluate_agent = EvaluateAgent()
+        try:
+            response = await evaluate_agent.evaluate(generate_requirement, all_properties)
+        finally:
+            # Ensure resources are cleaned up
+            await evaluate_agent.close()
+        end_time = time.time()
 
-    # Check if response is None before calling len()
-    if response:
-        print(
-            f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds"
-        )
-        for prop in response:
-            print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
-    else:
-        print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")
+        # Check if response is None before calling len()
+        if response:
+            print(
+                f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds"
+            )
+            for prop in response:
+                print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
+        else:
+            print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")
+    
+    # Run the async main function
+    asyncio.run(main())

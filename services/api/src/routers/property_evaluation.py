@@ -985,7 +985,6 @@ async def fetch_properties_background(
                 logging.warning(
                     "No properties loaded from files, creating dummy properties"
                 )
-
                 # Create dummy properties for both Airbnb and Booking.com - exactly APIFY_MAX_ITEMS each
                 for i in range(APIFY_MAX_ITEMS):
                     # Create dummy Airbnb property
