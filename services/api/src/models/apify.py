@@ -48,8 +48,8 @@ class BookingApifyRequest(BaseModel):
     checkOut: str = Field(description="The check-out date")
     
 class Location(BaseModel):
-    lat: float | None
-    lng: float | None
+    lat: float
+    lng: float
     
 class Address(BaseModel):
     full: str | None
