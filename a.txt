@@ -1,0 +1,36 @@
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "started", "message": "Starting property evaluation", "progress": 0}
+
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "in_progress", "step": "checking", "message": "Checking property search status", "progress": 10}
+
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "in_progress", "step": "retrieving", "message": "Retrieving properties from cache", "progress": 30}
+
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "retrieved", "step": "retrieved", "message": "Retrieved 10 properties", "progress": 40, "properties_count": 10, "properties": []}
+
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "in_progress", "step": "updating", "message": "Updating requirements with user preferences", "progress": 50, "properties_count": 10}
+
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "in_progress", "step": "processing", "message": "Evaluating 10 properties", "progress": 70, "properties_count": 10}
+
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "in_progress", "step": "formatting", "message": "Formatting results", "progress": 90}
+
+event: property_evaluation
+data: {"event": "property_evaluation", "status": "completed", "message": "Property evaluation completed", "count": 10, "results": [], "processing_time": "16.48 seconds", "performance_metrics": {"status_check_time": "0.00s", "property_retrieval_time": "0.00s", "requirements_update_time": "3.63s", "evaluation_time": "12.85s", "formatting_time": "0.00s", "total_time": "16.48s"}, "progress": 100}
+
+export type PropertyEvaluationEventData = {
+	event: string;
+	status: 'started' | 'in_progress' | 'completed';
+	message: string;
+	progress: number;
+	step?: 'checking' | 'retrieving' | 'retrieved' | 'updating' | 'processing' | 'formatting'};
+	properties_count?: number;
+	properties?: UnifiedProperty[];
+	results?: UnifiedProperty[];
+	count?: number;
+	error?: string;
+};

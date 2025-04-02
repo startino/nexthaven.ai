@@ -22,6 +22,7 @@ langchain-openai = "*"
 supabase = "^2.11.0"
 beautifulsoup4 = "^4.13.3"
 apify-client = "^1.9.2"
+logfire = "^3.12.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"

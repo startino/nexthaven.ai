@@ -1,0 +1,37 @@
+<script lang="ts">
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { FolderList, FolderProperties } from '$lib/components/folder';
+	import { Button } from '$lib/components/ui/button';
+	import { ArrowLeft } from 'lucide-svelte';
+
+	// Check authentication on mount
+	$effect(() => {
+		if (!$page.data.session) {
+			goto('/auth/login');
+		}
+	});
+</script>
+
+<div class="min-h-screen bg-background">
+	<div class="max-w-7xl mx-auto px-4 py-6 lg:py-8">
+		<!-- Page header -->
+		<div class="mb-6">
+			<h1 class="text-3xl font-serif">My Saved Properties</h1>
+			<p class="text-muted-foreground mt-2">Organize and manage your saved properties in folders.</p>
+		</div>
+		
+		<!-- Main content -->
+		<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+			<!-- Sidebar -->
+			<div class="md:col-span-3 border rounded-lg p-4 bg-card">
+				<FolderList />
+			</div>
+			
+			<!-- Main content area -->
+			<div class="md:col-span-9 border rounded-lg p-6 bg-card">
+				<FolderProperties />
+			</div>
+		</div>
+	</div>
+</div> 

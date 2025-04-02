@@ -31,3 +31,7 @@ Use Tailwind CSS for styling.
 
 Don't change styling of existing components unless you are asked to.
 
+Use `type` over `interface`, everytime.
+
+Use arrow functions, everytime.
+

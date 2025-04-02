@@ -1,0 +1,156 @@
+// Constants for time frames and durations
+export const timeFrames = ['Next Week', 'Two Weeks', 'Next Month'];
+export const durations = ['1 Week', '1 Month', '3 Months'];
+
+// Check if a date string is valid
+export function isValidDate(dateString: string): boolean {
+  if (!dateString) return false;
+  
+  // Check for timeFrames and durations format
+  if (timeFrames.includes(dateString) || 
+      durations.includes(dateString) || 
+      dateString.startsWith('for ') ||
+      /^(Next Week|Two Weeks|Next Month)\s+for\s+(1 Week|1 Month|3 Months)$/i.test(dateString)) {
+    return true;
+  }
+  
+  // Check for date range format (e.g., "March 15, 2024 - April 20, 2024")
+  if (/^[A-Za-z]+ \d{1,2}, \d{4} - [A-Za-z]+ \d{1,2}, \d{4}$/.test(dateString)) {
+    const [startStr, endStr] = dateString.split(' - ');
+    const startDate = new Date(startStr);
+    const endDate = new Date(endStr);
+    return !isNaN(startDate.getTime()) && !isNaN(endDate.getTime());
+  }
+  
+  // Check for standard date formats (YYYY-MM-DD, MM/DD/YYYY, etc.)
+  const date = new Date(dateString);
+  return !isNaN(date.getTime());
+}
+
+// Safely format a date string, returning a default value if invalid
+export function safeFormatDate(dateString: string, defaultValue = 'Invalid date'): string {
+  if (!dateString) return defaultValue;
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return defaultValue;
+    
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return defaultValue;
+  }
+}
+
+// Calculate start date based on selected time frame
+export function calculateStartDate(timeFrame: string): string {
+  let now = new Date();
+  
+  if (timeFrame === 'Next Week') {
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return nextWeek.toISOString().split('T')[0];
+  } else if (timeFrame === 'Two Weeks') {
+    const twoWeeks = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    return twoWeeks.toISOString().split('T')[0];
+  } else if (timeFrame === 'Next Month') {
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    return nextMonth.toISOString().split('T')[0];
+  }
+  
+  return '';
+}
+
+// Format date range based on time frame and duration
+export function formatDateRange(timeFrame: string, duration: string): string {
+  if (!timeFrame && !duration) return '';
+  
+  if (timeFrame && duration) {
+    return `${timeFrame} for ${duration}`;
+  } else if (timeFrame) {
+    return timeFrame;
+  } else if (duration) {
+    return `for ${duration}`;
+  }
+  
+  return '';
+}
+
+// Parse a date range string into timeframe and duration components
+// and now also handle specific date ranges
+export function parseDateRange(dateRange: string): { 
+  timeFrame: string | null; 
+  duration: string | null;
+  startDate?: string;
+  endDate?: string;
+} {
+  if (!dateRange) return { timeFrame: null, duration: null };
+  
+  // Full format: "Next Week for 1 Month"
+  const fullMatch = dateRange.match(/^(Next Week|Two Weeks|Next Month)\s+for\s+(1 Week|1 Month|3 Months)$/i);
+  
+  if (fullMatch) {
+    const timeframe = fullMatch[1];
+    const period = fullMatch[2];
+    
+    // Only update if valid options
+    if (timeFrames.includes(timeframe) && durations.includes(period)) {
+      return { timeFrame: timeframe, duration: period };
+    }
+  }
+  
+  // Only timeframe: "Next Week"
+  const timeframeMatch = dateRange.match(/^(Next Week|Two Weeks|Next Month)$/i);
+  if (timeframeMatch) {
+    const timeframe = timeframeMatch[1];
+    if (timeFrames.includes(timeframe)) {
+      return { timeFrame: timeframe, duration: null };
+    }
+  }
+  
+  // Only duration: "for 1 Month"
+  const durationMatch = dateRange.match(/^for\s+(1 Week|1 Month|3 Months)$/i);
+  if (durationMatch) {
+    const period = durationMatch[1];
+    if (durations.includes(period)) {
+      return { timeFrame: null, duration: period };
+    }
+  }
+  
+  // Handle date range format from calendar (e.g., "March 15, 2024 - April 20, 2024")
+  const dateRangeMatch = dateRange.match(/^([A-Za-z]+ \d{1,2}, \d{4}) - ([A-Za-z]+ \d{1,2}, \d{4})$/);
+  if (dateRangeMatch) {
+    const startDateStr = dateRangeMatch[1];
+    const endDateStr = dateRangeMatch[2];
+    
+    try {
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        return { 
+          timeFrame: null, 
+          duration: null,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        };
+      }
+    } catch (e) {
+      console.error("Failed to parse date range", e);
+    }
+  }
+  
+  return { timeFrame: null, duration: null };
+}
+
+// Format a Date into a readable format like "Mar 15"
+export function formatDate(date: Date): string {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid date';
+  }
+  
+  const month = date.toLocaleString('default', { month: 'short' });
+  return `${month} ${date.getDate()}`;
+} 

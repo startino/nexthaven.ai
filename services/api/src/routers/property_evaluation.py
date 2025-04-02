@@ -1,13 +1,14 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, AsyncGenerator
 import logging
 import time
 import asyncio
 import os
 import json
 from pathlib import Path
+from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
 from dotenv import load_dotenv, find_dotenv
 from src.models.apify import (
@@ -69,7 +70,7 @@ async def query_properties(request: PropertyQueryRequest):
     allowing the frontend to proceed to the preferences step while the search runs in the background.
     This approach reduces the overall response time by parallelizing the search and preference input.
 
-    Cursor Edit count: 2
+    Cursor Edit count: 4
     """
     logging.info(
         f"/properties/query: Starting property search for query: {request.query}"
@@ -95,14 +96,20 @@ async def query_properties(request: PropertyQueryRequest):
         )
         # endregion
 
+        # Create a shared event bus for this session
+        status_update_events = asyncio.Queue()
+
         # region Start background task
         # Start the background task without awaiting it
-        task = asyncio.create_task(fetch_properties_background(session_id, request))
+        task = asyncio.create_task(
+            fetch_properties_background(session_id, request, status_update_events)
+        )
 
         # Add a name to the task for debugging
         task.set_name(f"property_search_{session_id}")
         # endregion
 
+        # Standard JSON response
         return JSONResponse(
             content={
                 "status": "processing",
@@ -131,10 +138,11 @@ async def get_query_status_endpoint(session_id: str):
     which is useful for providing feedback to the user about the search progress.
     It's part of the asynchronous search pattern that improves overall response time.
 
-    Cursor Edit count: 2
+    Cursor Edit count: 4
     """
     logging.info(f"/properties/query/{session_id}/status: Checking query status")
 
+    # Standard synchronous status check
     status = await get_query_status(session_id)
 
     if not status:
@@ -155,14 +163,14 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         request: The property evaluation request with session_id and preferences
 
     Returns:
-        JSONResponse with evaluated properties sorted by score
+        EventSourceResponse with stream of property evaluation updates and final results
 
     This endpoint is called after step 3 of the form (when user preferences are known).
     It waits for the property search to complete if necessary, then evaluates the properties
     based on the user's preferences. This separation from the property search allows the
     search to start earlier in the user flow, reducing the overall response time for the user.
 
-    Cursor Edit count: 2
+    Cursor Edit count: 5
     """
     # Track timings for different operations
     timings = {}
@@ -172,168 +180,415 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
         f"/properties/evaluate: Evaluating properties for session: {request.session_id}"
     )
 
-    try:
-        # region Check query status and wait if needed
-        status_check_start = time.time()
-        # Check query status
-        status = await get_query_status(request.session_id)
+    # Helper function to safely extract image URL from different object formats
+    def get_image_url(prop):
+        """Extract the main image URL from a property object, handling different formats safely."""
+        # If property has image attribute directly
+        if hasattr(prop, "image") and prop.image:
+            return prop.image
 
-        if not status:
-            logging.error(f"Session not found: {request.session_id}")
-            raise HTTPException(status_code=404, detail="Session not found")
-
-        # If query is still in progress, wait for it to complete (without timeout)
-        if status.get("status") == "in_progress":
-            logging.info(f"Query still in progress for session {request.session_id}, waiting...")
-            
-            # Wait for completion without a maximum time limit
-            wait_interval = 5  # Check every 5 seconds
-            total_waited = 0
-            
-            # Keep waiting as long as the query is in progress
-            while status.get("status") == "in_progress":
-                await asyncio.sleep(wait_interval)
-                total_waited += wait_interval
-                status = await get_query_status(request.session_id)
-                
-                if not status:
-                    logging.error(f"Session expired during wait: {request.session_id}")
-                    raise HTTPException(status_code=404, detail="Session expired")
-                
-                # Log progress occasionally
-                if total_waited % 30 == 0:  # Log every 30 seconds
-                    logging.info(f"Still waiting for query to complete. Waited {total_waited} seconds so far. Current status: {status.get('message', 'No message')}")
-            
-            logging.info(f"Waited {total_waited} seconds for query to complete. Final status: {status.get('status')}")
-        
-        # Check if query completed successfully
-        if status.get("status") == "error":
-            error_message = status.get("error", "Unknown error")
-            logging.error(f"Property query failed: {error_message}")
-            raise HTTPException(status_code=500, detail=f"Property query failed: {error_message}")
-        
-        # We don't need to check for timeout anymore since we wait indefinitely
-        if status.get("status") != "completed":
-            logging.error(f"Property query failed with unexpected status: {status.get('status')}")
-            raise HTTPException(status_code=500, detail=f"Property query failed with unexpected status: {status.get('status')}")
-
-        timings["status_check"] = time.time() - status_check_start
-        # endregion
-
-        # region Retrieve and validate properties
-        property_retrieval_start = time.time()
-
-        # Retrieve properties and basic requirements from cache
-        all_properties, basic_req_obj = await retrieve_properties(request.session_id)
-
-        # Ensure basic_req_obj is a GeneratedRequirement object
-        if not isinstance(basic_req_obj, GeneratedRequirement):
-            logging.error(f"Invalid requirements format: {type(basic_req_obj)}")
-            raise HTTPException(status_code=500, detail="Invalid requirements format")
-
-        # Ensure all_properties is a list of property objects
-        if not isinstance(all_properties, list):
-            logging.error(f"Invalid properties format: {type(all_properties)}")
-            raise HTTPException(status_code=500, detail="Invalid properties format")
-
-        timings["property_retrieval"] = time.time() - property_retrieval_start
-        # endregion
-
-        # region Update requirements with preferences
-        req_update_start = time.time()
-        # Update requirements with preferences
-        user_requirement = UserRequirement(
-            query=basic_req_obj.query,
-            date=f"{basic_req_obj.date_range.start_date} to {basic_req_obj.date_range.end_date}",
-            budget=basic_req_obj.budget,
-            adults=basic_req_obj.adults,
-            children=basic_req_obj.children,
-            number_of_rooms=basic_req_obj.number_of_rooms,
-            preferences=request.preferences,
-        )
-
-        # Analyze with preferences included
-        analyzer = AnalyzeUserRequirement()
-        updated_req_obj = analyzer.analyze_user_requirement(user_requirement)
-
-        timings["req_update"] = time.time() - req_update_start
-        # endregion
-
-        # region Evaluate properties
-        evaluation_start = time.time()
-        # Evaluate properties
-        evaluate_agent = EvaluateAgent()
-        results = await evaluate_agent.evaluate(updated_req_obj, all_properties)
-        timings["evaluation"] = time.time() - evaluation_start
-
-        # Limit to requested number of results
-        top_results = results[:30]
-
-        # Convert UnifiedProperty objects to dictionaries for JSON response
-        formatting_start = time.time()
-        formatted_results = []
-        for prop in top_results:
+        # Handle Airbnb-style image arrays
+        if hasattr(prop, "images") and prop.images:
             try:
-                # The prop is already a UnifiedProperty object, so we can directly use model_dump()
-                formatted_results.append(prop.model_dump(exclude={"raw_data"}))
-            except Exception as e:
-                logging.error(f"Error formatting result: {str(e)}")
-        timings["formatting"] = time.time() - formatting_start
-        # endregion
+                # Try first as a list of dictionaries
+                if isinstance(prop.images[0], dict) and "imageUrl" in prop.images[0]:
+                    return prop.images[0]["imageUrl"]
 
-        # Calculate total time
-        overall_time = time.time() - overall_start_time
+                # Try as object with imageUrl attribute
+                if hasattr(prop.images[0], "imageUrl"):
+                    return prop.images[0].imageUrl
 
-        # Generate comprehensive performance report
-        logging.info(
-            f"Property evaluation complete - Performance Report:\n"
-            f"==========================================\n"
-            f"SESSION: {request.session_id}\n"
-            f"TOTAL TIME: {overall_time:.2f} seconds\n"
-            f"------------------------------------------\n"
-            f"1. Status Check & Waiting: {timings['status_check']:.2f}s\n"
-            f"2. Property Retrieval: {timings['property_retrieval']:.2f}s\n"
-            f"   - Properties Retrieved: {len(all_properties)}\n"
-            f"3. Requirements Processing: {timings['req_update']:.2f}s\n"
-            f"4. Property Evaluation: {timings['evaluation']:.2f}s\n"
-            f"5. Result Formatting: {timings['formatting']:.2f}s\n"
-            f"------------------------------------------\n"
-            f"OUTCOME: {len(formatted_results)} top properties selected from {len(all_properties)} total properties\n"
-            f"==========================================\n"
-        )
+                # Try as direct string in array
+                if isinstance(prop.images[0], str):
+                    return prop.images[0]
+            except (IndexError, TypeError, AttributeError):
+                pass
 
-        return JSONResponse(
-            content={
-                "status": "success",
-                "message": "Property evaluation completed",
-                "count": len(formatted_results),
-                "results": formatted_results,
-                "processing_time": f"{overall_time:.2f} seconds",
-                "performance_metrics": {
-                    "status_check_time": f"{timings['status_check']:.2f}s",
-                    "property_retrieval_time": f"{timings['property_retrieval']:.2f}s",
-                    "requirements_update_time": f"{timings['req_update']:.2f}s",
-                    "evaluation_time": f"{timings['evaluation']:.2f}s",
-                    "formatting_time": f"{timings['formatting']:.2f}s",
-                    "total_time": f"{overall_time:.2f}s",
-                },
-            }
-        )
+        return ""
 
-    except Exception as e:
-        logging.error(f"Error evaluating properties (global catch): {str(e)}")
-        logging.exception("Global exception details:")
+    async def event_generator():
+        try:
+            # Send initial SSE event - starting
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "started",
+                        "message": "Starting property evaluation",
+                        "progress": 0,
+                    }
+                ),
+                event="property_evaluation",
+            )
 
-        # Return a user-friendly error response
-        return JSONResponse(
-            content={
-                "status": "error",
-                "message": f"An unexpected error occurred: {str(e)}",
-                "count": 0,
-                "results": [],
-            },
-            status_code=500,
-        )
+            # Check query status
+            status_check_start = time.time()
+
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "in_progress",
+                        "step": "checking",
+                        "message": "Checking property search status",
+                        "progress": 10,
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+            status = await get_query_status(request.session_id)
+
+            if not status:
+                error_msg = f"Session not found: {request.session_id}"
+                logging.error(error_msg)
+                yield ServerSentEvent(
+                    data=json.dumps(
+                        {
+                            "event": "property_evaluation",
+                            "status": "error",
+                            "message": error_msg,
+                            "error": "session_not_found",
+                        }
+                    ),
+                    event="property_evaluation",
+                )
+                return
+
+            # If query is still in progress, wait for it to complete (with timeout)
+            if status.get("status") == "in_progress":
+                logging.info(
+                    f"Query still in progress for session {request.session_id}, waiting..."
+                )
+
+                yield ServerSentEvent(
+                    data=json.dumps(
+                        {
+                            "event": "property_evaluation",
+                            "status": "in_progress",
+                            "step": "waiting",
+                            "message": "Property search still in progress, waiting for completion",
+                            "progress": 15,
+                        }
+                    ),
+                    event="property_evaluation",
+                )
+
+                # Wait for completion with timeout
+                max_wait_time = 180  # 3 minutes max wait
+                wait_interval = 2  # Check every 2 seconds
+                total_waited = 0
+
+                while (
+                    status.get("status") == "in_progress"
+                    and total_waited < max_wait_time
+                ):
+                    await asyncio.sleep(wait_interval)
+                    total_waited += wait_interval
+                    status = await get_query_status(request.session_id)
+
+                    # Check for session expiry
+                    if not status:
+                        error_msg = f"Session expired during wait: {request.session_id}"
+                        logging.error(error_msg)
+                        yield ServerSentEvent(
+                            data=json.dumps(
+                                {
+                                    "event": "property_evaluation",
+                                    "status": "error",
+                                    "message": error_msg,
+                                    "error": "session_expired",
+                                }
+                            ),
+                            event="property_evaluation",
+                        )
+                        return
+
+                logging.info(f"Waited {total_waited} seconds for query to complete")
+
+            # Check if query completed successfully
+            if status.get("status") == "error":
+                error_message = status.get("error", "Unknown error")
+                error_msg = f"Property query failed: {error_message}"
+                logging.error(error_msg)
+                yield ServerSentEvent(
+                    data=json.dumps(
+                        {
+                            "event": "property_evaluation",
+                            "status": "error",
+                            "message": error_msg,
+                            "error": "query_failed",
+                            "query_error": error_message,
+                        }
+                    ),
+                    event="property_evaluation",
+                )
+                return
+
+            if status.get("status") != "completed":
+                error_msg = "Property query timed out or failed"
+                logging.error(error_msg)
+                yield ServerSentEvent(
+                    data=json.dumps(
+                        {
+                            "event": "property_evaluation",
+                            "status": "error",
+                            "message": error_msg,
+                            "error": "query_timeout",
+                        }
+                    ),
+                    event="property_evaluation",
+                )
+                return
+
+            timings["status_check"] = time.time() - status_check_start
+
+            # Retrieving properties
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "in_progress",
+                        "step": "retrieving",
+                        "message": "Retrieving properties from cache",
+                        "progress": 30,
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+            property_retrieval_start = time.time()
+            all_properties, basic_req_obj = await retrieve_properties(
+                request.session_id
+            )
+
+            # Ensure basic_req_obj is a GeneratedRequirement object
+            if not isinstance(basic_req_obj, GeneratedRequirement):
+                error_msg = f"Invalid requirements format: {type(basic_req_obj)}"
+                logging.error(error_msg)
+                yield ServerSentEvent(
+                    data=json.dumps(
+                        {
+                            "event": "property_evaluation",
+                            "status": "error",
+                            "message": error_msg,
+                            "error": "invalid_requirements",
+                        }
+                    ),
+                    event="property_evaluation",
+                )
+                return
+
+            # Ensure all_properties is a list of property objects
+            if not isinstance(all_properties, list):
+                error_msg = f"Invalid properties format: {type(all_properties)}"
+                logging.error(error_msg)
+                yield ServerSentEvent(
+                    data=json.dumps(
+                        {
+                            "event": "property_evaluation",
+                            "status": "error",
+                            "message": error_msg,
+                            "error": "invalid_properties",
+                        }
+                    ),
+                    event="property_evaluation",
+                )
+                return
+
+            timings["property_retrieval"] = time.time() - property_retrieval_start
+
+            # Send a retrieved event with all properties
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "retrieved",
+                        "step": "retrieved",
+                        "message": f"Retrieved {len(all_properties)} properties",
+                        "progress": 40,
+                        "properties_count": len(all_properties),
+                        "properties": [
+                            # Convert to UnifiedProperty-like structure based on property type
+                            {
+                                "id": getattr(prop, "id", None)
+                                or getattr(prop, "property_id", f"prop-{i}"),
+                                "name": getattr(prop, "name", None)
+                                or getattr(prop, "title", "Unnamed Property"),
+                                "source": (
+                                    "Airbnb"
+                                    if hasattr(prop, "title")
+                                    else "Booking.com"
+                                ),
+                                "url": getattr(prop, "url", ""),
+                                "description": getattr(prop, "description", ""),
+                                "location": (
+                                    f"{getattr(getattr(prop, 'address', None), 'full', '')}"
+                                    if hasattr(prop, "address")
+                                    else ""
+                                ),
+                                "pricing": {
+                                    "total": (
+                                        getattr(
+                                            getattr(prop, "price", None), "price", 0
+                                        )
+                                        if hasattr(prop, "price")
+                                        and isinstance(prop.price, object)
+                                        else (
+                                            prop.price if hasattr(prop, "price") else 0
+                                        )
+                                    )
+                                },
+                                "media": {
+                                    "main_image": get_image_url(prop),
+                                    "gallery": [],
+                                },
+                            }
+                            for i, prop in enumerate(all_properties)
+                        ],
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+            # Update requirements with preferences
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "in_progress",
+                        "step": "updating",
+                        "message": "Updating requirements with user preferences",
+                        "progress": 50,
+                        "properties_count": len(all_properties),
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+            req_update_start = time.time()
+            user_requirement = UserRequirement(
+                query=basic_req_obj.query,
+                date=f"{basic_req_obj.date_range.start_date} to {basic_req_obj.date_range.end_date}",
+                budget=basic_req_obj.budget,
+                adults=basic_req_obj.adults,
+                children=basic_req_obj.children,
+                number_of_rooms=basic_req_obj.number_of_rooms,
+                preferences=request.preferences,
+            )
+
+            # Analyze with preferences included
+            analyzer = AnalyzeUserRequirement()
+            updated_req_obj = analyzer.analyze_user_requirement(user_requirement)
+            timings["req_update"] = time.time() - req_update_start
+
+            # Evaluate properties
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "in_progress",
+                        "step": "processing",
+                        "message": f"Evaluating {len(all_properties)} properties",
+                        "progress": 70,
+                        "properties_count": len(all_properties),
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+            evaluation_start = time.time()
+            evaluate_agent = EvaluateAgent()
+            results = await evaluate_agent.evaluate(updated_req_obj, all_properties)
+            timings["evaluation"] = time.time() - evaluation_start
+
+            # Limit to requested number of results
+            top_results = results[:30]
+
+            # Format results
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "in_progress",
+                        "step": "formatting",
+                        "message": "Formatting results",
+                        "progress": 90,
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+            # Convert UnifiedProperty objects to dictionaries for JSON response
+            formatting_start = time.time()
+            formatted_results = []
+            for prop in top_results:
+                try:
+                    # The prop is already a UnifiedProperty object, so we can directly use model_dump()
+                    formatted_results.append(prop.model_dump(exclude={"raw_data"}))
+                except Exception as e:
+                    logging.error(f"Error formatting result: {str(e)}")
+            timings["formatting"] = time.time() - formatting_start
+
+            # Calculate total time
+            overall_time = time.time() - overall_start_time
+
+            # Send final results
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "completed",
+                        "message": "Property evaluation completed",
+                        "count": len(formatted_results),
+                        "results": formatted_results,
+                        "processing_time": f"{overall_time:.2f} seconds",
+                        "performance_metrics": {
+                            "status_check_time": f"{timings['status_check']:.2f}s",
+                            "property_retrieval_time": f"{timings['property_retrieval']:.2f}s",
+                            "requirements_update_time": f"{timings['req_update']:.2f}s",
+                            "evaluation_time": f"{timings['evaluation']:.2f}s",
+                            "formatting_time": f"{timings['formatting']:.2f}s",
+                            "total_time": f"{overall_time:.2f}s",
+                        },
+                        "progress": 100,
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+        except asyncio.CancelledError:
+            # Client disconnected
+            logging.info(
+                f"Client disconnected from evaluation SSE for session {request.session_id}"
+            )
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "cancelled",
+                        "message": "Client disconnected",
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+        except Exception as e:
+            logging.error(f"Error in evaluation SSE: {str(e)}")
+            logging.exception("Exception details:")
+            yield ServerSentEvent(
+                data=json.dumps(
+                    {
+                        "event": "property_evaluation",
+                        "status": "error",
+                        "message": f"An unexpected error occurred: {str(e)}",
+                        "error": "unexpected_error",
+                    }
+                ),
+                event="property_evaluation",
+            )
+
+    return EventSourceResponse(event_generator(), media_type="text/event-stream")
 
 
 def remove_duplicate_properties(properties):
@@ -472,24 +727,44 @@ def remove_duplicate_properties(properties):
     return deduplicated_properties, duplicate_count
 
 
-async def fetch_properties_background(session_id: str, request: PropertyQueryRequest):
+async def fetch_properties_background(
+    session_id: str,
+    request: PropertyQueryRequest,
+    status_update_events: asyncio.Queue = None,
+):
     """
     Background task to fetch properties from Apify to separate property fetching from evaluation.
 
     Args:
         session_id: Unique identifier for the query session
         request: The property query request parameters
+        status_update_events: Optional queue to send status updates for SSE
 
     This function runs asynchronously in the background after a query request is received.
     It fetches properties from both Booking.com and Airbnb, then stores them in the cache.
     This separation allows the property search to start earlier in the user flow,
     reducing the overall response time for the user.
 
-    Cursor Edit count: 3
+    Cursor Edit count: 4
     """
     # Track timings for different operations
     timings = {}
     overall_start = time.time()
+
+    # Helper function to send status updates via SSE and store in cache
+    async def update_status(status_data, event_type=None):
+        # Set default event type
+        event_type = "property_fetching"
+
+        # Add event type to the status data
+        status_data["event"] = event_type
+
+        # Store in cache
+        await store_query_status(session_id, status_data)
+
+        # Send to SSE if available
+        if status_update_events is not None:
+            await status_update_events.put(status_data)
 
     try:
         logging.info(f"Background task: Fetching properties for session {session_id}")
@@ -508,23 +783,33 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
                 logging.error(
                     f"Failed to convert request to PropertyQueryRequest: {str(e)}"
                 )
-                await store_query_status(
-                    session_id,
+                await update_status(
                     {
                         "status": "error",
                         "error": f"Invalid request format: {str(e)}",
                         "completed": False,
                         "message": f"Error: Invalid request format",
-                    },
+                    }
                 )
                 return
         else:
             request_obj = request
         timings["request_processing"] = time.time() - request_processing_start
 
-        # region Create user requirement
+        # Send initial status update
+        await update_status(
+            {
+                "status": "started",
+                "started_at": time.time(),
+                "completed": False,
+                "properties_count": 0,
+                "message": "Starting property search",
+                "progress": 5,
+            }
+        )
+
+        # Create user requirement
         req_creation_start = time.time()
-        # Create basic user requirement without preferences
         user_requirement = UserRequirement(
             query=request_obj.query,
             date=request_obj.date,
@@ -535,11 +820,21 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
             preferences="",  # Empty preferences
         )
         timings["req_creation"] = time.time() - req_creation_start
-        # endregion
 
-        # region Analyze requirements
+        # Analyze requirements
+        await update_status(
+            {
+                "status": "in_progress",
+                "started_at": time.time(),
+                "completed": False,
+                "properties_count": 0,
+                "message": "Analyzing search criteria",
+                "step": "analyzing",
+                "progress": 20,
+            }
+        )
+
         analysis_start = time.time()
-        # Analyze without preferences
         analyzer = AnalyzeUserRequirement()
         generated_req_obj_result = analyzer.analyze_user_requirement(user_requirement)
 
@@ -550,26 +845,26 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
             generated_req_obj = generated_req_obj_result
         timings["analysis"] = time.time() - analysis_start
 
-        # Update status with progress
-        await store_query_status(
-            session_id,
-            {
-                "status": "in_progress",
-                "started_at": time.time(),
-                "completed": False,
-                "properties_count": 0,
-                "message": "Analyzing requirements",
-            },
-        )
-        # endregion
-
-        # region Fetch Properties
+        # Start property fetching
         api_prep_start = time.time()
         all_properties = []
         booking_properties = []
         airbnb_properties = []
 
-        # In non-production, use dummy data
+        # Update status for fetching
+        await update_status(
+            {
+                "status": "in_progress",
+                "started_at": time.time(),
+                "completed": False,
+                "properties_count": 0,
+                "message": "Fetching property data",
+                "step": "fetching",
+                "progress": 40,
+            }
+        )
+
+        # Fetch properties - either from dummy data or API
         if ENVIRONMENT != "production":
             logging.info("Using dummy data for non-production environment")
             logging.info(
@@ -752,14 +1047,9 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
                         )
                     )
 
-            # Log final counts
-            logging.info(
-                f"Final property counts - Airbnb: {len(airbnb_properties)}, Booking: {len(booking_properties)}"
-            )
-
+            # Set API timings for dummy data
             timings["api_prep"] = time.time() - api_prep_start
             timings["api_fetch"] = 0  # No actual API fetch in non-production
-
         else:
             # In production, use real API data
             logging.info("Using production API data")
@@ -775,18 +1065,6 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
             )
             timings["api_prep"] = time.time() - api_prep_start
 
-            # Update status with progress
-            await store_query_status(
-                session_id,
-                {
-                    "status": "in_progress",
-                    "started_at": time.time(),
-                    "completed": False,
-                    "properties_count": 0,
-                    "message": "Querying Booking.com and Airbnb",
-                },
-            )
-
             # Execute both scrapers concurrently
             api_fetch_start = time.time()
             booking_properties, airbnb_properties = await asyncio.gather(
@@ -795,18 +1073,31 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
             )
             timings["api_fetch"] = time.time() - api_fetch_start
 
-            # Log final counts
-            logging.info(
-                f"Final total: {len(booking_properties)} Booking.com, {len(airbnb_properties)} Airbnb"
-            )
-
-        # Combine properties from both sources - no need to limit again since we limited at source
+        # Combine all properties
         all_properties = booking_properties + airbnb_properties
+
+        # Status update with initial properties fetched
+        total_properties = len(booking_properties) + len(airbnb_properties)
+        await update_status(
+            {
+                "status": "in_progress",
+                "completed": False,
+                "properties_count": total_properties,
+                "message": f"Processing {total_properties} properties",
+                "step": "processing",
+                "progress": 60,
+                "sources": {
+                    "airbnb": len(airbnb_properties),
+                    "booking": len(booking_properties),
+                },
+            }
+        )
+
+        # Process duplicates
         logging.info(
             f"Initial total: {len(all_properties)} properties ({len(booking_properties)} Booking.com, {len(airbnb_properties)} Airbnb)"
         )
 
-        # Remove duplicate properties
         deduplication_start = time.time()
         deduplicated_properties, duplicate_count = remove_duplicate_properties(
             all_properties
@@ -825,52 +1116,38 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
             f"Final total after deduplication: {len(deduplicated_properties)} unique properties"
         )
 
-        # Use deduplicated properties
-        all_properties = deduplicated_properties
-
         # Record deduplication time
         timings["deduplication"] = time.time() - deduplication_start
-        # endregion
 
-        # region Store results
+        # Saving the results
         storage_start = time.time()
+        await update_status(
+            {
+                "status": "in_progress",
+                "completed": False,
+                "properties_count": len(deduplicated_properties),
+                "message": "Finalizing property data",
+                "step": "finalizing",
+                "progress": 90,
+            }
+        )
+
         # Store properties and requirements in cache
-        await store_properties(session_id, all_properties, generated_req_obj)
+        await store_properties(session_id, deduplicated_properties, generated_req_obj)
         timings["storage"] = time.time() - storage_start
-        # endregion
 
         # Calculate total time
         overall_time = time.time() - overall_start
 
-        # Generate comprehensive performance report
-        logging.info(
-            f"Property fetching complete - Performance Report:\n"
-            f"==========================================\n"
-            f"SESSION: {session_id}\n"
-            f"TOTAL TIME: {overall_time:.2f} seconds\n"
-            f"------------------------------------------\n"
-            f"1. Request Processing: {timings['request_processing']:.2f}s\n"
-            f"2. Requirement Creation: {timings['req_creation']:.2f}s\n"
-            f"3. Requirement Analysis: {timings['analysis']:.2f}s\n"
-            f"4. API Preparation: {timings['api_prep']:.2f}s\n"
-            f"5. Property Fetching: {timings['api_fetch']:.2f}s\n"
-            f"6. Deduplication: {timings['deduplication']:.2f}s\n"
-            f"   - Removed {duplicate_count} duplicates ({duplicate_percentage:.1f}%)\n"
-            f"7. Property Storage: {timings['storage']:.2f}s\n"
-            f"------------------------------------------\n"
-            f"OUTCOME: {len(all_properties)} unique properties fetched and stored\n"
-            f"==========================================\n"
-        )
-
-        # Update status
-        await store_query_status(
-            session_id,
+        # Send final success status with complete data
+        await update_status(
             {
                 "status": "completed",
                 "completed": True,
                 "completed_at": time.time(),
-                "properties_count": len(all_properties),
-                "message": f"Found {len(all_properties)} unique properties (removed {duplicate_count} duplicates)",
+                "properties_count": len(deduplicated_properties),
+                "message": f"Found {len(deduplicated_properties)} unique properties",
+                "progress": 100,
                 "performance_metrics": {
                     "request_processing_time": f"{timings['request_processing']:.2f}s",
                     "requirement_creation_time": f"{timings['req_creation']:.2f}s",
@@ -881,25 +1158,30 @@ async def fetch_properties_background(session_id: str, request: PropertyQueryReq
                     "storage_time": f"{timings['storage']:.2f}s",
                     "total_time": f"{overall_time:.2f}s",
                 },
-                "duplicate_info": {
+                "property_stats": {
                     "original_count": len(booking_properties) + len(airbnb_properties),
                     "duplicates_removed": duplicate_count,
                     "duplicate_percentage": f"{duplicate_percentage:.1f}%",
-                    "final_count": len(all_properties),
+                    "final_count": len(deduplicated_properties),
+                    "sources": {
+                        "airbnb": len(airbnb_properties),
+                        "booking": len(booking_properties),
+                    },
                 },
-            },
+            }
         )
 
     except Exception as e:
         logging.error(f"Error in background task for session {session_id}: {str(e)}")
         logging.exception("Exception details:")
-        # Update status with error
-        await store_query_status(
-            session_id,
+
+        # Send error status update
+        await update_status(
             {
                 "status": "error",
                 "error": str(e),
                 "completed": False,
                 "message": f"Error: {str(e)}",
-            },
+                "step": "error",
+            }
         )

@@ -1,3 +1,4 @@
+import os
 import time
 import logging
 from dotenv import load_dotenv

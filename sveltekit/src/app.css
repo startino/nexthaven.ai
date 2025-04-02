@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 222.2 84% 4.9%;
+
+		--muted: 210 40% 96.1%;
+		--muted-foreground: 215.4 16.3% 46.9%;
+
+		--popover: 0 0% 100%;
+		--popover-foreground: 222.2 84% 4.9%;
+
+		--card: 0 0% 100%;
+		--card-foreground: 222.2 84% 4.9%;
+
+		--border: 214.3 31.8% 91.4%;
+		--input: 214.3 31.8% 91.4%;
+
+		--primary: 222.2 47.4% 11.2%;
+		--primary-foreground: 210 40% 98%;
+
+		--secondary: 210 40% 96.1%;
+		--secondary-foreground: 222.2 47.4% 11.2%;
+
+		--accent: 210 40% 96.1%;
+		--accent-foreground: 222.2 47.4% 11.2%;
+
+		--destructive: 0 72.2% 50.6%;
+		--destructive-foreground: 210 40% 98%;
+
+		--ring: 222.2 84% 4.9%;
+
+		--radius: 0.5rem;
+	}
+
+	.dark {
+		--background: 0 0% 0%; /* Pure black background */
+		--foreground: 210 40% 98%;
+
+		--muted: 217.2 32.6% 17.5%;
+		--muted-foreground: 215 20.2% 65.1%;
+
+		--popover: 0 0% 10%; /* Almost black for popovers */
+		--popover-foreground: 210 40% 98%;
+
+		--card: 0 0% 7%; /* Almost black for cards */
+		--card-foreground: 210 40% 98%;
+
+		--border: 329 0% 15%;
+		--input: 217.2 32.6% 17.5%;
+
+		--primary: 270 95% 80%;
+		--primary-foreground: 0 0% 0%;
+
+		--secondary: 329 86% 75%;
+		--secondary-foreground: 210 40% 98%;
+
+		--accent: 234 89% 74%;
+		--accent-foreground: 0 0% 100%;
+
+		/* Color values for specific elements */
+		--hotel: 339 83% 66%;
+		--apartment: 291 76% 42%;
+		--hostel: 228 65% 45%;
+		
+		--destructive: 0 63% 31%;
+		--destructive-foreground: 210 40% 98%;
+
+		--ring: 280 80% 60%;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground dark font-sans;
+	}
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		@apply font-serif;
+	}
+}
+
+@layer utilities {
+	.border-border {
+		border-color: hsl(var(--border));
+	}
+
+	.gradient-primary {
+		@apply from-primary to-secondary bg-gradient-to-r;
+	}
+
+	.text-gradient {
+		@apply from-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent;
+	}
+
+	.button-gradient {
+		@apply from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 bg-gradient-to-r;
+	}
+}
