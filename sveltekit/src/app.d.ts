@@ -2,6 +2,7 @@
 // for information about these interfaces
 import { SupabaseClient, Session } from '@supabase/supabase-js';
 import { Database } from '$lib/types/database.types';
+import Stripe from 'stripe';
 
 declare global {
 	namespace App {
@@ -10,6 +11,7 @@ declare global {
 			supabase: SupabaseClient<Database>;
 			session: Session | null;
 			getSession: () => Promise<Session | null>;
+			stripe: Stripe | null;
 			subscriptionStatus: {
 				isActive: boolean;
 				planId?: string;

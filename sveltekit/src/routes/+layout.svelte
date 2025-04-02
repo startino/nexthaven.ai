@@ -120,6 +120,8 @@
 					isSettingUpAnonymousAccount = false;
 				}, remainingTime);
 			}
+		} else {
+			isSettingUpAnonymousAccount = false;
 		}
 	});
 	

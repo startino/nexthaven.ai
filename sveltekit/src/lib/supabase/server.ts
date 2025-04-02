@@ -1,17 +1,19 @@
 import { createServerClient } from '@supabase/ssr';
 import type { Database } from '$lib/types/database.types';
-import { redirect, error } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import type { Cookies } from '@sveltejs/kit';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 
 export const createSupabaseServerClient = async ({
+	serviceRoleKey,
 	cookies,
 	fetch
 }: {
 	cookies: Cookies;
 	fetch: typeof globalThis.fetch;
+	serviceRoleKey: string;
 }) => {
-	const supabase = createServerClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+	const supabase = createServerClient<Database>(PUBLIC_SUPABASE_URL, serviceRoleKey, {
 		cookies: {
 			// Pass SvelteKit cookies implementation to Supabase
 			getAll: () => {

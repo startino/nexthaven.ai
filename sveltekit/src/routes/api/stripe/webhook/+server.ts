@@ -3,8 +3,9 @@ import type { RequestHandler } from './$types';
 import { STRIPE_WEBHOOK_SECRET } from '$env/static/private';
 import { SECRET_STRIPE_KEY } from '$env/static/private';
 import Stripe from 'stripe';
+import { stripeService } from '$lib/services/stripe';
 
-// Initialize Stripe with secret key
+// Initialize Stripe for webhook verification
 const stripe = new Stripe(SECRET_STRIPE_KEY, {
 	apiVersion: '2025-02-24.acacia'
 });
@@ -23,67 +24,50 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// Verify the event using the webhook secret and signature
 		const event = Stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
 
-		// Process the event
-		const { type, data } = event;
-		console.log(`Processing webhook event: ${type}`);
+		// Use the consolidated stripe service to handle the webhook
+		// Pass locals.stripe as the Stripe instance
+		await stripeService.handleWebhookEvent(locals.stripe, locals.supabase, event);
 
-		// Since we're using Stripe directly for subscription data, we just log the events
-		// and don't need to update our database for subscription changes
-		switch (type) {
-			case 'customer.subscription.created':
-				console.log('New subscription created:', (data.object as Stripe.Subscription).id);
-				// When a subscription is created, deactivate any trials for this customer
-				try {
-					const subscription = data.object as Stripe.Subscription;
+		// Add additional custom handling as needed
+		if (event.type === 'customer.subscription.created') {
+			// When a subscription is created, deactivate any trials for this customer
+			try {
+				const subscription = event.data.object as Stripe.Subscription;
 
-					// Get the customer ID from the subscription
-					const customerId = subscription.customer as string;
+				// Get the customer ID from the subscription
+				const customerId = subscription.customer as string;
 
-					// Find the user ID associated with this customer
-					const { data: customerData, error: customerError } = await locals.supabase
-						.from('customers')
-						.select('user_id')
-						.eq('stripe_customer_id', customerId)
-						.single();
+				// Find the user ID associated with this customer
+				const { data: customerData, error: customerError } = await locals.supabase
+					.from('customers')
+					.select('user_id')
+					.eq('stripe_customer_id', customerId)
+					.single();
 
-					if (customerError) {
-						console.error('Error finding user for customer:', customerError);
-					} else if (customerData?.user_id) {
-						// Deactivate any trials for this user
-						const { error: deactivateError } = await locals.supabase
-							.from('user_trials')
-							.update({ is_active: false })
-							.eq('user_id', customerData.user_id);
+				if (customerError) {
+					console.error('Error finding user for customer:', customerError);
+				} else if (customerData?.user_id) {
+					// Deactivate any trials for this user
+					const { error: deactivateError } = await locals.supabase
+						.from('user_trials')
+						.update({ is_active: false })
+						.eq('user_id', customerData.user_id);
 
-						if (deactivateError) {
-							console.error(
-								'Error deactivating trials for user with new subscription:',
-								deactivateError
-							);
-						} else {
-							console.log(
-								'Successfully deactivated trials for user with new subscription:',
-								customerData.user_id
-							);
-						}
+					if (deactivateError) {
+						console.error(
+							'Error deactivating trials for user with new subscription:',
+							deactivateError
+						);
+					} else {
+						console.log(
+							'Successfully deactivated trials for user with new subscription:',
+							customerData.user_id
+						);
 					}
-				} catch (err) {
-					console.error('Error processing subscription created webhook:', err);
 				}
-				break;
-			case 'customer.subscription.updated':
-				console.log('Subscription updated:', (data.object as Stripe.Subscription).id);
-				break;
-			case 'customer.subscription.deleted':
-				console.log('Subscription deleted:', (data.object as Stripe.Subscription).id);
-				break;
-			// Add other events as needed
-			case 'customer.created':
-				console.log('Customer created:', (data.object as Stripe.Customer).id);
-				break;
-			case 'customer.updated':
-				console.log('Customer updated:', (data.object as Stripe.Customer).id);
-				break;
+			} catch (err) {
+				console.error('Error processing subscription created webhook:', err);
+			}
 		}
 
 		return json({ received: true });

@@ -1,5 +1,3 @@
-import Stripe from 'stripe';
-import { SECRET_STRIPE_KEY } from '$env/static/private';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
 	SubscriptionStatus,
@@ -7,19 +5,19 @@ import type {
 	IsEligibleForTrial
 } from '$lib/utils/subscription';
 import type { Database } from '$lib/types/database.types';
-
-// Initialize Stripe with secret key
-const stripe = new Stripe(SECRET_STRIPE_KEY, {
-	apiVersion: '2025-02-24.acacia'
-});
+import type Stripe from 'stripe';
 
 /**
  * Checks if a user has an active subscription or is in a trial period
  * This is the server-side implementation
+ * @param stripe - The Stripe instance from event.locals
+ * @param supabase - The Supabase instance
+ * @param userId - The user ID to check
  */
-export const checkSubscriptionStatus: CheckSubscriptionStatus = async (
+export const checkSubscriptionStatus = async (
 	supabase: SupabaseClient<Database>,
-	userId: string
+	userId: string,
+	stripe?: Stripe | null
 ): Promise<SubscriptionStatus> => {
 	try {
 		// First check if user has a Stripe customer ID
@@ -29,27 +27,32 @@ export const checkSubscriptionStatus: CheckSubscriptionStatus = async (
 			.eq('user_id', userId)
 			.single();
 
-		if (customer?.stripe_customer_id) {
+		if (customer?.stripe_customer_id && stripe) {
 			// User has a Stripe customer ID, check for active subscriptions in Stripe
-			const subscriptions = await stripe.subscriptions.list({
-				customer: customer.stripe_customer_id,
-				status: 'active',
-				expand: ['data.plan.product']
-			});
+			try {
+				const subscriptions = await stripe.subscriptions.list({
+					customer: customer.stripe_customer_id,
+					status: 'active',
+					expand: ['data.plan.product']
+				});
 
-			if (subscriptions.data.length > 0) {
-				// User has an active paid subscription
-				const subscription = subscriptions.data[0];
-				const plan = subscription.items.data[0].plan;
-				const product = plan.product as Stripe.Product;
+				if (subscriptions.data.length > 0) {
+					// User has an active paid subscription
+					const subscription = subscriptions.data[0];
+					const plan = subscription.items.data[0].plan;
+					const product = plan.product as Stripe.Product;
 
-				return {
-					isActive: true,
-					planId: plan.id,
-					planName: product.name,
-					currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-					isInTrial: false
-				};
+					return {
+						isActive: true,
+						planId: plan.id,
+						planName: product.name,
+						currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+						isInTrial: false
+					};
+				}
+			} catch (stripeError) {
+				console.error('Error checking Stripe subscription:', stripeError);
+				// Continue to check for trials even if Stripe API fails
 			}
 		}
 

@@ -5,6 +5,16 @@ import { isAnonymousUser } from '$lib/supabase/auth';
 import { signInAnonymously } from '$lib/supabase/auth';
 import { checkAnonymousSearchLimit } from '$lib/utils/anonymousSearch';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { SECRET_STRIPE_KEY } from '$env/static/private';
+import Stripe from 'stripe';
+import { PRIVATE_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+
+// Initialize Stripe with the secret key once for the entire server
+const stripe = SECRET_STRIPE_KEY
+	? new Stripe(SECRET_STRIPE_KEY, {
+			apiVersion: '2025-02-24.acacia'
+		})
+	: null;
 
 // Define public routes that don't require authentication
 const publicRoutes = [
@@ -79,8 +89,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Create supabase server client
 	event.locals.supabase = await createSupabaseServerClient({
 		cookies: event.cookies,
-		fetch: event.fetch
+		fetch: event.fetch,
+		serviceRoleKey: PRIVATE_SUPABASE_SERVICE_ROLE_KEY
 	});
+
+	// Add Stripe instance to locals
+	event.locals.stripe = stripe;
 
 	// Add getSession method for backward compatibility
 	event.locals.getSession = async () => {
@@ -222,7 +236,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 			if (!isSubscriptionExemptRoute) {
 				event.locals.subscriptionStatus = await checkSubscriptionStatus(
 					event.locals.supabase,
-					session.user.id
+					session.user.id,
+					event.locals.stripe
 				);
 
 				// If subscription is not active, check if this is a premium route
