@@ -90,7 +90,7 @@
 					<CardDescription>View and manage your profile details</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form class="space-y-4" on:submit|preventDefault={updateProfile}>
+					<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); updateProfile(); }}>
 						<div class="space-y-2">
 							<Label for="name">Name</Label>
 							<Input id="name" type="text" bind:value={name} placeholder="Your name" />
@@ -132,7 +132,7 @@
 					<CardDescription>Update your account password</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form class="space-y-4" on:submit|preventDefault={handlePasswordChange}>
+					<form class="space-y-4" onsubmit={(e) => { e.preventDefault(); handlePasswordChange(); }}>
 						<div class="space-y-2">
 							<Label for="newPassword">New Password</Label>
 							<Input id="newPassword" type="password" bind:value={newPassword} required />
