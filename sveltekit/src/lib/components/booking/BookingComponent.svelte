@@ -33,16 +33,6 @@
     }
   }
 
-  // Control body scroll
-  $effect(() => {
-    // Prevent scrolling on the main page when booking view is open
-    document.body.style.overflow = 'hidden';
-    
-    return () => {
-      // Re-enable scrolling when component is unmounted
-      document.body.style.overflow = '';
-    };
-  });
 </script>
 
 <div class="fixed inset-0 bg-background z-50 flex flex-col">
