@@ -8,6 +8,7 @@
   import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
   import type { UnifiedProperty } from '$lib/types/unified-property';
   import { Info } from 'lucide-svelte';
+  import { AddToCollection } from '$lib/components/folder';
   
   // Immediately log when the component script is executed
   console.log('MAP COMPONENT SCRIPT EXECUTED');
@@ -53,6 +54,66 @@
     fullscreenControl: false, // Disable fullscreen control
     streetViewControl: false, // Disable street view
     zoomControl: true, // Keep zoom controls
+    // Custom map styling to match the light beige style in the reference image
+    styles: [
+      {
+        // Set default styling for all map features
+        elementType: "geometry",
+        stylers: [{ color: "#f5f5f0" }] // Light beige background
+      },
+      {
+        // Style roads lighter
+        featureType: "road",
+        elementType: "geometry",
+        stylers: [{ color: "#eeeeee" }] // Light gray roads
+      },
+      {
+        // Style arterial roads
+        featureType: "road.arterial",
+        elementType: "geometry",
+        stylers: [{ color: "#dddddd" }] // Slightly darker gray for arterial roads
+      },
+      {
+        // Style highway roads
+        featureType: "road.highway",
+        elementType: "geometry",
+        stylers: [{ color: "#ffffff" }] // White highways
+      },
+      {
+        // Style road labels
+        featureType: "road",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#666666" }] // Darker gray text for better readability
+      },
+      {
+        // Style water areas like lakes, rivers, etc.
+        featureType: "water",
+        elementType: "geometry",
+        stylers: [{ color: "#c9e2f7" }] // Light blue water
+      },
+      {
+        // Style parks and natural features
+        featureType: "poi.park",
+        elementType: "geometry",
+        stylers: [{ color: "#e8f0da" }] // Light green parks
+      },
+      {
+        // Style POI labels
+        featureType: "poi",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#8a7744" }] // Gold/tan color for POI text
+      },
+      {
+        // Reduce POI visibility to match the minimal POI density in the image
+        featureType: "poi",
+        stylers: [{ visibility: "simplified" }]
+      },
+      {
+        // Hide transit stations to reduce map clutter
+        featureType: "transit.station",
+        stylers: [{ visibility: "off" }]
+      }
+    ]
   };
   
   // Color gradient for scores (0-100)
@@ -76,6 +137,14 @@
     { label: '40-49', color: '#FF9800' },
     { label: '0-39', color: '#F44336' }
   ];
+  
+  // Get color class based on score for the circular score indicator
+  function getScoreColorClass(score: number): string {
+    if (score >= 90) return 'border-purple-500';
+    if (score >= 80) return 'border-green-500';
+    if (score >= 70) return 'border-yellow-500';
+    return 'border-orange-500';
+  }
   
   // Load Google Maps with geocoding library
   function loadGoogleMapsScript() {
@@ -126,34 +195,34 @@
         hasMapError = true;
         errorMessage = 'Failed to load Google Maps. The script load timed out.';
       }, 10000); // 10 second timeout
-      
-      // Define the global callback function before adding the script
-      // @ts-ignore - Ignore TypeScript error for window.initMap
-      window.initMap = () => {
+    
+    // Define the global callback function before adding the script
+    // @ts-ignore - Ignore TypeScript error for window.initMap
+    window.initMap = () => {
         console.log('MAP COMPONENT: Google Maps script loaded successfully via callback');
         clearTimeout(scriptLoadTimeout);
-        isScriptLoaded = true;
-        initializeMap();
-      };
-      
+      isScriptLoaded = true;
+      initializeMap();
+    };
+    
       // Important: Correctly include the geocoding library
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
-      script.async = true;
-      script.defer = true;
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+    script.async = true;
+    script.defer = true;
       
       console.log('MAP COMPONENT: Creating script element with API key and geocoding library');
-      
-      // Handle script loading errors
+    
+    // Handle script loading errors
       script.onerror = (error) => {
         clearTimeout(scriptLoadTimeout);
         console.error('MAP COMPONENT: Error loading Google Maps script', error);
-        hasMapError = true;
+      hasMapError = true;
         errorMessage = 'Failed to load Google Maps. Please check your API key and connection.';
-      };
-      
-      // Add the script to the document
-      document.head.appendChild(script);
+    };
+    
+    // Add the script to the document
+    document.head.appendChild(script);
       console.log('MAP COMPONENT: Google Maps script added to document head');
     } catch (scriptError) {
       console.error('MAP COMPONENT: Error setting up script:', scriptError);
@@ -212,8 +281,8 @@
       // @ts-ignore - Ignore TypeScript error for Google Maps API
       google.maps.event.addListenerOnce(map, 'idle', () => {
         console.log('MAP COMPONENT: Map is fully loaded and idle');
-        isMapLoaded = true;
-        
+      isMapLoaded = true;
+      
         // Immediately log current selected location
         console.log('MAP COMPONENT: Selected location after map idle:', selectedLocation);
         
@@ -226,10 +295,10 @@
         }
         
         // Process any properties that arrived while the map was loading
-        if (properties.length > 0) {
+      if (properties.length > 0) {
           console.log(`MAP COMPONENT: Processing ${properties.length} properties after map is idle`);
-          updateMarkers();
-        }
+        updateMarkers();
+      }
       });
       
       // Listen for the tilesloaded event as a fallback
@@ -242,7 +311,7 @@
           // Center on selected location if we have one
           if (selectedLocation && selectedLocation !== previousLocation) {
             console.log('MAP COMPONENT: Selected location found after tiles loaded:', selectedLocation);
-            centerMapOnLocation(selectedLocation);
+        centerMapOnLocation(selectedLocation);
           } else {
             console.log('MAP COMPONENT: No selected location to center on after tiles loaded');
           }
@@ -269,9 +338,9 @@
     // Skip if no map, no location, or it's an empty string
     if (!map || !location || location.trim() === '') {
       console.log('MAP COMPONENT: Skipping centerMapOnLocation - invalid inputs');
-      return;
-    }
-    
+            return;
+          }
+          
     // Check if we've already geocoded this location
     if (geocodedLocations[location]) {
       console.log('MAP COMPONENT: Using cached coordinates for:', location, geocodedLocations[location]);
@@ -371,6 +440,16 @@
     }
   }
   
+  // Create a marker label for prices instead of scores
+  function createPriceLabel(price: number): any {
+    return {
+      text: `$${Math.round(price)}`,
+      color: '#333333',
+      fontWeight: 'bold',
+      fontSize: '13px'
+    };
+  }
+  
   // Add or update markers for all properties
   function updateMarkers() {
     console.log('MAP COMPONENT: Updating markers...');
@@ -422,9 +501,9 @@
         
         propertiesWithCoords++;
         const position = {
-          lat: property.coordinates.lat,
-          lng: property.coordinates.lng
-        };
+            lat: property.coordinates.lat,
+            lng: property.coordinates.lng
+          };
         
         console.log(`MAP COMPONENT: Adding marker for property at:`, position);
         hasValidCoordinates = true;
@@ -433,71 +512,118 @@
         bounds.extend(position);
         
         try {
-          // Determine marker color based on score
-          const score = property.score || 0;
-          const markerColor = getMarkerColor(score);
+        // Determine marker color based on score
+        const score = property.score || 0;
+        const markerColor = getMarkerColor(score);
+          const price = property.pricing?.total || 0;
+          const scoreColorClass = getScoreColorClass(score);
           
-          // Create a simple marker
-          // @ts-ignore - Ignore TypeScript error for Google Maps API
+          // Create a pill-shaped price marker that matches the style in the image
+        // @ts-ignore - Ignore TypeScript error for Google Maps API
           const marker = new google.maps.Marker({
             position,
             map,
             title: property.name || 'Property',
-            label: {
-              text: Math.round(score).toString(),
-              color: '#FFFFFF',
-              fontWeight: 'bold'
-            },
+            label: createPriceLabel(price),
             icon: {
-              path: 'M-8,0a8,8 0 1,0 16,0a8,8 0 1,0 -16,0',
-              fillColor: markerColor,
+              // Pill-shaped path for a smooth, rounded rectangle
+              path: 'M -12,-10 L 12,-10 C 17,-10 17,-5 17,0 C 17,5 17,10 12,10 L -12,10 C -17,10 -17,5 -17,0 C -17,-5 -17,-10 -12,-10 Z',
+              fillColor: '#FFFFFF',
               fillOpacity: 1,
-              strokeWeight: 2,
-              strokeColor: '#FFFFFF',
-              scale: 1.2
+              strokeColor: '#DDDDDD',
+              strokeWeight: 1,
+              scale: 1.2, // Slightly larger to match the image
+              // Add shadow effect
+              shadow: true,
+              // Label positioning
+              // @ts-ignore
+              labelOrigin: {x: 0, y: 0}
             }
           });
+          
+          // Apply custom shadow to marker (Google Maps doesn't directly support shadows for custom markers)
+          // We can achieve this by setting appropriate z-index and styling
+          marker.setZIndex(1000 + index);
           
           // Keep track of the marker
           markers.push(marker);
           
-          // Create info window content
-          const infoContent = document.createElement('div');
-          infoContent.className = 'info-window-content';
-          infoContent.innerHTML = `
-            <div class="info-window-inner">
-              <div class="info-header">
-                <h3 class="info-title">${property.name || 'Unnamed Property'}</h3>
-                <div class="info-score">Score: <strong>${Math.round(score)}/100</strong></div>
-              </div>
-              <div class="info-price">$${Math.round(property.pricing?.total || 0)}</div>
-              <div class="info-location">${property.location || 'Unknown location'}</div>
-            </div>
-          `;
+          // Create a wrapper for the info window content with Tailwind classes
+          const infoWindowContent = document.createElement('div');
+          infoWindowContent.className = 'info-window-content';
           
-          // Add Tailwind styling
-          infoContent.querySelector('.info-window-inner')?.classList.add('p-3', 'max-w-xs');
-          infoContent.querySelector('.info-header')?.classList.add('border-b', 'pb-2', 'mb-2');
-          infoContent.querySelector('.info-title')?.classList.add('font-bold', 'text-gray-900', 'mb-1');
-          infoContent.querySelector('.info-score')?.classList.add('text-sm', 'text-gray-700');
-          infoContent.querySelector('.info-price')?.classList.add('text-lg', 'font-bold', 'text-blue-600', 'mb-1');
-          infoContent.querySelector('.info-location')?.classList.add('text-sm', 'text-gray-600');
+          // Use our Svelte component to render the content
+          PropertyInfoWindow({
+            property,
+            score,
+            price,
+            scoreColorClass
+          }).render(infoWindowContent);
           
-          // Create info window
+          // Create info window with custom styling to remove white background
+        // @ts-ignore - Ignore TypeScript error for Google Maps API
+        const infoWindow = new google.maps.InfoWindow({
+            content: infoWindowContent,
+            maxWidth: 400,
+            // Fix TypeScript error with a direct object
+            // @ts-ignore
+            pixelOffset: {width: 0, height: 0},
+            // Remove default InfoWindow styling
+            disableAutoPan: false
+          });
+          
+          // Apply custom styling to the InfoWindow to remove white background
           // @ts-ignore - Ignore TypeScript error for Google Maps API
-          const infoWindow = new google.maps.InfoWindow({
-            content: infoContent,
-            maxWidth: 300
+          google.maps.event.addListener(infoWindow, 'domready', () => {
+            // Target the InfoWindow container and remove white background
+            const iwOuter = document.querySelector('.gm-style-iw-a');
+            if (iwOuter) {
+              // Get parent element
+              const iwBackground = iwOuter.parentElement;
+              
+              // Remove all background elements added by Google Maps
+              if (iwBackground) {
+                // Get all child elements
+                const childElements = iwBackground.children;
+                // Hide the Google Maps white background
+                for (let i = 0; i < childElements.length; i++) {
+                  const child = childElements[i] as HTMLElement;
+                  if (child.className.includes('gm-style-iw')) {
+                    // Style the inner window
+                    child.style.background = 'transparent';
+                    child.style.boxShadow = 'none';
+                  } else {
+                    // Hide background elements by setting opacity to 0
+                    if (i !== 1) { // Keep the shadow
+                      child.style.display = 'none';
+                    }
+                  }
+                }
+              }
+
+              // Remove white background from the InfoWindow content container
+              const iwContainer = document.querySelector('.gm-style-iw');
+              if (iwContainer) {
+                (iwContainer as HTMLElement).style.background = 'transparent';
+                (iwContainer as HTMLElement).style.padding = '0';
+              }
+              
+              // Fix the arrow at the bottom of the info window
+              const iwCloseBtn = document.querySelector('.gm-style-iw-t button');
+              if (iwCloseBtn) {
+                iwCloseBtn.remove();
+              }
+            }
+        });
+        
+        // Add click listener to open info window
+        marker.addListener('click', () => {
+          infoWindow.open({
+            anchor: marker,
+            map
           });
-          
-          // Add click listener to open info window
-          marker.addListener('click', () => {
-            infoWindow.open({
-              anchor: marker,
-              map
-            });
-          });
-          
+        });
+        
         } catch (markerError) {
           console.error(`MAP COMPONENT: Error creating marker:`, markerError);
         }
@@ -510,11 +636,11 @@
         // If we have a selectedLocation, prioritize centering on that instead of fitting to markers
         if (!selectedLocation) {
           console.log(`MAP COMPONENT: No selected location - fitting map to ${markers.length} markers`);
-          map.fitBounds(bounds);
-          
-          // If we only have one marker, zoom out a bit
-          if (markers.length === 1) {
-            map.setZoom(14);
+        map.fitBounds(bounds);
+        
+        // If we only have one marker, zoom out a bit
+        if (markers.length === 1) {
+          map.setZoom(14);
             console.log('MAP COMPONENT: Setting zoom to 14 for single marker');
           }
         }
@@ -584,7 +710,7 @@
     
     // Load script with a small delay to ensure DOM is ready
     setTimeout(() => {
-      loadGoogleMapsScript();
+    loadGoogleMapsScript();
     }, 200);
     
     // Clean up resources when component is unmounted
@@ -644,9 +770,9 @@
         class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors" 
         onclick={() => {
           console.log('MAP COMPONENT: Retry button clicked');
-          hasMapError = false;
+        hasMapError = false;
           mapInitializationAttempted = false;
-          loadGoogleMapsScript();
+        loadGoogleMapsScript();
         }}
         type="button"
       >
@@ -656,14 +782,14 @@
   {:else}
     <div bind:this={mapElement} class="w-full h-full" data-testid="google-map-container"></div>
     
-    <!-- Map Legend -->
-    <div class="absolute top-2 left-2 bg-white rounded p-2 shadow-md z-10 text-xs">
-      <div class="font-semibold mb-1 text-sm text-gray-800">Score Legend</div>
+    <!-- Map Legend - Moved to top right and styled with bg-card -->
+    <div class="absolute top-2 right-2 bg-card text-card-foreground rounded p-2 shadow-md z-10 text-xs">
+      <div class="font-semibold mb-1 text-sm">Score Legend</div>
       <div class="flex flex-col gap-1">
         {#each scoreLegend as item}
           <div class="flex items-center gap-1.5">
             <div class="w-3 h-3 rounded" style="background-color: {item.color}"></div>
-            <div class="text-xs text-gray-700">{item.label}</div>
+            <div class="text-xs">{item.label}</div>
           </div>
         {/each}
       </div>
@@ -694,8 +820,106 @@
 </div>
 
 <style>
-  /* We'll use Tailwind for most styling, but keep global styles for Google Maps info windows */
-  :global(.info-window-content) {
-    font-family: system-ui, -apple-system, sans-serif;
+  /* Add Tailwind border-3 utility that doesn't exist by default */
+  :global(.border-3) {
+    border-width: 3px;
   }
-</style> 
+</style>
+
+<!-- Component for property info window -->
+<script context="module">
+  // This component will be used for the InfoWindow contents
+  // It's defined in a module context so it's only created once
+  // and can be reused for all info windows
+  
+  // Define interface for props
+  interface PropertyInfoWindowProps {
+    property: UnifiedProperty;
+    score: number;
+    price: number;
+    scoreColorClass: string;
+  }
+  
+  function PropertyInfoWindow(props: PropertyInfoWindowProps) {
+    const { property, score, price, scoreColorClass } = props;
+    
+    // Component for the property info window
+    return {
+      // Create the component with tailwind classes
+      render: (target: HTMLElement) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'w-[400px] max-w-full rounded-lg overflow-hidden shadow-lg relative';
+        
+        // Create the component's HTML structure
+        const content = `
+          <div class="relative">
+            <!-- Property Image -->
+            <div class="relative w-full h-56">
+              <img src="${property.media?.main_image || 'https://via.placeholder.com/400x200?text=No+Image'}" 
+                   alt="${property.name || 'Property'}" 
+                   class="w-full h-full object-cover" />
+              
+              <!-- Save Button -->
+              <div class="absolute top-3 left-3 z-10">
+                <div class="bg-black/70 text-white rounded-full px-4 py-1.5 flex items-center gap-2 text-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>Save</span>
+                </div>
+              </div>
+              
+              <!-- Score Circle -->
+              <div class="absolute top-3 right-3 z-10">
+                <div class="bg-neutral-800 rounded-full flex items-center justify-center w-12 h-12 border-3 ${scoreColorClass}">
+                  <span class="text-white font-bold text-lg">${Math.round(score)}</span>
+                </div>
+              </div>
+              
+              <!-- Price -->
+              <div class="absolute bottom-4 left-4 z-10">
+                <span class="text-white text-2xl font-bold drop-shadow-lg">$${Math.round(price)}</span>
+              </div>
+            </div>
+            
+            <!-- Property Details - Dark Background -->
+            <div class="bg-neutral-900 text-white p-4">
+              <!-- Property Title -->
+              <h3 class="font-bold text-lg truncate mb-1">${property.name || 'Unnamed Property'}</h3>
+              
+              <!-- Property Location -->
+              <p class="text-neutral-400 text-sm truncate mb-3">${property.location || 'Unknown location'}</p>
+              
+              <!-- Bedrooms/Beds -->
+              <div class="flex items-center gap-2 text-sm text-neutral-300 mb-3">
+                ${property.capacity?.bedrooms ? `<span>${property.capacity.bedrooms} ${property.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span>` : ''}
+                ${property.capacity?.bedrooms && property.capacity?.beds ? '<span class="text-neutral-500">•</span>' : ''}
+                ${property.capacity?.beds ? `<span>${property.capacity.beds} ${property.capacity.beds === 1 ? 'bed' : 'beds'}</span>` : ''}
+              </div>
+              
+              <!-- Location Feature -->
+              ${(property as any).location_score ? `
+              <div class="flex items-start gap-2">
+                <span class="text-neutral-300 flex-shrink-0">📍</span>
+                <p class="text-sm text-neutral-400">
+                  Location: ${(property as any).location_score}/10
+                  ${property.description ? ` - ${property.description.substring(0, 60)}${property.description.length > 60 ? '...' : ''}` : ''}
+                </p>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+        
+        wrapper.innerHTML = content;
+        
+        // Mount to target
+        if (target) {
+          target.appendChild(wrapper);
+        }
+        
+        return wrapper;
+      }
+    };
+  }
+</script> 
