@@ -22,7 +22,10 @@ langchain-openai = "*"
 supabase = "^2.11.0"
 beautifulsoup4 = "^4.13.3"
 apify-client = "^1.9.2"
-logfire = "^3.12.0"
+logfire = {extras = ["fastapi"], version = "^3.12.0"}
+opentelemetry-instrumentation-asgi = "^0.52b1"
+opentelemetry-api = "^1.31.1"
+opentelemetry-sdk = "^1.31.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
