@@ -99,7 +99,7 @@
 				<div class="mb-6 p-4 bg-green-100/20 border border-green-500/30 rounded-lg flex items-start gap-3">
 					<CheckCircle class="text-green-500 shrink-0 mt-0.5" size={18} />
 					<div>
-						<p class="text-sm text-green-400 font-medium">Account upgraded successfully!</p>
+						<p class="text-sm text-green-400 font-medium">Account created successfully!</p>
 						<p class="text-xs text-green-400/80 mt-1">
 							Please check your email for a verification link, then sign in with your new credentials to continue.
 						</p>
@@ -165,7 +165,7 @@
 						class="w-full mt-3" 
 						onclick={() => goto('/signup?convert=true')}
 					>
-						Upgrade to Permanent Account
+						Create Permanent Account
 					</Button>
 				</div>
 			{/if}

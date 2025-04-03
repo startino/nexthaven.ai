@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ url, cookies, fetch, locals }) => {
 	// Get the provider from the URL (added by Supabase OAuth)
 	const provider = url.searchParams.get('provider');
 
-	// Check if this is an upgrade from anonymous account
+	// Check if this is an account creation from anonymous account
 	const isUpgrade = url.searchParams.get('upgrade') === 'true';
 	const anonymousId = url.searchParams.get('anonymousId');
 
@@ -34,10 +34,10 @@ export const load: PageServerLoad = async ({ url, cookies, fetch, locals }) => {
 		if (data?.session) {
 			const userId = data.session.user.id;
 
-			// Handle anonymous account upgrade via Google OAuth
+			// Handle anonymous account conversion via Google OAuth
 			if (isUpgrade && anonymousId && provider === 'google') {
 				console.log(
-					`Processing anonymous account upgrade: anonymousId=${anonymousId}, newUserId=${userId}`
+					`Processing anonymous account conversion: anonymousId=${anonymousId}, newUserId=${userId}`
 				);
 
 				// IMPORTANT: Need to handle data migration from anonymous user to the new authenticated user
@@ -55,7 +55,7 @@ export const load: PageServerLoad = async ({ url, cookies, fetch, locals }) => {
 					if (anonUserError) {
 						console.error('Error fetching anonymous user:', anonUserError);
 					} else if (anonUserData?.user && isAnonymousUser(anonUserData.user)) {
-						console.log('Confirmed anonymous user, proceeding with upgrade');
+						console.log('Confirmed anonymous user, proceeding with account creation');
 
 						// Migrate user data - this will vary based on your data model
 						// The following tables might need migration:
@@ -130,25 +130,27 @@ export const load: PageServerLoad = async ({ url, cookies, fetch, locals }) => {
 							console.error('Exception during anonymous account metadata update:', err);
 						}
 
-						// Now activate the free trial for the upgraded user
-						console.log('Activating 14-day free trial for upgraded Google user');
+						// Now activate the free trial for the new user
+						console.log(
+							'Activating 14-day free trial for new Google user (converted from anonymous)'
+						);
 						const trialActivated = await activateFreeTrial(supabase, userId, 14, true);
 
 						if (trialActivated) {
-							console.log('Successfully activated 14-day trial for upgraded Google user');
+							console.log('Successfully activated 14-day trial for new Google user');
 						} else {
-							console.error('Failed to activate trial for upgraded Google user');
+							console.error('Failed to activate trial for new Google user');
 						}
 					} else {
 						console.warn(
-							'Anonymous ID provided is not an anonymous user, skipping upgrade process'
+							'Anonymous ID provided is not an anonymous user, skipping conversion process'
 						);
 					}
 				} catch (err) {
-					console.error('Exception during account upgrade process:', err);
+					console.error('Exception during account conversion process:', err);
 				}
 			}
-			// Handle regular new Google sign-up (not an upgrade)
+			// Handle regular new Google sign-up (not a conversion)
 			else if (provider === 'google' && !isUpgrade) {
 				// Check if this is a new user by looking for trial records
 				const { data: existingUserData, error: userError } = await supabase

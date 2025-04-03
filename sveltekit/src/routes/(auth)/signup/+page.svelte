@@ -181,18 +181,18 @@
 				<div class="flex justify-center mb-2">
 					<div class="bg-primary/20 text-primary px-3 py-1 rounded-full flex items-center gap-1 text-xs font-medium">
 						<ArrowUp size={12} />
-						Account Upgrade
+						Create Account
 					</div>
 				</div>
 			{/if}
 			<CardTitle class="text-2xl text-center text-gradient">
-				{isConvertingAnonymous && isCurrentlyAnonymous ? 'Upgrade Your Account' : 'Create Account'}
+				Create Account
 			</CardTitle>
 			<CardDescription class="text-center">
 				{#if isFromSearch && isCurrentlyAnonymous}
 					Create an account to continue searching and unlock all features
 				{:else if isConvertingAnonymous && isCurrentlyAnonymous}
-					Keep your data and continue your journey beyond the trial
+					Keep your data and continue your journey with a permanent account
 				{:else}
 					Sign up for a new account to get started
 				{/if}
@@ -203,9 +203,9 @@
 				<div class="mb-6 p-3 bg-primary/10 rounded-lg border border-primary/20">
 					<p class="text-sm">
 						{#if isFromSearch}
-							By upgrading your account, you'll get access to unlimited searches and all premium features. Your existing data will be preserved.
+							By creating an account, you'll get access to unlimited searches and all premium features. Your existing data will be preserved.
 						{:else}
-							By upgrading your temporary account, all your existing data and settings will be preserved.
+							By creating a permanent account, all your existing data and settings will be preserved.
 						{/if}
 					</p>
 				</div>
@@ -229,7 +229,7 @@
 							<path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
 						</g>
 					</svg>
-					<span>{isConvertingAnonymous && isCurrentlyAnonymous ? 'Upgrade with Google' : 'Sign up with Google'}</span>
+					<span>Sign up with Google</span>
 				{/if}
 			</Button>
 			
@@ -325,9 +325,9 @@
 					disabled={isLoading || !isEmailValid || !isPasswordValid || successMessage !== ""}
 				>
 					{#if isLoading}
-						{isConvertingAnonymous && isCurrentlyAnonymous ? 'Upgrading account...' : 'Creating account...'}
+						Creating account...
 					{:else}
-						{isConvertingAnonymous && isCurrentlyAnonymous ? 'Upgrade Account' : 'Sign Up'}
+						Create Account
 					{/if}
 				</Button>
 			</form>
