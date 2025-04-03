@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { checkUserAuthentication } from '$lib/utils/subscription';
+import { checkUserAuthentication } from '$lib/server/subscription';
 import { isAnonymousUser } from '$lib/supabase/auth';
 import { checkAnonymousSearchLimit, ANONYMOUS_SEARCH_LIMIT } from '$lib/utils/anonymousSearch';
 import type { SubscriptionStatus } from '$lib/utils/subscription';

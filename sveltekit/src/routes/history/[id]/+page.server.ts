@@ -1,9 +1,8 @@
 import { error, redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
 import type { UnifiedProperty } from '$lib/types/unified-property';
-import { requireSubscription } from '$lib/utils/subscription';
+import { requireSubscription } from '$lib/server/subscription';
 
-export const load: PageServerLoad = async (event) => {
+export const load = async (event) => {
 	const { params, locals } = event;
 	const { supabase } = locals;
 	const { id } = params;

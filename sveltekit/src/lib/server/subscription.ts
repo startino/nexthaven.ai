@@ -6,6 +6,7 @@ import type {
 } from '$lib/utils/subscription';
 import type { Database } from '$lib/types/database.types';
 import type Stripe from 'stripe';
+import { redirect, type RequestEvent } from '@sveltejs/kit';
 
 /**
  * Checks if a user has an active subscription or is in a trial period
@@ -155,3 +156,64 @@ export const isEligibleForTrial: IsEligibleForTrial = async (
 		return false;
 	}
 };
+
+/**
+ * Middleware function to protect routes that require an active subscription
+ * Redirects to subscription page if no active subscription
+ * Note: This should only be used in server-side code (+page.server.ts, etc.)
+ */
+export async function requireSubscription(
+	event: RequestEvent,
+	redirectRoute = '/subscription'
+): Promise<SubscriptionStatus> {
+	const { locals, url } = event;
+	const session = await locals.getSession();
+
+	// If not logged in, redirect to login first
+	if (!session) {
+		const loginRedirect = `/auth/login?redirectTo=${url.pathname}${url.search}`;
+		redirect(303, loginRedirect);
+	}
+
+	// Check subscription status using our updated function
+	// which also checks for active trials
+	const subscriptionStatus = await checkSubscriptionStatus(locals.supabase, session.user.id);
+
+	// If not subscribed, redirect to subscription page
+	if (!subscriptionStatus.isActive) {
+		// Include the current URL as a redirectTo parameter
+		const subscriptionRedirect = `${redirectRoute}?redirectTo=${url.pathname}${url.search}`;
+		redirect(303, subscriptionRedirect);
+	}
+
+	// If subscribed, continue
+	return subscriptionStatus;
+}
+
+/**
+ * Check if the user is authenticated without requiring a subscription
+ * Returns the user's session and subscription status if available
+ * This allows free trial users to access protected functionality
+ * Note: This should only be used in server-side code (+page.server.ts, etc.)
+ */
+export async function checkUserAuthentication(
+	event: RequestEvent
+): Promise<{ session: any; subscriptionStatus: SubscriptionStatus | null }> {
+	const { locals, url } = event;
+	const session = await locals.getSession();
+
+	// If not logged in, redirect to login first
+	if (!session) {
+		const loginRedirect = `/auth/login?redirectTo=${url.pathname}${url.search}`;
+		redirect(303, loginRedirect);
+	}
+
+	// We need to dynamically import the server module here to avoid client-side imports
+	const { checkSubscriptionStatus } = await import('$lib/server/subscription');
+
+	// Check subscription status but don't redirect if inactive
+	const subscriptionStatus = await checkSubscriptionStatus(locals.supabase, session.user.id);
+
+	// Return both the session and subscription status
+	return { session, subscriptionStatus };
+}

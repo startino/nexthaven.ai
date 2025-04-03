@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { requireSubscription } from '$lib/utils/subscription';
+import { requireSubscription } from '$lib/server/subscription';
 
 export const POST: RequestHandler = async (event) => {
 	// Check subscription status and redirect if not subscribed
