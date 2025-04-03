@@ -21,8 +21,6 @@
 	// Initialize state variables first so they're immediately available
 	let session = $state(data.session);
 	let supabase = $state(data.supabase);
-	let subscriptionStatus = $state(data.subscriptionStatus);
-	let hasExpiredTrial = $state(data.hasExpiredTrial);
 	let isAnonymous = $state(data.isAnonymous);
 	
 	// Track anonymous account setup loading state - initialize it immediately based on data
@@ -32,8 +30,6 @@
 	$effect(() => {
 		session = data.session;
 		supabase = data.supabase;
-		subscriptionStatus = data.subscriptionStatus;
-		hasExpiredTrial = data.hasExpiredTrial;
 		isAnonymous = data.isAnonymous;
 		
 		// If we're signing in anonymously, set the loading state immediately
@@ -273,12 +269,10 @@
 				</div>
 				
 				<h2 class="text-2xl font-semibold mb-3">Setting up your experience</h2>
-				
+			
 				<p class="text-muted-foreground mb-6">
-					We're creating a temporary account so you can start exploring right away. 
-					No sign-up required for basic searches.
+					Welcome to the future of travel.
 				</p>
-				
 				<div class="flex justify-center gap-2">
 					<div class="h-2 w-2 rounded-full bg-primary/30 animate-pulse" style="animation-delay: 0ms;"></div>
 					<div class="h-2 w-2 rounded-full bg-primary/30 animate-pulse" style="animation-delay: 200ms;"></div>

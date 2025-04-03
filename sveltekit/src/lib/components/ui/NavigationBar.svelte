@@ -158,7 +158,15 @@
 							<LogOut size={18} />
 						</Button>
 					</form>
-				{/if}
+					{:else}
+						<Button
+							variant="ghost"
+							class="bg-card"
+							href="/login"
+						>
+							Sign In
+						</Button>
+					{/if}
 			{:else}
 				<!-- Login/Signup buttons -->
 				<Button
