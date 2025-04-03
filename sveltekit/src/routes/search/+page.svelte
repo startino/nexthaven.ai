@@ -116,7 +116,6 @@
 	let streamedProperties = $state<UnifiedProperty[]>([]);
 	let progressInterval: ReturnType<typeof setInterval> | undefined;
 	
-	
 	// Create an effect to clear the error after a timeout
 	$effect(() => {
 		if (error) {

@@ -28,7 +28,7 @@
   // Internal state variables
   let map: any; // Google Map instance
   let markers: any[] = []; // Array to track created markers
-  let mapElement: HTMLElement; // Reference to the map container element
+  let mapElement: HTMLElement | null = $state(null); // Reference to the map container element
   let isMapLoaded = $state(false);
   let isScriptLoaded = $state(false);
   let hasMapError = $state(false);
@@ -441,13 +441,31 @@
   }
   
   // Create a marker label for prices instead of scores
-  function createPriceLabel(price: number): any {
+  function createPriceLabel(price: number, markerColor: string): any {
+    // Calculate contrast - darker background colors need white text
+    const isDarkBackground = isColorDark(markerColor);
+    
     return {
       text: `$${Math.round(price)}`,
-      color: '#333333',
+      color: isDarkBackground ? '#FFFFFF' : '#333333',
       fontWeight: 'bold',
       fontSize: '13px'
     };
+  }
+  
+  // Helper to determine if a color is dark (needs white text for contrast)
+  function isColorDark(hexColor: string): boolean {
+    // Convert hex to RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    
+    // Calculate luminance (perceived brightness)
+    // Using the formula: 0.299*R + 0.587*G + 0.114*B
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // If luminance is less than 0.5, color is considered dark
+    return luminance < 0.6;
   }
   
   // Add or update markers for all properties
@@ -515,52 +533,52 @@
         // Determine marker color based on score
         const score = property.score || 0;
         const markerColor = getMarkerColor(score);
-          const price = property.pricing?.total || 0;
-          const scoreColorClass = getScoreColorClass(score);
+        const price = property.pricing?.total || 0;
+        const scoreColorClass = getScoreColorClass(score);
           
-          // Create a pill-shaped price marker that matches the style in the image
+        // Create a pill-shaped price marker that matches the style in the image
         // @ts-ignore - Ignore TypeScript error for Google Maps API
-          const marker = new google.maps.Marker({
-            position,
-            map,
-            title: property.name || 'Property',
-            label: createPriceLabel(price),
-            icon: {
-              // Pill-shaped path for a smooth, rounded rectangle
-              path: 'M -12,-10 L 12,-10 C 17,-10 17,-5 17,0 C 17,5 17,10 12,10 L -12,10 C -17,10 -17,5 -17,0 C -17,-5 -17,-10 -12,-10 Z',
-              fillColor: '#FFFFFF',
-              fillOpacity: 1,
-              strokeColor: '#DDDDDD',
-              strokeWeight: 1,
-              scale: 1.2, // Slightly larger to match the image
-              // Add shadow effect
-              shadow: true,
-              // Label positioning
-              // @ts-ignore
-              labelOrigin: {x: 0, y: 0}
-            }
-          });
-          
-          // Apply custom shadow to marker (Google Maps doesn't directly support shadows for custom markers)
-          // We can achieve this by setting appropriate z-index and styling
-          marker.setZIndex(1000 + index);
-          
-          // Keep track of the marker
-          markers.push(marker);
-          
-          // Create a wrapper for the info window content with Tailwind classes
-          const infoWindowContent = document.createElement('div');
-          infoWindowContent.className = 'info-window-content';
-          
-          // Use our Svelte component to render the content
-          PropertyInfoWindow({
-            property,
-            score,
-            price,
-            scoreColorClass
-          }).render(infoWindowContent);
-          
-          // Create info window with custom styling to remove white background
+        const marker = new google.maps.Marker({
+          position,
+          map,
+          title: property.name || 'Property',
+          label: createPriceLabel(price, markerColor),
+          icon: {
+            // Pill-shaped path for a smooth, rounded rectangle
+            path: 'M -12,-10 L 12,-10 C 17,-10 17,-5 17,0 C 17,5 17,10 12,10 L -12,10 C -17,10 -17,5 -17,0 C -17,-5 -17,-10 -12,-10 Z',
+            fillColor: markerColor,
+            fillOpacity: 1,
+            strokeColor: '#DDDDDD',
+            strokeWeight: 1,
+            scale: 1.2, // Slightly larger to match the image
+            // Add shadow effect
+            shadow: true,
+            // Label positioning
+            // @ts-ignore
+            labelOrigin: {x: 0, y: 0}
+          }
+        });
+        
+        // Apply custom shadow to marker (Google Maps doesn't directly support shadows for custom markers)
+        // We can achieve this by setting appropriate z-index and styling
+        marker.setZIndex(1000 + index);
+        
+        // Keep track of the marker
+        markers.push(marker);
+        
+        // Create a wrapper for the info window content with Tailwind classes
+        const infoWindowContent = document.createElement('div');
+        infoWindowContent.className = 'info-window-content';
+        
+        // Use our Svelte component to render the content
+        PropertyInfoWindow({
+          property,
+          score,
+          price,
+          scoreColorClass
+        }).render(infoWindowContent);
+        
+        // Create info window with custom styling to remove white background
         // @ts-ignore - Ignore TypeScript error for Google Maps API
         const infoWindow = new google.maps.InfoWindow({
             content: infoWindowContent,
@@ -571,49 +589,49 @@
             // Remove default InfoWindow styling
             disableAutoPan: false
           });
-          
-          // Apply custom styling to the InfoWindow to remove white background
-          // @ts-ignore - Ignore TypeScript error for Google Maps API
-          google.maps.event.addListener(infoWindow, 'domready', () => {
-            // Target the InfoWindow container and remove white background
-            const iwOuter = document.querySelector('.gm-style-iw-a');
-            if (iwOuter) {
-              // Get parent element
-              const iwBackground = iwOuter.parentElement;
-              
-              // Remove all background elements added by Google Maps
-              if (iwBackground) {
-                // Get all child elements
-                const childElements = iwBackground.children;
-                // Hide the Google Maps white background
-                for (let i = 0; i < childElements.length; i++) {
-                  const child = childElements[i] as HTMLElement;
-                  if (child.className.includes('gm-style-iw')) {
-                    // Style the inner window
-                    child.style.background = 'transparent';
-                    child.style.boxShadow = 'none';
-                  } else {
-                    // Hide background elements by setting opacity to 0
-                    if (i !== 1) { // Keep the shadow
-                      child.style.display = 'none';
-                    }
+        
+        // Apply custom styling to the InfoWindow to remove white background
+        // @ts-ignore - Ignore TypeScript error for Google Maps API
+        google.maps.event.addListener(infoWindow, 'domready', () => {
+          // Target the InfoWindow container and remove white background
+          const iwOuter = document.querySelector('.gm-style-iw-a');
+          if (iwOuter) {
+            // Get parent element
+            const iwBackground = iwOuter.parentElement;
+            
+            // Remove all background elements added by Google Maps
+            if (iwBackground) {
+              // Get all child elements
+              const childElements = iwBackground.children;
+              // Hide the Google Maps white background
+              for (let i = 0; i < childElements.length; i++) {
+                const child = childElements[i] as HTMLElement;
+                if (child.className.includes('gm-style-iw')) {
+                  // Style the inner window
+                  child.style.background = 'transparent';
+                  child.style.boxShadow = 'none';
+                } else {
+                  // Hide background elements by setting opacity to 0
+                  if (i !== 1) { // Keep the shadow
+                    child.style.display = 'none';
                   }
                 }
               }
-
-              // Remove white background from the InfoWindow content container
-              const iwContainer = document.querySelector('.gm-style-iw');
-              if (iwContainer) {
-                (iwContainer as HTMLElement).style.background = 'transparent';
-                (iwContainer as HTMLElement).style.padding = '0';
-              }
-              
-              // Fix the arrow at the bottom of the info window
-              const iwCloseBtn = document.querySelector('.gm-style-iw-t button');
-              if (iwCloseBtn) {
-                iwCloseBtn.remove();
-              }
             }
+
+            // Remove white background from the InfoWindow content container
+            const iwContainer = document.querySelector('.gm-style-iw');
+            if (iwContainer) {
+              (iwContainer as HTMLElement).style.background = 'transparent';
+              (iwContainer as HTMLElement).style.padding = '0';
+            }
+            
+            // Fix the arrow at the bottom of the info window
+            const iwCloseBtn = document.querySelector('.gm-style-iw-t button');
+            if (iwCloseBtn) {
+              iwCloseBtn.remove();
+            }
+          }
         });
         
         // Add click listener to open info window
