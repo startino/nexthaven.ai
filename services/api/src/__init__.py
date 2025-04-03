@@ -1,6 +1,4 @@
-import os
-import time
-import logging
+import os, time, logging, logfire
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, Request
@@ -12,19 +10,24 @@ from src.routers import router
 load_dotenv()
 setup_logging()
 
+
 def create_app() -> FastAPI:
     app = FastAPI()
-    
+
+    logfire.configure(token=os.getenv("LOGFIRE_TOKEN"))
+    logfire.instrument_fastapi(app, capture_headers=True)
+    logfire.instrument_openai()
+
     @app.middleware("http")
     async def add_process_time_header(request: Request, call_next):
         start_time = time.time()
         response = await call_next(request)
-        process_time = time.time() - start_time 
+        process_time = time.time() - start_time
         response.headers["X-Process-Time"] = str(process_time)
         return response
-    
+
     app.include_router(router)
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -32,7 +35,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     return app
+
 
 app = create_app()
