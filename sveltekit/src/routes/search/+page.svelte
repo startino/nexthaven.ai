@@ -14,6 +14,7 @@
 	import SearchForm from './SearchForm.svelte';
 	import PropertyResults from './PropertyResults.svelte';
 	import SearchProgress from './SearchProgress.svelte';
+	import Map from './Map.svelte';
 	import { ResizablePane, ResizablePaneGroup, ResizableHandle } from '$lib/components/ui/resizable';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -250,7 +251,22 @@
 					currentStep = 2;
 					// This is where properties should come in
 					if (data.properties && data.properties.length > 0) {
-						streamedProperties = data.properties;
+						// Ensure coordinates are preserved
+						const propertiesToSet = data.properties.map(property => {
+							// Validate coordinates structure if present
+							if (property.coordinates && 
+								typeof property.coordinates.lat === 'number' && 
+								typeof property.coordinates.lng === 'number') {
+								// Valid coordinates, use them
+								return property;
+							} else if (property.location) {
+								// Try to use any existing coordinates or preserve as undefined to match the type
+								return { ...property, coordinates: property.coordinates || undefined };
+							}
+							return property;
+						});
+						
+						streamedProperties = propertiesToSet;
 					}
 					break;
 				case 'updating':
@@ -272,15 +288,45 @@
 		
 		// Always try to process properties if they exist in the payload
 		if (data.properties && data.properties.length > 0 && data.step !== 'retrieved') {
-			streamedProperties = data.properties;
+			// Ensure coordinates are preserved for map display
+			const propertiesToSet = data.properties.map(property => {
+				// Validate coordinates structure if present
+				if (property.coordinates && 
+					typeof property.coordinates.lat === 'number' && 
+					typeof property.coordinates.lng === 'number') {
+					// Valid coordinates, use them
+					return property;
+				} else if (property.location) {
+					// Try to use any existing coordinates or preserve as undefined to match the type
+					return { ...property, coordinates: property.coordinates || undefined };
+				}
+				return property;
+			});
+			
+			streamedProperties = propertiesToSet;
 		}
 		
 		// Handle final results when evaluation is completed
 		if (data.status === 'completed' && data.results && data.results.length > 0) {
-			streamedProperties = data.results;
+			// Ensure coordinates are preserved for map display in final results
+			const propertiesToSet = data.results.map(property => {
+				// Validate coordinates structure if present
+				if (property.coordinates && 
+					typeof property.coordinates.lat === 'number' && 
+					typeof property.coordinates.lng === 'number') {
+					// Valid coordinates, use them
+					return property;
+				} else if (property.location) {
+					// Try to use any existing coordinates or preserve as undefined to match the type
+					return { ...property, coordinates: property.coordinates || undefined };
+				}
+				return property;
+			});
+			
+			streamedProperties = propertiesToSet;
 			
 			// Then, save to the global store for the compare page
-			setProperties(data.results);
+			setProperties(propertiesToSet);
 			
 			// Update property count if it wasn't set
 			if (!propertyCount && data.count) {
@@ -743,24 +789,13 @@
 						</Button>
 					</div>
 					
-					<div class="flex-1 flex items-center justify-center">
-						<div class="text-center p-6">
-							<div class="bg-primary/10 rounded-full p-4 inline-block mb-3">
-								<MapPin class="h-8 w-8 text-primary/70" />
-							</div>
-							<h4 class="text-lg font-medium mb-2">Map View Coming Soon</h4>
-							<p class="text-sm text-muted-foreground max-w-[250px] mx-auto mb-4">
-								We're working on a beautiful interactive map to help you find properties more easily.
-							</p>
-							<Button 
-								variant="outline" 
-								size="sm" 
-								onclick={toggleMapVisibility}
-								class="text-xs"
-							>
-								Hide Map & Get More Space
-							</Button>
-						</div>
+					<div class="flex-1">
+						<!-- Interactive Google Map with property markers -->
+						<Map 
+							properties={streamedProperties} 
+							selectedLocation={destination}
+							height="100%"
+						/>
 					</div>
 				</div>
 			</ResizablePane>

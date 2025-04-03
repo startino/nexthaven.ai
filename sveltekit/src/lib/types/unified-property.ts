@@ -11,6 +11,10 @@ export interface UnifiedProperty {
 
 	// Location Information
 	location: string;
+	coordinates?: { // Optional coordinates for map display
+		lat: number;
+		lng: number;
+	};
 
 	// Pricing Information
 	pricing: {
