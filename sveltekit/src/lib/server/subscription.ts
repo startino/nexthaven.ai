@@ -18,7 +18,7 @@ import { redirect, type RequestEvent } from '@sveltejs/kit';
 export const checkSubscriptionStatus = async (
 	supabase: SupabaseClient<Database>,
 	userId: string,
-	stripe?: Stripe | null
+	stripe: Stripe | null
 ): Promise<SubscriptionStatus> => {
 	try {
 		// First check if user has a Stripe customer ID
@@ -28,14 +28,17 @@ export const checkSubscriptionStatus = async (
 			.eq('user_id', userId)
 			.single();
 
-		if (customer?.stripe_customer_id && stripe) {
+		if (customer?.stripe_customer_id) {
 			// User has a Stripe customer ID, check for active subscriptions in Stripe
 			try {
+				console.log('customer', customer);
 				const subscriptions = await stripe.subscriptions.list({
 					customer: customer.stripe_customer_id,
 					status: 'active',
 					expand: ['data.plan.product']
 				});
+
+				console.log('subscriptions', subscriptions);
 
 				if (subscriptions.data.length > 0) {
 					// User has an active paid subscription
@@ -177,7 +180,11 @@ export async function requireSubscription(
 
 	// Check subscription status using our updated function
 	// which also checks for active trials
-	const subscriptionStatus = await checkSubscriptionStatus(locals.supabase, session.user.id);
+	const subscriptionStatus = await checkSubscriptionStatus(
+		locals.supabase,
+		session.user.id,
+		locals.stripe
+	);
 
 	// If not subscribed, redirect to subscription page
 	if (!subscriptionStatus.isActive) {
@@ -212,7 +219,11 @@ export async function checkUserAuthentication(
 	const { checkSubscriptionStatus } = await import('$lib/server/subscription');
 
 	// Check subscription status but don't redirect if inactive
-	const subscriptionStatus = await checkSubscriptionStatus(locals.supabase, session.user.id);
+	const subscriptionStatus = await checkSubscriptionStatus(
+		locals.supabase,
+		session.user.id,
+		locals.stripe
+	);
 
 	// Return both the session and subscription status
 	return { session, subscriptionStatus };

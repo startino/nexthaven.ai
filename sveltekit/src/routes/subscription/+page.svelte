@@ -14,14 +14,11 @@
 		DialogFooter,
 		DialogHeader,
 		DialogTitle,
-		DialogClose
 	} from '$lib/components/ui/dialog';
 
 	// Get data from server
 	let { data } = $props();
 	
-	// Subscription status
-	let isSubscribed = $state(data.subscriptionStatus?.isActive || false);
 	let hasPaidSubscription = $state(data.subscriptionStatus?.isActive && !data.subscriptionStatus?.isInTrial);
 	let isAnonymous = $state(data.isAnonymous || false);
 	let planName = $state(data.subscriptionStatus?.planName || '');

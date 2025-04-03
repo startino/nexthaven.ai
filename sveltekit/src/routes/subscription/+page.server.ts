@@ -2,7 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isAnonymousUser } from '$lib/supabase/auth';
-
+import { checkSubscriptionStatus, isEligibleForTrial } from '$lib/server/subscription';
 /**
  * Helper function to verify user status directly from the auth API
  */
@@ -65,7 +65,7 @@ async function verifyUserStatus(supabase: SupabaseClient, userId: string) {
 	}
 }
 
-export const load = (async ({ locals, url }) => {
+export const load = async ({ locals, url }) => {
 	const session = await locals.getSession();
 
 	// Redirect to login if not authenticated
@@ -95,11 +95,6 @@ export const load = (async ({ locals, url }) => {
 	let isTrialEligible = false;
 
 	try {
-		// Dynamically import the server module
-		const { checkSubscriptionStatus, isEligibleForTrial } = await import(
-			'$lib/server/subscription'
-		);
-
 		// Check trial eligibility only for non-anonymous users
 		if (!isAnonymous) {
 			isTrialEligible = await isEligibleForTrial(locals.supabase, session.user.id);
@@ -108,7 +103,11 @@ export const load = (async ({ locals, url }) => {
 		}
 
 		// Get subscription status including both Stripe subscriptions and our trial system
-		const subscriptionStatus = await checkSubscriptionStatus(locals.supabase, session.user.id);
+		const subscriptionStatus = await checkSubscriptionStatus(
+			locals.supabase,
+			session.user.id,
+			locals.stripe
+		);
 
 		// Set the isAnonymous flag in the subscription status
 		subscriptionStatus.isAnonymous = isAnonymous;
@@ -126,4 +125,4 @@ export const load = (async ({ locals, url }) => {
 			isAnonymous
 		};
 	}
-}) satisfies PageServerLoad;
+};
