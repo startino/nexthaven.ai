@@ -3,6 +3,10 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+	preview: {
+		// Allow nexthaven.ai host for preview mode
+		allowedHosts: ['nexthaven.ai']
+	},
 	plugins: [sveltekit()],
 	test: {
 		workspace: [
