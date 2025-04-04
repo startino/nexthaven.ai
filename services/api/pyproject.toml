@@ -25,6 +25,7 @@ opentelemetry-sdk = "^1.31.1"
 
 # Keep langchain as optional dependencies to avoid breaking existing code
 # They will be phased out as we migrate to pydantic-ai
+pydantic-ai = "^0.0.52"
 [tool.poetry.group.legacy.dependencies]
 langchain-experimental = "^0.3.4"
 langchain = "*"
