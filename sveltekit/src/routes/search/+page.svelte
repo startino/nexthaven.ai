@@ -18,16 +18,14 @@
 	import { ResizablePane, ResizablePaneGroup, ResizableHandle } from '$lib/components/ui/resizable';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { X, MapPin, Clock, Search, Check } from 'lucide-svelte';
+	import { X, MapPin, Search, Check } from 'lucide-svelte';
 	import { searchQuotaState } from '$lib/stores/search-quota.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 		
 	// Import utilities
-	import { loadPreviousPreferences, savePreference } from './preferences';
-	import { parseDateRange, calculateStartDate, formatDateRange, isValidDate } from './dateHelpers';
-	import { saveSearchToSupabaseAndNavigate } from './searchData';
-	import { fade, fly, scale } from 'svelte/transition';
-	import { ensureCompleteAnonymousSearchInfo } from './anonymousSearch';
+	import { loadPreviousPreferences } from './preferences';
+	import { parseDateRange, isValidDate } from './dateHelpers';
+	import { fade } from 'svelte/transition';
 	
 	// Import necessary types
 	import type { SavedPreference, SearchFormParams } from './types';

@@ -52,13 +52,6 @@ export const load: PageServerLoad = async (event): Promise<SearchPageData> => {
 				isAnonymous: true
 			};
 		}
-
-		// If anonymous user has reached their search limit, redirect to signup page
-		if (anonymousSearchInfo.hasReachedLimit) {
-			console.log('Anonymous user has reached search limit, redirecting to signup');
-			// Save the current URL to redirect back after signup
-			redirect(303, `/signup?redirect=${encodeURIComponent(url.pathname + url.search)}`);
-		}
 	} else {
 		// For non-anonymous users, check subscription status normally
 		if (!subscriptionStatus || !subscriptionStatus.isActive) {

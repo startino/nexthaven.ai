@@ -187,12 +187,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 			event.locals.isTrialEligible = false;
 			event.locals.hasExpiredTrial = false;
 
-			// If on the search page and they've reached their limit, redirect to signup
-			if (event.url.pathname === '/search' && anonymousSearchInfo.hasReachedLimit) {
-				console.log('HOOKS: Anonymous user reached search limit, redirecting from hook');
-				redirect(303, `/signup?redirect=${encodeURIComponent(event.url.pathname)}`);
-			}
-
 			console.log('HOOKS: Anonymous user can access search page');
 		} else {
 			// For regular authenticated users, check subscription

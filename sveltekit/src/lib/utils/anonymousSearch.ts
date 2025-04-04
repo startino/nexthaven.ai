@@ -1,9 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isAnonymousUser } from '$lib/supabase/auth';
+import { PUBLIC_ANONYMOUS_SEARCH_LIMIT } from '$env/static/public';
 
 // Maximum number of searches allowed for anonymous users
-export const ANONYMOUS_SEARCH_LIMIT = 1;
-
+export const ANONYMOUS_SEARCH_LIMIT = parseInt(PUBLIC_ANONYMOUS_SEARCH_LIMIT);
 /**
  * Check if an anonymous user has reached their search limit
  * @param supabase Supabase client
