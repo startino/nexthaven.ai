@@ -34,7 +34,7 @@
     selectedRooms = 1,
     preferences = $bindable(''),
     isLoading = false,
-    previousPreferences = [],
+    previousPreferences = [] as SavedPreference[],
     onSubmit = () => {},
   } = $props();
   
@@ -49,18 +49,25 @@
   let favoriteUserTags = $state<string[]>([]);
   
   // Create a filtered list of preferences with no duplicates
-  let uniquePreferences = $derived(() => {
-    // Use a Map to track unique preference texts
-    const uniquePrefs = new Map();
-    // Keep only the latest occurrence of each preference text
-    [...previousPreferences].reverse().forEach(pref => {
-      if (!uniquePrefs.has(pref.text)) {
-        uniquePrefs.set(pref.text, pref);
-      }
-    });
+  $effect(() => {
+    // Filter out duplicates whenever previousPreferences changes
+    const uniquePrefs = new Map<string, SavedPreference>();
+    
+    if (previousPreferences && previousPreferences.length > 0) {
+      // Keep only the latest occurrence of each preference text
+      [...previousPreferences].reverse().forEach(pref => {
+        if (!uniquePrefs.has(pref.text)) {
+          uniquePrefs.set(pref.text, pref);
+        }
+      });
+    }
+    
     // Convert back to array and reverse to maintain original order (newest first)
-    return Array.from(uniquePrefs.values()).reverse();
+    uniquePreferences = Array.from(uniquePrefs.values()).reverse();
   });
+  
+  // State for unique preferences
+  let uniquePreferences = $state<SavedPreference[]>([]);
   
   // Price range slider state
   let priceRange = $state<[number, number]>([100, 300]);
@@ -773,6 +780,9 @@
   // Function to handle previous preference selection via Select component
   function handlePreviousPreferenceChange(selected: { value: string, label?: string } | undefined) {
     if (selected?.value) {
+      // Clear existing tags first
+      selectedTags = [];
+      // Then add the new preferences
       selectPreviousPreference(selected.value);
     }
   }
@@ -943,7 +953,7 @@
   {/if}
   
   <div class="border rounded-md p-4 bg-card">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
         <Sparkle class="h-5 w-5 text-primary" />
         <h3 class="font-medium">Your Unique Preferences</h3>
@@ -964,11 +974,9 @@
           <Select.Root onSelectedChange={handlePreviousPreferenceChange}>
             <Select.Trigger class="text-xs h-8 gap-1 px-2 w-[220px]">
               <Clock class="h-4 w-4" />
-              <span>Previous</span>
+              <span>Previous Preferences</span>
             </Select.Trigger>
             <Select.Content class="w-[500px]">
-              <Select.Label>Previous preferences</Select.Label>
-              <Select.Separator />
               <ScrollArea class="h-[200px]">
                 {#each uniquePreferences as preference}
                   <Select.Item 
@@ -1050,18 +1058,18 @@
         {#if showTagInput && editingTagIndex === null}
           <Input 
             bind:value={tagInputValue}
-            placeholder={selectedTags.length > 0 ? "Add or edit tag... (use Enter or comma)" : "Add your own unique tags like 'no tile floor' or 'king-size bed'..."}
+            placeholder={selectedTags.length > 0 ? "Add or edit tag... (use Enter or comma)" : "Add your own unique tags like 'I don't like tile floors' or 'Apartment or condo'..."}
             onkeydown={handleCustomTagKeydown}
             oninput={handleTagInput}
             class="border-0 shadow-none focus-visible:ring-0 flex-1 h-8 min-w-[180px] text-sm"
             data-tag-input
           />
         {:else if selectedTags.length === 0}
-          <span class="text-muted-foreground text-sm">Add tags like 'modern kitchen', 'pet friendly'...</span>
+          <span class="text-muted-foreground text-sm">Add your own unique tags like "I don't like tile floors" or "Apartment or condo"...</span>
         {/if}
       </div>
     </div>
-    <p class="text-xs text-muted-foreground mt-1">Double-click to edit tags directly or use Enter/comma to add multiple</p>
+    <p class="text-xs text-muted-foreground mt-1.5">Double-click to edit tags directly or use Enter/comma to add multiple</p>
     
     <!-- Suggested tags section - now below the tag input -->
     <div class="mt-3 border rounded-md p-3 pt-2 bg-background/50">
