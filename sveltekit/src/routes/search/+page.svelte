@@ -31,6 +31,7 @@
 	
 	// Import necessary types
 	import type { SavedPreference, SearchFormParams } from './types';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	
 	// Define interface for page data
 	interface PageData {
@@ -397,6 +398,7 @@
 		// Ensure preferences are properly formatted and used
 		const tagsPreferences = preferences.trim();
 		console.log("Sending tag preferences to backend:", tagsPreferences);
+		console.log("Original preferences:", preferences);
 		
 		// Construct the request body
 		const requestBody = {
@@ -711,13 +713,14 @@
 	}
 </script>
 
-<div class="w-full h-screen overflow-hidden" transition:fade={{ duration: 300 }}>
-	<ResizablePaneGroup direction="horizontal" class="h-full">
+<div class="w-full h-full overflow-hidden" transition:fade={{ duration: 300 }}>
+	<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden">
 		<!-- Left sidebar with search inputs and results -->
-		<ResizablePane minSize={20} defaultSize={showMap ? 66 : 100}>
-			<div class="h-full overflow-y-auto">
-				<div class="p-4 md:p-6">
-					<!-- Error message box -->
+		<ResizablePane minSize={20} defaultSize={50}>
+			<ScrollArea class="h-full">
+				<div class="h-full">
+					<div class="p-4 md:p-6">
+						<!-- Error message box -->
 					{#if error}
 					<div 
 						class="w-full mb-4 p-3 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
@@ -738,7 +741,7 @@
 						{destination}
 						{dateRange}
 						{budget}
-						{preferences}
+						bind:preferences
 						{selectedRooms}
 						{previousPreferences}
 						isLoading={isSearching}
@@ -762,6 +765,7 @@
 					/>
 				</div>
 			</div>
+			</ScrollArea>
 		</ResizablePane>
 		
 		{#if showMap}

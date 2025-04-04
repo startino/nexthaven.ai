@@ -31,7 +31,7 @@
     dateRange = '',
     budget = '600',
     selectedRooms = 1,
-    preferences = '',
+    preferences = $bindable(''),
     isLoading = false,
     previousPreferences = [],
     onSubmit = () => {},

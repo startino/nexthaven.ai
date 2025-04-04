@@ -229,8 +229,14 @@ class EvaluateAgent:
                         content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
                 Evaluate this property against the user's requirements and preferences and return a match score and analysis.
                 
-                Property: {property_data}
-                Image Analysis: {image_analysis}
+                #### PROPERTY ####
+                {property_data}
+                
+                #### IMAGE ANALYSIS ####
+                {image_analysis}
+                
+                #### USER REQUIREMENTS ####
+                {user_request}
                 
                 Pay careful attention to both the Generic Image Analysis (which describes the overall property style and features) and the User Preference-Centric Analysis (which specifically examines how well the property matches the user's stated preferences). Use insights from both analyses when evaluating how well the property aligns with the user's requirements, especially regarding style and feel.
                 
@@ -363,7 +369,11 @@ class EvaluateAgent:
                         "text": f"""Analyze these property images comprehensively in two parts:
 
 PART 1 - GENERIC ANALYSIS:
-Describe the style, vibe, and aesthetic of the property. Focus on decor, design elements, ambiance, and overall feel. Is it modern, traditional, minimalist, luxurious, cozy, etc.? What are the key visual features of this property?
+Describe the style, vibe, and aesthetic of the property.
+Focus on decor, design elements, ambiance, and overall feel.
+Is it modern, traditional, minimalist, luxurious, cozy, etc.?
+What are the key visual features of this property?
+Touch on each image, room, and area of the property available.
 
 PART 2 - USER PREFERENCE MATCH:
 The user has specified these preferences: '{preferences_text}'
@@ -372,6 +382,9 @@ Be highly descriptive and specifc about the details found in the images; it's li
 If the images don't contain the information to make a determination, say "Images don't contain information to make a determination for [insert preference here]"
 
 Please provide a detailed, thorough analysis of both aspects, clearly separating the two parts in your response.
+
+You are not responsible for evaluating and matching the property.
+You are simply responsible for describing the property in its entirety.
 """,
                     },
                     *[
