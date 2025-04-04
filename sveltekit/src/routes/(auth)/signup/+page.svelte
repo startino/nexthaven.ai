@@ -161,7 +161,7 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center px-4">
+<div class="flex min-h-screen items-center justify-center px-4 overflow-y-auto">
 	<Card class="w-full max-w-md bg-white/5 backdrop-blur-sm">
 		{#if isFromSearch && isCurrentlyAnonymous}
 			<div class="px-6 pt-6 pb-0">
