@@ -788,7 +788,7 @@
   }
 </script>
 
-<form class="grid grid-cols-1 gap-5">
+<form class="grid grid-cols-1 gap-4 ">
 
   <!-- When & Where Section - Now as individual boxes -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -870,7 +870,7 @@
       </div>
       
       <!-- Tab-like system for nightly vs total -->
-      <div class="mb-5 max-w-xl">
+      <div class="mb-5">
         <div class="grid grid-cols-2 w-full gap-4">
           <button
             type="button"

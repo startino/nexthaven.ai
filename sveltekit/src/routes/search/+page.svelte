@@ -710,13 +710,14 @@
 	}
 </script>
 
-<div class="w-full h-[calc(100dvh-75px)] overflow-hidden" transition:fade={{ duration: 300 }}>
-	<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden">
+<div class="w-full h-full overflow-hidden" transition:fade={{ duration: 300 }}>
+	<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden ">
 		<!-- Left sidebar with search inputs and results -->
 		<ResizablePane minSize={20} defaultSize={50} class="overflow-hidden">
 			<ScrollArea class="h-full">
-				<div class="p-4 md:p-6">
-					<!-- Error message box -->
+				<div class="h-full">
+					<div class="pr-4 pl-2 md:pr-6 md:pl-4">
+						<!-- Error message box -->
 					{#if error}
 					<div 
 						class="w-full mb-4 p-3 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
