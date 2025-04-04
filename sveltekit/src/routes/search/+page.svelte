@@ -97,14 +97,13 @@
 	// Local state
 	let destination = $state('');
 	let dateRange = $state('');
-
 	let budget = $state('600');
 	let selectedRooms = $state(1);
 	let preferences = $state('');
 	let error = $derived(getErrorMessage());
 	let previousPreferences = $state<SavedPreference[]>([]);
 	let showMap = $state(true); // Always show map, no toggle functionality
-	
+	let selectedProperty = $state<UnifiedProperty | null>(null);
 	// Search state
 	let isSearching = $state(false);
 	let progress = $state(0);
@@ -704,16 +703,20 @@
 			}
 		}
 	}
+	
+	// Handle property selection from map
+	function handlePropertySelection(property: UnifiedProperty) {
+		selectedProperty = property;
+	}
 </script>
 
-<div class="w-full h-full overflow-hidden" transition:fade={{ duration: 300 }}>
+<div class="w-full h-[calc(100dvh-75px)] overflow-hidden" transition:fade={{ duration: 300 }}>
 	<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden">
 		<!-- Left sidebar with search inputs and results -->
-		<ResizablePane minSize={20} defaultSize={50}>
+		<ResizablePane minSize={20} defaultSize={50} class="overflow-hidden">
 			<ScrollArea class="h-full">
-				<div class="h-full">
-					<div class="p-4 md:p-6">
-						<!-- Error message box -->
+				<div class="p-4 md:p-6">
+					<!-- Error message box -->
 					{#if error}
 					<div 
 						class="w-full mb-4 p-3 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
@@ -751,13 +754,13 @@
 					
 					<!-- Properties Section -->
 					<PropertyResults
+						bind:externalSelectedProperty={selectedProperty}
 						properties={streamedProperties}
 						{propertyCount}
 						isSearching={isSearching}
 						{currentStepName}
 					/>
 				</div>
-			</div>
 			</ScrollArea>
 		</ResizablePane>
 		
@@ -766,12 +769,13 @@
 			<ResizableHandle withHandle />
 			
 			<!-- Map section (right side - 1/3 of screen width) -->
-			<ResizablePane minSize={20} defaultSize={34}>
-						<Map 
-							properties={streamedProperties} 
-							selectedLocation={destination}
-							height="100%"
-						/>
+			<ResizablePane minSize={20} defaultSize={34} class="overflow-hidden">
+				<Map 
+					properties={streamedProperties} 
+					selectedLocation={destination}
+					height="100%"
+					onSelectProperty={handlePropertySelection}
+				/>
 			</ResizablePane>
 		{:else}
 			<!-- Map is hidden but no button to show it since we're removing close functionality -->

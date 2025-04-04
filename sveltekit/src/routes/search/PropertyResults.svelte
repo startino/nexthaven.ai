@@ -20,17 +20,38 @@
     properties, 
     propertyCount, 
     isSearching, 
-    currentStepName 
+    currentStepName,
+    externalSelectedProperty = $bindable<UnifiedProperty | null>(null)
   } = $props<{
     properties: UnifiedProperty[];
     propertyCount: number;
     isSearching: boolean;
     currentStepName?: PropertyEvaluationStep;
+    externalSelectedProperty?: UnifiedProperty | null;
   }>();
 
   // State for property gallery
-  let selectedProperty: UnifiedProperty | null = $state(null);
-  let showGallery = $state(false);
+  let selectedProperty: UnifiedProperty | null = $state(externalSelectedProperty ?? null);
+  let showGallery = $derived(selectedProperty !== null);
+  
+  // Sync the external selected property with our internal one
+  $effect(() => {
+    if (externalSelectedProperty !== null) {
+      selectedProperty = externalSelectedProperty;
+    }
+
+    if (selectedProperty === null) {
+      externalSelectedProperty = null;
+    }
+  });
+
+  
+  // Notify when selectedProperty changes internally
+  $effect(() => {
+    if (selectedProperty !== externalSelectedProperty) {
+      externalSelectedProperty = selectedProperty;
+    }
+  });
   
   // State for adaptive grid columns
   let gridContainer: HTMLElement;
@@ -90,13 +111,12 @@
     if (!property) return;
     
     selectedProperty = property;
-    showGallery = true;
   }
   
   // Close gallery
   function closeGallery() {
-    showGallery = false;
     selectedProperty = null;
+    externalSelectedProperty = null;
   }
   
   // Select property for booking

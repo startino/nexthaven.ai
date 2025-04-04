@@ -17,7 +17,8 @@
   let { 
     properties = $bindable([]), 
     selectedLocation = $bindable(''),
-    height = $bindable('100%')
+    height = $bindable('100%'),
+    onSelectProperty = $bindable((property: UnifiedProperty) => {})
   } = $props();
   
   // DEBUGGING - Track every time the selected location is updated
@@ -45,6 +46,7 @@
     selectedLocation: selectedLocation || 'None',
     apiKey: PUBLIC_GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing'
   });
+
   
   // Map initialization options - using default styling
   const defaultMapOptions = {
@@ -639,11 +641,47 @@
         
         // Add click listener to open info window
         marker.addListener('click', () => {
+          // Close any open info windows first
+          markers.forEach(m => m.infoWindow?.close());
+          
+          // Store the info window reference on the marker
+          marker.infoWindow = infoWindow;
+          
           infoWindow.open({
             anchor: marker,
             map
           });
+          
+          // Add event listener for our custom close event
+          infoWindowContent.addEventListener('closeInfoWindow', () => {
+            infoWindow.close();
+          });
+          
+          // Add click listener to map to close info window when clicking outside
+          // @ts-ignore - Ignore TypeScript error for Google Maps API
+          const mapClickListener = map.addListener('click', () => {
+            infoWindow.close();
+            // @ts-ignore - Ignore TypeScript error for Google Maps API
+            window.google.maps.event.removeListener(mapClickListener);
+          });
+          
+          // Remove previous click listener when info window is closed
+          // @ts-ignore - Ignore TypeScript error for Google Maps API
+          window.google.maps.event.addListener(infoWindow, 'closeclick', () => {
+            // @ts-ignore - Ignore TypeScript error for Google Maps API
+            window.google.maps.event.removeListener(mapClickListener);
+          });
         });
+        
+        infoWindowContent.addEventListener('selectProperty', ((e: CustomEvent) => {
+          // If the property contains 'select', this came from the View Details button
+          if (e.detail.property === 'select') {
+            onSelectProperty(property);
+          } else {
+            onSelectProperty(e.detail.property);
+          }
+          infoWindow.close();
+        }) as EventListener);
         
         } catch (markerError) {
           console.error(`MAP COMPONENT: Error creating marker:`, markerError);
@@ -869,24 +907,39 @@
       // Create the component with tailwind classes
       render: (target: HTMLElement) => {
         const wrapper = document.createElement('div');
-        wrapper.className = 'w-[400px] max-w-full rounded-lg overflow-hidden shadow-lg relative';
+        wrapper.className = 'max-w-[400px] w-full rounded-lg overflow-hidden shadow-lg relative cursor-pointer hover:opacity-95 transition-opacity';
+        
+        // Add click handler for the whole card
+        wrapper.onclick = (e) => {
+          // Don't trigger if clicking the close button or the view details button
+          if (!(e.target as HTMLElement).closest('[data-close-button]') && 
+              !(e.target as HTMLElement).closest('[data-select-button]')) {
+            wrapper.dispatchEvent(new CustomEvent('selectProperty', { 
+              detail: { property } 
+            }));
+          }
+        };
         
         // Create the component's HTML structure
         const content = `
-          <div class="relative">
+          <div class="relative cursor-pointer" onclick="this.closest('.info-window-content').dispatchEvent(new CustomEvent('selectProperty', { detail: { property: 'select' } }))">
             <!-- Property Image -->
             <div class="relative w-full h-56">
               <img src="${property.media?.main_image || 'https://via.placeholder.com/400x200?text=No+Image'}" 
                    alt="${property.name || 'Property'}" 
                    class="w-full h-full object-cover" />
               
-              <!-- Save Button -->
-              <div class="absolute top-3 left-3 z-10">
-                <div class="bg-black/70 text-white rounded-full px-4 py-1.5 flex items-center gap-2 text-sm">
+              <!-- Action Buttons -->
+              <div class="absolute top-3 left-3 z-10 flex gap-2">
+                <!-- Close Button -->
+                <div class="bg-black/70 text-white rounded-full px-4 py-1.5 flex items-center gap-2 text-sm" 
+                     data-close-button 
+                     onclick="event.stopPropagation(); this.closest('.info-window-content').dispatchEvent(new CustomEvent('closeInfoWindow'))">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    <path d="M18 6L6 18"></path>
+                    <path d="M6 6l12 12"></path>
                   </svg>
-                  <span>Save</span>
+                  <span>Close</span>
                 </div>
               </div>
               

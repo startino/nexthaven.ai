@@ -14,11 +14,12 @@
   // Props - simplified
   let { 
     property, 
-    showGallery = false,
+    showGallery = $bindable(false),
   } = $props<{ 
     property: UnifiedProperty | null,
-    showGallery: boolean,
+    showGallery: boolean
   }>();
+
   
   // Event dispatcher
   const dispatch = createEventDispatcher<{
