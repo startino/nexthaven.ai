@@ -259,6 +259,7 @@ class EvaluateAgent:
                 You must provide detailed reasoning for your score, explaining to the user why the property matches or doesn't match the their preferences.
                 This reasoning will be shown to the user to help them understand why this property received its score.
                 Be specific about which preferences were met and which weren't.
+                Start your reasoning with the leanest, most concise summary of the evaluation, addressing the most important preferences succinctly.
                 Format this as a list of sentences, with emojis for each item, in HTML format. Only use <p>, <strong>, tags.
                 Make the emojis relevant to the item (for location, use a map emoji, 📌 for summary, etc.) and scoring of that attribute.
                 Don't use thumbsup, thumsdown, checkmark, or any generic emojis.

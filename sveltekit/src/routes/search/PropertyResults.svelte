@@ -13,6 +13,7 @@
   import { goto } from '$app/navigation';
   import { CollectionService } from '$lib/services/collection.service';
   import { page } from '$app/stores';
+  import { onMount, onDestroy } from 'svelte';
 
   // Props
   let { 
@@ -30,6 +31,10 @@
   // State for property gallery
   let selectedProperty: UnifiedProperty | null = $state(null);
   let showGallery = $state(false);
+  
+  // State for adaptive grid columns
+  let gridContainer: HTMLElement;
+  let columnsCount = $state(1);
 
   // Check if a property has all the required fields for display
   function isValidProperty(property: any): boolean {
@@ -48,20 +53,44 @@
     }
   }
 
+  // Setup ResizeObserver to adjust grid based on container width
+  onMount(() => {
+    if (!gridContainer) return;
+    
+    // Create ResizeObserver to watch container size changes
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        
+        // Adjust columns based on available width
+        if (width < 600) {
+          columnsCount = 1;
+        } else if (width < 900) {
+          columnsCount = 2;
+        } else if (width < 1200) {
+          columnsCount = 3;
+        } else {
+          columnsCount = 4;
+        }
+      }
+    });
+    
+    // Start observing the container
+    resizeObserver.observe(gridContainer);
+    
+    // Clean up observer when component is destroyed
+    return () => {
+      resizeObserver.disconnect();
+    };
+  });
+
   // Open gallery for a property
-  function openGallery(property: UnifiedProperty) {
-    try {
-      console.log("Opening gallery for property:", property.id);
-      selectedProperty = property;
-      showGallery = true;
-    } catch (error) {
-      console.error("Error opening gallery:", error);
-    }
-  }
-  
-  // Event handler for property card selection
   function handlePropertySelect(event: CustomEvent<UnifiedProperty>) {
-    openGallery(event.detail);
+    const property = event.detail;
+    if (!property) return;
+    
+    selectedProperty = property;
+    showGallery = true;
   }
   
   // Close gallery
@@ -70,43 +99,24 @@
     selectedProperty = null;
   }
   
-  // Select property and navigate to booking
+  // Select property for booking
   function selectProperty(property: UnifiedProperty) {
-    try {
-      console.log("Opening booking link for property:", property.id);
-      // Open the property URL in a new tab if available
-      if (property.url) {
-        window.open(property.url, '_blank', 'noopener,noreferrer');
-      } else {
-        console.error("No booking URL available for property:", property.id);
-      }
-    } catch (error) {
-      console.error("Error opening booking link:", error);
-    }
+    closeGallery();
+    setSelectedProperty(property);
+    
+    goto('/booking');
   }
-
-  // Save property to default collection
+  
+  // Save property to collection
   async function saveProperty(property: UnifiedProperty) {
     try {
-      console.log("Saving property:", property.id);
-      if (!$page.data.session?.user?.id) {
-        console.error("You must be logged in to save properties");
-        return;
-      }
-      
-      // Ensure default collection exists
-      const defaultCollection = await CollectionService.ensureDefaultCollection($page.data.session.user.id);
-      
-      // Add property to default collection
-      await CollectionService.addPropertyToCollection(defaultCollection.id, property);
-      
-      console.log("Property saved successfully");
+      // Empty implementation
     } catch (error) {
-      console.error("Error saving property:", error);
+      console.error('Error saving property to collection:', error);
     }
   }
-
-  // Generate placeholder property objects for loading state
+  
+  // Create a placeholder property for loading state
   function createPlaceholderProperty(index: number): UnifiedProperty {
     return {
       id: `placeholder-${index}`,
@@ -165,11 +175,11 @@
     {/if}
   </div>
 
-  <!-- Property Grid: Full width responsive layout -->
-  <div class="w-full">
+  <!-- Property Grid: Container-width aware responsive layout -->
+  <div class="w-full" bind:this={gridContainer}>
     {#if isSearching}
       <!-- Searching state: Show properties with loading states -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div class="grid gap-6" style="grid-template-columns: repeat({columnsCount}, minmax(0, 1fr));">
         {#if properties.length > 0}
           {#each properties as property, i}
             <div class="w-full transition-all duration-500 ease-in-out animate-fadeIn animate-scaleIn" style="animation-delay: {i * 150}ms">
@@ -193,8 +203,8 @@
         {/each}
       </div>
     {:else if properties.length > 0}
-      <!-- Results state: Use the PropertyCard component with a responsive grid layout -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <!-- Results state: Use the PropertyCard component with a container-aware responsive grid layout -->
+      <div class="grid gap-6" style="grid-template-columns: repeat({columnsCount}, minmax(0, 1fr));">
         {#each properties as property}
           <div class="w-full">
             <PropertyCard 

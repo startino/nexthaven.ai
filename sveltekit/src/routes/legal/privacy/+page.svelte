@@ -20,19 +20,21 @@
       <!-- Introduction -->
       <section>
         <h2 class="text-2xl font-semibold mb-4">Introduction</h2>
-        <p>Welcome to Nexthaven.ai. We respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, and safeguard your information when you use our AI-driven rental discovery platform.</p>
+        <p>
+          Welcome to Nexthaven.ai. Your privacy is important to us, and we are committed to protecting your personal data. This Privacy Policy explains the types of information we collect, how we use it, and the measures we take to safeguard your data when you use our AI-powered rental discovery platform.
+        </p>
       </section>
 
       <!-- Information We Collect -->
       <section>
         <h2 class="text-2xl font-semibold mb-4">Information We Collect</h2>
         <ul class="list-disc pl-6 space-y-2">
-          <li>Personal identification information (Name, email address, phone number)</li>
+          <li>Personal details (e.g., name, email address, phone number)</li>
           <li>Booking and rental history</li>
           <li>Payment information</li>
-          <li>Usage data, preferences, and free-flow text tags (e.g., "rustic decor", "sunlit writing nook")</li>
+          <li>Usage data and preference tags (e.g., “rustic decor,” “sunlit writing nook”)</li>
           <li>Device and browser information</li>
-          <li>Information derived from property image analysis (non-personal, feature-based)</li>
+          <li>Feature-based insights derived from property images (non-personal)</li>
         </ul>
       </section>
 
@@ -40,47 +42,47 @@
       <section>
         <h2 class="text-2xl font-semibold mb-4">How We Use Your Information</h2>
         <ul class="list-disc pl-6 space-y-2">
-          <li>To process your bookings and transactions</li>
+          <li>To process bookings and manage transactions</li>
           <li>To provide customer support</li>
-          <li>To send you important updates and notifications</li>
-          <li>To personalize your experience by matching property features (derived from image analysis) with your stated preferences and text tags</li>
+          <li>To deliver essential updates and notifications</li>
+          <li>To personalize your experience using property features (including insights from image analysis) matched to your preferences and text tags</li>
           <li>To aggregate listings from partner platforms</li>
-          <li>To improve our AI models and services</li>
-          <li>To comply with legal obligations</li>
+          <li>To enhance and refine our AI models and services</li>
+          <li>To comply with legal requirements</li>
         </ul>
       </section>
 
       <!-- Data Protection -->
       <section>
         <h2 class="text-2xl font-semibold mb-4">Data Protection</h2>
-        <p>We implement appropriate technical and organizational measures to ensure a level of security appropriate to the risk, including:</p>
+        <p>We use appropriate technical and organizational measures to protect your data, including:</p>
         <ul class="list-disc pl-6 space-y-2">
           <li>Encryption of personal data</li>
           <li>Regular security assessments</li>
-          <li>Access controls and authentication</li>
-          <li>Regular backups and data recovery procedures</li>
-          <li>Anonymization or pseudonymization of data used for AI model training where appropriate</li>
+          <li>Access controls and authentication protocols</li>
+          <li>Frequent backups and data recovery procedures</li>
+          <li>Anonymization or pseudonymization of data for AI model training when feasible</li>
         </ul>
       </section>
 
       <!-- Your Rights -->
       <section>
         <h2 class="text-2xl font-semibold mb-4">Your Rights</h2>
-        <p>Under data protection laws, you have rights including:</p>
+        <p>You have certain rights under data protection laws, including the right to:</p>
         <ul class="list-disc pl-6 space-y-2">
-          <li>The right to access your personal data</li>
-          <li>The right to correct inaccurate personal data</li>
-          <li>The right to request deletion of your personal data</li>
-          <li>The right to restrict processing of your personal data</li>
-          <li>The right to data portability</li>
-          <li>The right to object to automated decision-making, including profiling, where applicable</li>
+          <li>Access your personal data</li>
+          <li>Request the correction of inaccurate personal data</li>
+          <li>Request the deletion of your personal data</li>
+          <li>Restrict the processing of your personal data</li>
+          <li>Receive your data in a portable format</li>
+          <li>Object to automated decision-making, such as profiling, where applicable</li>
         </ul>
       </section>
 
       <!-- Contact Information -->
       <section>
         <h2 class="text-2xl font-semibold mb-4">Contact Us</h2>
-        <p>If you have any questions about this Privacy Policy, please contact us at:</p>
+        <p>If you have questions about this Privacy Policy or wish to exercise any of your rights, please contact us at:</p>
         <div class="mt-4">
           <Button variant="outline">
             <a href="mailto:jorge.lewis@nexthaven.ai">jorge.lewis@nexthaven.ai</a>
