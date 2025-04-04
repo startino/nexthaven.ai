@@ -251,7 +251,7 @@
 	<NavigationBar />
 
 	<!-- Page content -->
-	<main>
+	<main class="h-screen overflow-hidden pt-20">
 		{@render children()}
 	</main>
 	

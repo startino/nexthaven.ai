@@ -288,6 +288,3 @@
 		</div>
 	</Sheet.Content>
 </Sheet.Root>
-
-<!-- Add spacing to account for fixed header -->
-<div class="h-14"></div> 

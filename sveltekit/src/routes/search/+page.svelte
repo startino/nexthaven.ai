@@ -105,7 +105,7 @@
 	let preferences = $state('');
 	let error = $derived(getErrorMessage());
 	let previousPreferences = $state<SavedPreference[]>([]);
-	let showMap = $state(true); // Track if map section is visible
+	let showMap = $state(true); // Always show map, no toggle functionality
 	
 	// Search state
 	let isSearching = $state(false);
@@ -706,11 +706,6 @@
 			}
 		}
 	}
-	
-	// Function to toggle map visibility
-	function toggleMapVisibility() {
-		showMap = !showMap;
-	}
 </script>
 
 <div class="w-full h-full overflow-hidden" transition:fade={{ duration: 300 }}>
@@ -774,47 +769,14 @@
 			
 			<!-- Map section (right side - 1/3 of screen width) -->
 			<ResizablePane minSize={20} defaultSize={34}>
-				<div class="h-full bg-muted/40 relative flex flex-col">
-					<div class="p-3 border-b flex items-center justify-between bg-background/80">
-						<div class="flex items-center gap-2">
-							<MapPin class="h-5 w-5 text-primary" />
-							<h3 class="font-medium text-sm">Map View</h3>
-						</div>
-						<Button 
-							variant="outline" 
-							size="sm" 
-							onclick={toggleMapVisibility}
-							class="h-8 px-3 flex items-center gap-1.5"
-							aria-label="Close map"
-						>
-							<X class="h-4 w-4" />
-							<span>Close</span>
-						</Button>
-					</div>
-					
-					<div class="flex-1">
-						<!-- Interactive Google Map with property markers -->
 						<Map 
 							properties={streamedProperties} 
 							selectedLocation={destination}
 							height="100%"
 						/>
-					</div>
-				</div>
 			</ResizablePane>
 		{:else}
-			<!-- Show a small button to restore the map -->
-			<div class="absolute top-[72px] md:top-4 right-4 z-10">
-				<Button 
-					variant="outline" 
-					size="sm" 
-					onclick={toggleMapVisibility}
-					class="flex items-center gap-1.5 shadow-sm"
-				>
-					<MapPin class="h-4 w-4" />
-					<span>Show Map</span>
-				</Button>
-			</div>
+			<!-- Map is hidden but no button to show it since we're removing close functionality -->
 		{/if}
 	</ResizablePaneGroup>
 </div>

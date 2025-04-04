@@ -24,6 +24,7 @@
   import { getTopFavoriteTags, trackTagsUsage } from './favourite-filters';
   import { Slider } from '$lib/components/ui/slider';
   import { searchQuotaState } from '$lib/stores/search-quota.svelte';
+  import * as Select from '$lib/components/ui/select';
 
   // Get props using Svelte 5 syntax
   let {
@@ -46,6 +47,20 @@
   let selectedTags = $state<string[]>([]);
   let editingTagIndex = $state<number | null>(null);
   let favoriteUserTags = $state<string[]>([]);
+  
+  // Create a filtered list of preferences with no duplicates
+  let uniquePreferences = $derived(() => {
+    // Use a Map to track unique preference texts
+    const uniquePrefs = new Map();
+    // Keep only the latest occurrence of each preference text
+    [...previousPreferences].reverse().forEach(pref => {
+      if (!uniquePrefs.has(pref.text)) {
+        uniquePrefs.set(pref.text, pref);
+      }
+    });
+    // Convert back to array and reverse to maintain original order (newest first)
+    return Array.from(uniquePrefs.values()).reverse();
+  });
   
   // Price range slider state
   let priceRange = $state<[number, number]>([100, 300]);
@@ -754,6 +769,13 @@
       if (input) input.focus();
     }, 0);
   }
+  
+  // Function to handle previous preference selection via Select component
+  function handlePreviousPreferenceChange(selected: { value: string, label?: string } | undefined) {
+    if (selected?.value) {
+      selectPreviousPreference(selected.value);
+    }
+  }
 </script>
 
 <form class="grid grid-cols-1 gap-5">
@@ -824,9 +846,7 @@
           onSelect={handleLocationSelect}
           class="h-12"
         />
-        <div class="mt-1 text-xs text-muted-foreground">
-          You can type any location or select from suggestions
-        </div>
+
       </div>
     </div>
   </div>
@@ -836,7 +856,7 @@
       <div class="flex items-center gap-2 mb-3">
         <DollarSign class="h-5 w-5 text-primary" />
         <h3 class="font-medium">Budget Range</h3>
-        <span class="ml-auto text-sm text-muted-foreground">Drag both handles to set your minimum and maximum budget</span>
+        <span class="ml-auto text-sm text-muted-foreground">Drag the the slider to set your budget</span>
       </div>
       
       <!-- Tab-like system for nightly vs total -->
@@ -922,7 +942,7 @@
     </div>
   {/if}
   
-  <div class="space-y-3">
+  <div class="border rounded-md p-4 bg-card">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <Sparkle class="h-5 w-5 text-primary" />
@@ -941,42 +961,27 @@
         </Button>
         {/if}
         {#if previousPreferences.length > 0}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onclick={togglePreviousPreferences}
-            data-previous-preferences-btn
-            class="text-xs h-8 relative"
-          >
-            <Clock class="h-4 w-4 mr-1" />
-            <span>Previous</span>
-            {#if showPreviousPreferences}
-              <div 
-                class="absolute right-0 top-full mt-1 bg-card z-10 border rounded-md shadow-md max-h-[200px] overflow-y-auto w-64"
-                transition:slide={{ duration: 150 }}
-              >
-                <div class="p-2 border-b text-xs text-muted-foreground flex items-center gap-2">
-                  <Clock size={14} />
-                  <span>Previous preferences</span>
-                </div>
-                
-                <div class="divide-y">
-                  {#each previousPreferences as preference}
-                    <button 
-                      data-preference-item
-                      class="w-full text-left p-3 hover:bg-muted/50 transition-colors"
-                      onclick={() => selectPreviousPreference(preference.text)}
-                    >
-                      <div class="flex justify-between items-start gap-3">
-                        <p class="text-sm line-clamp-2">{preference.text}</p>
-                        <span class="text-xs text-muted-foreground shrink-0 mt-0.5">{formatTimestamp(preference.timestamp)}</span>
-                      </div>
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          </Button>
+          <Select.Root onSelectedChange={handlePreviousPreferenceChange}>
+            <Select.Trigger class="text-xs h-8 gap-1 px-2 w-[220px]">
+              <Clock class="h-4 w-4" />
+              <span>Previous</span>
+            </Select.Trigger>
+            <Select.Content class="w-[500px]">
+              <Select.Label>Previous preferences</Select.Label>
+              <Select.Separator />
+              <ScrollArea class="h-[200px]">
+                {#each uniquePreferences as preference}
+                  <Select.Item 
+                    value={preference.text} 
+                    label={preference.text}
+                    class="flex justify-between items-start gap-3 w-full"
+                  >
+                    <p class="text-sm line-clamp-2">{preference.text}</p>
+                  </Select.Item>
+                {/each}
+              </ScrollArea>
+            </Select.Content>
+          </Select.Root>
         {/if}
       </div>
     </div>

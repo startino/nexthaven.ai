@@ -54,6 +54,9 @@
     fullscreenControl: false, // Disable fullscreen control
     streetViewControl: false, // Disable street view
     zoomControl: true, // Keep zoom controls
+    // Disable any other controls that could close the map
+    controlSize: 30, // Make controls appropriately sized
+    disableDefaultUI: false, // Keep minimal UI
     // Custom map styling to match the light beige style in the reference image
     styles: [
       {
@@ -626,11 +629,11 @@
               (iwContainer as HTMLElement).style.padding = '0';
             }
             
-            // Fix the arrow at the bottom of the info window
-            const iwCloseBtn = document.querySelector('.gm-style-iw-t button');
-            if (iwCloseBtn) {
-              iwCloseBtn.remove();
-            }
+            // Always remove the close button from info windows
+            const iwCloseBtns = document.querySelectorAll('.gm-style-iw-t button, .gm-ui-hover-effect');
+            iwCloseBtns.forEach(btn => {
+              btn.remove();
+            });
           }
         });
         
