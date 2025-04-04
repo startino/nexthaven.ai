@@ -47,6 +47,14 @@ from src.models.unified_property import (
 )
 
 from langsmith import traceable
+from pydantic import BaseModel, Field
+
+
+class NightlyPriceOutput(BaseModel):
+    """Output model for nightly price calculation"""
+
+    price: float = Field(description="The calculated nightly price")
+
 
 class EvaluateAgent:
     def __init__(self):
@@ -62,7 +70,7 @@ class EvaluateAgent:
     ):
         """
         Evaluate properties in parallel using asyncio tasks
-        
+
         Args:
             user_request: The user's requirements
             properties: List of properties to evaluate
@@ -85,12 +93,14 @@ class EvaluateAgent:
                     # Extract image URLs from Airbnb images
                     image_urls = [img.imageUrl for img in prop.images if img.imageUrl]
                     if image_urls:
-                        image_tasks.append(self._analyze_images(image_urls, user_request))
+                        image_tasks.append(
+                            self._analyze_images(image_urls, user_request)
+                        )
                     else:
                         image_tasks.append(None)
                 else:
                     image_tasks.append(None)
-                    
+
             start_time = time.time()
 
             # Wait for all image analyses to complete
@@ -105,11 +115,15 @@ class EvaluateAgent:
                     image_analyses[f"property_{i}"] = image_results[result_index]
                     result_index += 1
                 else:
-                    image_analyses[f"property_{i}"] = "No images available for analysis."
-                    
+                    image_analyses[f"property_{i}"] = (
+                        "No images available for analysis."
+                    )
+
             end_time = time.time()
-            logging.info(f"Image analysis completed in {end_time - start_time:.2f} seconds")
-            
+            logging.info(
+                f"Image analysis completed in {end_time - start_time:.2f} seconds"
+            )
+
         # Create evaluation tasks for each property
         evaluation_tasks = []
         for i, prop in enumerate(properties):
@@ -122,72 +136,83 @@ class EvaluateAgent:
             property_data["source"] = ""
             property_data["price"] = ""
             property_data["name"] = ""
-    
+
             # Create the task for this property
             task = self._evaluate_single_property(
                 property_index=i,
                 property_data=property_data,
                 image_analysis=image_analysis,
-                user_request=user_request
+                user_request=user_request,
             )
             evaluation_tasks.append(task)
-        
+
         # Process in batches instead of all at once to prevent rate limiting
         logging.info(f"Starting batch processing of {len(properties)} properties")
         start_time = time.time()
-        
+
         # Use a semaphore to limit the total number of concurrent evaluations
         # This prevents overwhelming the API while still allowing parallel batch processing
         max_concurrent_total = 15  # Maximum concurrent evaluations across all batches
         semaphore = asyncio.Semaphore(max_concurrent_total)
-        
+
         # Create a limited version of the evaluation function
         async def limited_evaluation(task):
             async with semaphore:
                 return await task
-        
+
         # Process all properties in a more optimized parallel approach
         # Instead of processing batches sequentially, we wrap each task with the semaphore
         # and run all of them in parallel, but with a concurrency limit applied via semaphore
         tasks = [limited_evaluation(task) for task in evaluation_tasks]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         end_time = time.time()
-        logging.info(f"Completed parallel evaluation in {end_time - start_time:.2f} seconds")
-        
+        logging.info(
+            f"Completed parallel evaluation in {end_time - start_time:.2f} seconds"
+        )
+
         # Process results
         processed_results: list[UnifiedProperty] = []
         success_count = 0
         error_count = 0
-        
+
         for i, (result, prop) in enumerate(zip(results, properties)):
             try:
                 # Check if the result is an exception
                 if isinstance(result, Exception):
                     error_count += 1
                     error_message = str(result)
-                    
+
                     # Log different types of errors differently
-                    if "Invalid prompt" in error_message or "usage policy" in error_message:
-                        logging.warning(f"Content policy violation for property {i}: {error_message[:100]}...")
+                    if (
+                        "Invalid prompt" in error_message
+                        or "usage policy" in error_message
+                    ):
+                        logging.warning(
+                            f"Content policy violation for property {i}: {error_message[:100]}..."
+                        )
                     else:
-                        logging.error(f"Error evaluating property {i}: {error_message[:100]}...")
+                        logging.error(
+                            f"Error evaluating property {i}: {error_message[:100]}..."
+                        )
                     continue
-                
+
                 # Check if result is None (skipped)
                 if result is None:
                     error_count += 1
                     logging.warning(f"Property {i} was skipped due to potential issues")
                     continue
-                
+
                 # Process the valid result
                 success_count += 1
 
                 # Create a UnifiedProperty object
                 unified_prop = self._create_unified_property(prop, result)
                 processed_results.append(unified_prop)
-                
-                logging.info(f"Successfully processed property: {unified_prop.name} with score: {unified_prop.score}")
+
+                logging.info(
+                    f"Successfully processed property: {unified_prop.name} with score: {unified_prop.score}"
+                )
             except Exception as e:
                 error_count += 1
                 logging.error(f"Error processing property {i}: {str(e)}")
@@ -207,17 +232,23 @@ class EvaluateAgent:
         else:
             logging.warning("No properties were successfully processed")
             return []
-    
-    async def _evaluate_single_property(self, property_index: int, property_data: dict, image_analysis: str, user_request: GeneratedRequirement) -> Result | None:
+
+    async def _evaluate_single_property(
+        self,
+        property_index: int,
+        property_data: dict,
+        image_analysis: str,
+        user_request: GeneratedRequirement,
+    ) -> Result | None:
         """
         Evaluate a single property using LLM
-        
+
         Args:
             property_index: Index of the property
             property_data: Simplified property data
             image_analysis: Analysis of property images
             user_request: User requirements
-            
+
         Returns:
             Evaluation result dict or None if evaluation fails
         """
@@ -275,74 +306,95 @@ class EvaluateAgent:
                     ),
                     HumanMessage(
                         content=f"""Hey man! I'm excited to be here with you! I can't wait for you to help me find the perfect short-term rental for me! Here are my imaginary requirements: {str(user_request)}"""
-                    )
+                    ),
                 ]
             )
             # Create the evaluation chain
             chain = (
-                prompt 
-                | self.llm.bind_tools([Result], tool_choice="any") 
+                prompt
+                | self.llm.bind_tools([Result], tool_choice="any")
                 | JsonOutputToolsParser(return_id=True)
             )
-            
+
             # Execute with 30 second timeout to meet our target
             try:
                 result = await asyncio.wait_for(
-                    chain.ainvoke({}), 
-                    timeout=30 # Reduced to 30s target
+                    chain.ainvoke({}), timeout=30  # Reduced to 30s target
                 )
-                
+
                 logging.info(f"Successfully evaluated property {property_index}")
-                
+
                 # Extract the result args
-                if not result or not isinstance(result, list) or not result[0].get("args"):
-                    logging.error(f"Unexpected result format for property {property_index}: {result}")
+                if (
+                    not result
+                    or not isinstance(result, list)
+                    or not result[0].get("args")
+                ):
+                    logging.error(
+                        f"Unexpected result format for property {property_index}: {result}"
+                    )
                     return None
-                
+
                 # Convert the result to a Result object
                 result_obj = Result(**result[0]["args"])
 
                 return result_obj
-                
+
             except asyncio.TimeoutError:
-                logging.warning(f"Evaluation of property {property_index} timed out after 30 seconds")
+                logging.warning(
+                    f"Evaluation of property {property_index} timed out after 30 seconds"
+                )
                 return None
-                
+
         except openai.BadRequestError as e:
             # Handle content policy violations
             error_message = str(e)
             content_policy_patterns = [
-                "invalid prompt", 
-                "usage policy", 
-                "content policy", 
-                "violating", 
+                "invalid prompt",
+                "usage policy",
+                "content policy",
+                "violating",
                 "error code: 400",
-                "invalid_request_error"
+                "invalid_request_error",
             ]
-            
+
             # Check if any content policy pattern is in the error message (case insensitive)
-            if any(pattern.lower() in error_message.lower() for pattern in content_policy_patterns):
-                logging.warning(f"Content policy violation detected for property {property_index}, skipping")
+            if any(
+                pattern.lower() in error_message.lower()
+                for pattern in content_policy_patterns
+            ):
+                logging.warning(
+                    f"Content policy violation detected for property {property_index}, skipping"
+                )
                 return None  # Return None to skip this property instead of raising
-            
+
             # For other OpenAI API errors, log and return None to continue with other properties
-            logging.error(f"OpenAI API error for property {property_index}: {error_message}")
+            logging.error(
+                f"OpenAI API error for property {property_index}: {error_message}"
+            )
             return None
-                
+
         except Exception as e:
             # Log any other exception but don't halt the entire process
-            logging.error(f"Unexpected error evaluating property {property_index}: {str(e)}")
+            logging.error(
+                f"Unexpected error evaluating property {property_index}: {str(e)}"
+            )
             return None
-    
-    async def _analyze_images(self, image_urls: List[str], user_request: GeneratedRequirement, max_images: int = 15) -> str:
+
+    async def _analyze_images(
+        self,
+        image_urls: List[str],
+        user_request: GeneratedRequirement,
+        max_images: int = 15,
+    ) -> str:
         """
         Analyze property images using vision model - combined generic and preference analysis
-        
+
         Args:
             image_urls: List of image URLs to analyze
             user_request: User's requirements to consider for preference-centric analysis
             max_images: Maximum number of images to analyze
-            
+
         Returns:
             String containing combined image analysis
         """
@@ -355,12 +407,12 @@ class EvaluateAgent:
             selected_urls = random.sample(image_urls, max_images)
         else:
             selected_urls = image_urls.copy()
-            
+
         # Extract user preferences for the prompt
         preferences_text = "Not specified"
         if user_request and user_request.preferences:
             preferences_text = user_request.preferences
-            
+
         # Create a combined prompt that addresses both generic and preference-specific analysis
         messages = [
             HumanMessage(
@@ -423,10 +475,18 @@ You are simply responsible for describing the property in its entirety.
                     if detail.name:
                         amenities.append(detail.name)
 
+        # Extract check-in and check-out dates for pricing calculations
+        check_in = property_data.checkIn
+        check_out = property_data.checkOut
+
         result = {
             "name": property_data.name,
             "url": property_data.url,
             "price": property_data.price,
+            "price_type": "total",  # Indicate this is a total price
+            "source": "Booking.com",  # Explicitly mark the source with consistent name
+            "check_in": check_in,  # Include check-in date
+            "check_out": check_out,  # Include check-out date
             "location": property_data.address.full if property_data.address else "",
             "rooms": len(property_data.rooms) if property_data.rooms else 0,
             "amenities": amenities[:10],
@@ -438,8 +498,53 @@ You are simply responsible for describing the property in its entirety.
             "image": property_data.image,
             "description": property_data.description,
             "gallery": property_data.gallery,
-            "source": "booking",
         }
+
+        # For Booking.com, convert total price to nightly price
+        # Calculate number of nights from check-in/check-out
+        if result["price"] is not None:
+            try:
+                from datetime import datetime
+
+                # Get check-in and check-out dates with robust handling
+                check_in_value = check_in
+                check_out_value = check_out
+
+                # Add debug logging
+                logging.info(
+                    f"Simplify booking - CheckIn: {check_in_value}, CheckOut: {check_out_value}"
+                )
+
+                if check_in_value and check_out_value:
+                    check_in_date = datetime.strptime(check_in_value, "%Y-%m-%d")
+                    check_out_date = datetime.strptime(check_out_value, "%Y-%m-%d")
+                    nights = (check_out_date - check_in_date).days
+                    logging.info(f"Simplify booking calculated nights: {nights}")
+
+                    if nights > 0:
+                        # Convert to nightly price
+                        result["price"] = result["price"] / nights
+                        # Apply discount adjustment for long stays
+                        if nights >= 28:
+                            # Long stay, might have monthly pricing
+                            result["price"] = (
+                                result["price"] * 0.9
+                            )  # Simple adjustment for monthly discounts
+                        elif nights >= 7:
+                            # Weekly stay, might have minor discount
+                            result["price"] = (
+                                result["price"] * 0.95
+                            )  # Simple adjustment for weekly discounts
+                    else:
+                        logging.warning(
+                            f"Invalid night count {nights} in _simplify_booking_property"
+                        )
+                else:
+                    logging.warning("Missing dates in _simplify_booking_property")
+            except Exception as e:
+                logging.warning(
+                    f"Error calculating nightly price from dates in _simplify_booking_property: {e}"
+                )
 
         return result
 
@@ -498,7 +603,264 @@ You are simply responsible for describing the property in its entirety.
             "source": "airbnb",
         }
 
+        # For Booking.com, convert total price to nightly price
+        # Calculate number of nights from check-in/check-out
+        if (
+            property_data.checkIn
+            and property_data.checkOut
+            and result["price"] is not None
+        ):
+            try:
+                from datetime import datetime
+
+                check_in_date = datetime.strptime(property_data.checkIn, "%Y-%m-%d")
+                check_out_date = datetime.strptime(property_data.checkOut, "%Y-%m-%d")
+                nights = (check_out_date - check_in_date).days
+                if nights > 0:
+                    # Convert to nightly price
+                    result["price"] = result["price"] / nights
+                    # Apply discount adjustment for long stays
+                    if nights >= 28:
+                        # Long stay, might have monthly pricing
+                        result["price"] = (
+                            result["price"] * 0.9
+                        )  # Simple adjustment for monthly discounts
+                    elif nights >= 7:
+                        # Weekly stay, might have minor discount
+                        result["price"] = (
+                            result["price"] * 0.95
+                        )  # Simple adjustment for weekly discounts
+            except Exception as e:
+                logging.warning(f"Error calculating nightly price from dates: {e}")
+
         return result
+
+    async def _convert_booking_price_with_llm(self, property_data, total_price):
+        """
+        Uses LLM to intelligently convert Booking.com's total price to nightly price
+        considering all pricing factors (discounts, duration, etc).
+
+        Args:
+            property_data: The BookingApifyResponse object
+            total_price: The total price for the entire stay
+
+        Returns:
+            Calculated nightly price
+        """
+        # Calculate basic duration information for context
+        nights = 1  # Default fallback
+
+        # Debug log to check property_data attributes
+        logging.info(
+            f"CheckIn type: {type(property_data)}, has checkIn: {hasattr(property_data, 'checkIn')}"
+        )
+        logging.info(f"CheckIn value: {getattr(property_data, 'checkIn', 'NOT FOUND')}")
+        logging.info(
+            f"CheckOut value: {getattr(property_data, 'checkOut', 'NOT FOUND')}"
+        )
+
+        # More robust checks for check-in/out dates
+        check_in_value = None
+        check_out_value = None
+
+        # Try multiple ways to get the dates
+        if (
+            hasattr(property_data, "checkIn")
+            and property_data.checkIn
+            and str(property_data.checkIn).strip()
+        ):
+            check_in_value = str(property_data.checkIn).strip()
+
+        if (
+            hasattr(property_data, "checkOut")
+            and property_data.checkOut
+            and str(property_data.checkOut).strip()
+        ):
+            check_out_value = str(property_data.checkOut).strip()
+
+        # If dates are found, calculate nights
+        if check_in_value and check_out_value:
+            try:
+                from datetime import datetime
+
+                logging.info(
+                    f"Found dates - CheckIn: {check_in_value}, CheckOut: {check_out_value}"
+                )
+                check_in = datetime.strptime(check_in_value, "%Y-%m-%d")
+                check_out = datetime.strptime(check_out_value, "%Y-%m-%d")
+                nights = (check_out - check_in).days
+                logging.info(f"Calculated nights: {nights}")
+
+                if nights <= 0:
+                    logging.warning(
+                        f"Invalid nights calculation: {nights}, defaulting to 1"
+                    )
+                    nights = 1
+            except Exception as e:
+                logging.warning(f"Error calculating nights from dates: {e}")
+        else:
+            logging.warning(
+                f"Missing check-in/out dates. Using default nights value: {nights}"
+            )
+
+        # Ensure nights is at least 1 to avoid division by zero
+        nights = max(1, nights)
+
+        # Create a prompt for the LLM
+        prompt = PromptTemplate.from_template(
+            """You are an expert vacation rental pricing analyst with deep knowledge of global pricing trends.
+            
+            ## PROPERTY DETAILS:
+            - Property name: {name}
+            - Description: {description_snippet}
+            - Total price: ${total_price} for {nights} nights
+            - Check-in: {check_in}
+            - Check-out: {check_out}
+            - Property type: {property_type}
+            - Location: {location}
+            - Number of rooms: {room_count}
+            - Has reviews: {has_reviews}
+            
+            ## TASK:
+            Calculate a REALISTIC nightly price for this Booking.com property.
+            
+            ## CONSIDERATIONS:
+            
+            ### 1. LOCATION FACTORS:
+               - Typical hotel/accommodation prices per night in major cities:
+                 * New York: Budget $100-180, Standard $180-350, Luxury $350-800+
+                 * London: Budget $90-160, Standard $160-320, Luxury $320-750+
+                 * Paris: Budget $80-150, Standard $150-300, Luxury $300-700+
+                 * Tokyo: Budget $70-140, Standard $140-280, Luxury $280-650+
+                 * Miami: Budget $80-150, Standard $150-300, Luxury $300-700+
+               - Research typical pricing in this specific location/neighborhood
+               - Consider proximity to attractions, transit, business districts
+            
+            ### 2. TEMPORAL FACTORS:
+               - Weekend vs weekday rate differences (weekends typically 10-40% higher)
+               - Seasonal demand (high season can be 25-100% more expensive)
+               - Holiday/event premiums (can increase rates 50-200%)
+               - Length-of-stay discounts (weekly ~10-15%, monthly ~25-40%)
+            
+            ### 3. PROPERTY FACTORS:
+               - Property type and size impact on pricing
+               - Star rating and quality level
+               - Amenities that might justify premium pricing
+            
+            ### 4. REALITY CHECK:
+               - Simple division gives: ${total_price} ÷ {nights} = ${per_night_price:.2f}/night
+               - Does this price make sense for this property type in this location?
+               - If the simple division price seems unrealistic, estimate a more realistic price
+               - Most hotels (except ultra-luxury) rarely exceed $800/night in major cities
+            
+            ## EXAMPLES:
+            
+            ### Example 1: Standard Hotel in New York
+            - Total price: $1200 for 4 nights
+            - Simple division: $300/night
+            - Realistic price: $285/night (after accounting for Sunday at lower rate)
+            
+            ### Example 2: Luxury Resort in Miami Beach
+            - Total price: $3500 for 7 nights
+            - Simple division: $500/night
+            - Realistic price: $550/night (weekend nights priced higher, offsetting weekly discount)
+            
+            ### Example 3: Budget Accommodation in London
+            - Total price: $900 for 6 nights
+            - Simple division: $150/night
+            - Realistic price: $145/night (weekly discount applied)
+            
+            ### Example 4: Extended Stay Apartment in Paris
+            - Total price: $4200 for 30 nights
+            - Simple division: $140/night
+            - Realistic price: $170/night (monthly discount already applied to total, actual nightly rate higher)
+            
+            Return ONLY a single numeric value representing the most realistic nightly price in USD - no explanation or text.
+            """
+        )
+
+        # Create the chain with structured output
+        chain = (
+            prompt
+            | gpt_4o_mini(0).bind_tools([NightlyPriceOutput], tool_choice="any")
+            | JsonOutputToolsParser(return_id=True)
+        )
+
+        # Invoke the chain
+        try:
+            # Prepare the input with detailed context
+            chain_input = {
+                "total_price": total_price,
+                "nights": nights,
+                "check_in": property_data.checkIn or "Unknown",
+                "check_out": property_data.checkOut or "Unknown",
+                "property_type": property_data.type or "Accommodation",
+                "location": (
+                    property_data.address.full
+                    if property_data.address
+                    else "Unknown location"
+                ),
+                # Add more context for better analysis
+                "name": (
+                    property_data.name[:100] if hasattr(property_data, "name") else ""
+                ),
+                "description_snippet": (
+                    property_data.description[:200]
+                    if hasattr(property_data, "description")
+                    else ""
+                ),
+                "room_count": (
+                    len(property_data.rooms)
+                    if hasattr(property_data, "rooms") and property_data.rooms
+                    else 1
+                ),
+                "has_reviews": (
+                    bool(property_data.categoryReviews)
+                    if hasattr(property_data, "categoryReviews")
+                    else False
+                ),
+                # Calculate the per night price to avoid template calculation issues
+                # Using max(1, nights) to ensure we never divide by zero
+                "per_night_price": (
+                    total_price / max(1, nights) if nights > 0 else total_price
+                ),
+            }
+
+            # Get the calculated price with structured output
+            response = await chain.ainvoke(chain_input)
+
+            # Extract the price from the structured output
+            try:
+                if response and isinstance(response, list) and len(response) > 0:
+                    calculated_price = float(response[0]["args"]["price"])
+
+                    # Enhanced logging with more details about the calculation
+                    logging.info(
+                        f"Price calculation for {property_data.name[:30]}... in {chain_input['location'][:30]}...:"
+                        + f"\n  Original total: ${chain_input['total_price']:.2f} for {chain_input['nights']} nights"
+                        + f"\n  Calculated nightly: ${calculated_price:.2f}"
+                        + f"\n  Simple division: ${chain_input['total_price']/max(1,chain_input['nights']):.2f}"
+                        + f"\n  Diff from simple division: {(calculated_price - chain_input['total_price']/max(1,chain_input['nights']))/max(0.01, chain_input['total_price']/max(1,chain_input['nights']))*100:.1f}%"
+                    )
+
+                    return calculated_price
+                else:
+                    # Fall back to simple division if response format is unexpected
+                    logging.warning(
+                        "Unexpected response format from LLM, falling back to simple calculation"
+                    )
+                    return total_price / nights
+            except (KeyError, ValueError, TypeError) as e:
+                # If we can't parse the price, fall back to simple division
+                logging.warning(
+                    f"Error extracting price from LLM response: {e}, falling back to simple calculation"
+                )
+                return total_price / nights
+
+        except Exception as e:
+            logging.error(f"Error in LLM price calculation: {e}")
+            # Fall back to simple division if LLM fails
+            return total_price / nights
 
     def _create_unified_property(
         self,
@@ -522,13 +884,70 @@ You are simply responsible for describing the property in its entirety.
             description = property_data.description
             url = property_data.url
             location = property_data.address.full if property_data.address else ""
-            coordinates: Coordinates = Coordinates(lat=property_data.location.lat, lng=property_data.location.lng)
+            coordinates: Coordinates = Coordinates(
+                lat=property_data.location.lat, lng=property_data.location.lng
+            )
 
             # Extract pricing
             if isinstance(property_data.price, str):
                 total = float(property_data.price.replace("$", "").replace(",", ""))
             else:
                 total = property_data.price
+
+            # For Booking.com, convert total price to nightly price using LLM chain
+            if source == "Booking.com" and total:
+                # Use LLM to calculate nightly price considering all factors
+                # This is replaced with a sync version for simplicity - in production use asyncio.run()
+                import asyncio
+
+                try:
+                    total = asyncio.get_event_loop().run_until_complete(
+                        self._convert_booking_price_with_llm(property_data, total)
+                    )
+                except Exception as e:
+                    logging.error(f"Error calculating nightly price with LLM: {e}")
+                    # Fall back to simple calculation if LLM fails
+                    nights = 1
+
+                    # Try to get check-in and check-out dates with robust handling
+                    check_in_value = None
+                    check_out_value = None
+
+                    if hasattr(property_data, "checkIn") and property_data.checkIn:
+                        check_in_value = property_data.checkIn
+
+                    if hasattr(property_data, "checkOut") and property_data.checkOut:
+                        check_out_value = property_data.checkOut
+
+                    # Calculate nights if dates are available
+                    if check_in_value and check_out_value:
+                        try:
+                            from datetime import datetime
+
+                            logging.info(
+                                f"Fallback calculation - CheckIn: {check_in_value}, CheckOut: {check_out_value}"
+                            )
+                            check_in = datetime.strptime(check_in_value, "%Y-%m-%d")
+                            check_out = datetime.strptime(check_out_value, "%Y-%m-%d")
+                            nights = (check_out - check_in).days
+                            logging.info(f"Fallback calculated nights: {nights}")
+
+                            if nights <= 0:
+                                nights = 1
+                        except Exception as e:
+                            logging.warning(
+                                f"Error in fallback nights calculation: {e}"
+                            )
+                    else:
+                        logging.warning(
+                            "Missing dates for fallback calculation, using default nights=1"
+                        )
+
+                    # Ensure nights is at least 1
+                    nights = max(1, nights)
+
+                    # Calculate the nightly price
+                    total = total / nights
 
             # Extract capacity
             bedrooms = len(property_data.rooms) if property_data.rooms else 1
@@ -556,7 +975,10 @@ You are simply responsible for describing the property in its entirety.
             description = property_data.description if property_data.description else ""
             url = property_data.url
             location = property_data.location if property_data.location else ""
-            coordinates: Coordinates = Coordinates(lat=property_data.coordinates.latitude, lng=property_data.coordinates.longitude)
+            coordinates: Coordinates = Coordinates(
+                lat=property_data.coordinates.latitude,
+                lng=property_data.coordinates.longitude,
+            )
 
             # Extract pricing
             if isinstance(property_data.price, str):
@@ -592,7 +1014,11 @@ You are simply responsible for describing the property in its entirety.
             name=name,
             description=description,
             location=location if location else "",  # Ensure location is never None
-            coordinates=Coordinates(lat=coordinates.lat, lng=coordinates.lng) if coordinates else Coordinates(lat=None, lng=None),
+            coordinates=(
+                Coordinates(lat=coordinates.lat, lng=coordinates.lng)
+                if coordinates
+                else Coordinates(lat=None, lng=None)
+            ),
             pricing=PricingModel(
                 total=(
                     float(total.price.replace("$", "").replace(",", ""))
@@ -631,7 +1057,6 @@ You are simply responsible for describing the property in its entirety.
                 return 999
 
 
-
 if __name__ == "__main__":
     user_request = UserRequirement(
         query="New York",
@@ -667,13 +1092,15 @@ if __name__ == "__main__":
 
     # Combine properties from both sources
     all_properties = booking_properties + airbnb_properties
-    
+
     # Use the asyncio version
     async def main():
         start_time = time.time()
         evaluate_agent = EvaluateAgent()
         try:
-            response = await evaluate_agent.evaluate(generate_requirement, all_properties)
+            response = await evaluate_agent.evaluate(
+                generate_requirement, all_properties
+            )
         finally:
             # Ensure resources are cleaned up
             await evaluate_agent.close()
@@ -685,9 +1112,13 @@ if __name__ == "__main__":
                 f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds"
             )
             for prop in response:
-                print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
+                print(
+                    f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}"
+                )
         else:
-            print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")
-    
+            print(
+                f"No properties were evaluated in {end_time - start_time:.2f} seconds"
+            )
+
     # Run the async main function
     asyncio.run(main())

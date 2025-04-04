@@ -8,7 +8,7 @@ from src.models.requirement import (
     Budget,
     DateRange,
 )
-from src.interfaces.llm import gpt_4o_mini, ministral_8b
+from src.interfaces.llm import gpt_4o_mini, ministral_8b, gemini_flash_2
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputToolsParser
@@ -19,6 +19,7 @@ class AnalyzeUserRequirement:
 
     def __init__(self):
         self.llm = ministral_8b()
+        # self.llm = gemini_flash_2()
         self.today_date = datetime.now().strftime("%Y-%m-%d")
 
     def analyze_user_requirement(
