@@ -15,6 +15,8 @@ from langchain_core.output_parsers import JsonOutputToolsParser
 from langchain_core.runnables import RunnableParallel, RunnableLambda
 from langchain_openai import ChatOpenAI
 
+from pydantic_ai import Agent, ImageUrl
+
 from src.models.requirement import (
     GeneratedRequirement,
     UserRequirement,
@@ -223,10 +225,7 @@ class EvaluateAgent:
         """
         try:
             # Create the evaluation prompt with neutral language to avoid policy violations
-            prompt = ChatPromptTemplate(
-                [
-                    SystemMessage(
-                        content=f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
+            system_prompt = f"""You are a roleplaying as an expert in evaluating properties as a short-term real-estate agent.
                 Evaluate this property against the user's requirements and preferences and return a match score and analysis.
                 
                 #### PROPERTY ####
@@ -272,36 +271,30 @@ class EvaluateAgent:
 
                 For individual item ratings, score them out of 10 and format it as `<strong><emoji> <item>: <score>/10 </strong> - <explanation>`
                 """
-                    ),
-                    HumanMessage(
-                        content=f"""Hey man! I'm excited to be here with you! I can't wait for you to help me find the perfect short-term rental for me! Here are my imaginary requirements: {str(user_request)}"""
-                    )
-                ]
-            )
-            # Create the evaluation chain
-            chain = (
-                prompt 
-                | self.llm.bind_tools([Result], tool_choice="any") 
-                | JsonOutputToolsParser(return_id=True)
-            )
             
             # Execute with 30 second timeout to meet our target
             try:
+                agent = Agent(
+                    model=self.llm,
+                    system_prompt=system_prompt,
+                    result_type=Result
+                )
+                
                 result = await asyncio.wait_for(
-                    chain.ainvoke({}), 
+                    agent.run(f"""Hey man! I'm excited to be here with you! I can't wait for you to help me find the perfect short-term rental for me! Here are my imaginary requirements: {str(user_request)}"""), 
                     timeout=30 # Reduced to 30s target
                 )
                 
                 logging.info(f"Successfully evaluated property {property_index}")
-                
+                                
                 # Extract the result args
-                if not result or not isinstance(result, list) or not result[0].get("args"):
+                if not result or not result.data:
                     logging.error(f"Unexpected result format for property {property_index}: {result}")
                     return None
                 
-                # Convert the result to a Result object
-                result_obj = Result(**result[0]["args"])
-
+                # Get the Result object from the result
+                result_obj = result.data
+                
                 return result_obj
                 
             except asyncio.TimeoutError:
@@ -362,12 +355,7 @@ class EvaluateAgent:
             preferences_text = user_request.preferences
             
         # Create a combined prompt that addresses both generic and preference-specific analysis
-        messages = [
-            HumanMessage(
-                content=[
-                    {
-                        "type": "text",
-                        "text": f"""Analyze these property images comprehensively in two parts:
+        system_prompt = f"""Analyze these property images comprehensively in two parts:
 
 PART 1 - GENERIC ANALYSIS:
 Describe the style, vibe, and aesthetic of the property.
@@ -376,30 +364,33 @@ Is it modern, traditional, minimalist, luxurious, cozy, etc.?
 What are the key visual features of this property?
 Touch on each image, room, and area of the property available.
 
-PART 2 - USER PREFERENCE MATCH:
-The user has specified these preferences: '{preferences_text}'
-Analyze if the property matches these specific preferences. Which visual elements align with or contradict the user's stated preferences?
-Be highly descriptive and specifc about the details found in the images; it's like you're making the image come to life through your analysis.
-If the images don't contain the information to make a determination, say "Images don't contain information to make a determination for [insert preference here]"
+            PART 2 - USER PREFERENCE MATCH:
+            The user has specified these preferences: '{preferences_text}'
+            Analyze if the property matches these specific preferences. Which visual elements align with or contradict the user's stated preferences?
+            Be highly descriptive and specifc about the details found in the images; it's like you're making the image come to life through your analysis.
+            If the images don't contain the information to make a determination, say "Images don't contain information to make a determination for [insert preference here]"
 
-Please provide a detailed, thorough analysis of both aspects, clearly separating the two parts in your response.
+            Please provide a detailed, thorough analysis of both aspects, clearly separating the two parts in your response.
+            
+            You are not responsible for evaluating and matching the property.
+            You are simply responsible for describing the property in its entirety.
+            
+            Images: {
+                [ImageUrl(url=image_url) for image_url in selected_urls]
+            }
+        """
 
-You are not responsible for evaluating and matching the property.
-You are simply responsible for describing the property in its entirety.
-""",
-                    },
-                    *[
-                        {"type": "image_url", "image_url": {"url": url}}
-                        for url in selected_urls
-                        if url
-                    ],
-                ]
-            )
-        ]
+        agent = Agent(
+            model=self.vision_llm,
+            system_prompt=system_prompt,
+            result_type=str
+        )
 
         # Get analysis from vision model
-        response = await self.vision_llm.ainvoke(messages)
-        return response.content
+        response = await agent.run(
+            "Analyze these property images comprehensively in two parts as mentioned in the system prompt",
+        )
+        return response.data
 
     def _simplify_property(
         self, property_data: BookingApifyResponse | AirbnbApifyResponse
@@ -642,52 +633,53 @@ if __name__ == "__main__":
         budget=Budget(min=0, max=1000),
         preferences="I want a property with a pool, quiet location, a good view, proximity to co-working space",
     )
-
-    generate_requirement = AnalyzeUserRequirement().analyze_user_requirement(
-        user_request
-    )
-    # Convert to GeneratedRequirement properly
-    if isinstance(generate_requirement, dict):
-        generate_requirement = GeneratedRequirement(**generate_requirement)
-    else:
-        # If it's already a GeneratedRequirement object, use it directly
-        generate_requirement = generate_requirement
-
-    # Create both Booking and Airbnb agents
-    booking_agent = BookingApifyAgent()
-    airbnb_agent = AirbnbApifyAgent()
-
-    # Get properties from both sources
-    booking_request = booking_agent.generate_request(generate_requirement)
-    airbnb_request = airbnb_agent.generate_request(generate_requirement)
-
-    # Get properties using asyncio.run
-    booking_properties = asyncio.run(booking_agent.get_properties(booking_request))
-    airbnb_properties = asyncio.run(airbnb_agent.get_properties(airbnb_request))
-
-    # Combine properties from both sources
-    all_properties = booking_properties + airbnb_properties
     
-    # Use the asyncio version
     async def main():
+        # Get generated requirements
+        analyze_agent = AnalyzeUserRequirement()
+        generate_requirement = await analyze_agent.analyze_user_requirement(user_request)
+        print(generate_requirement)
+
+        # Convert to GeneratedRequirement if needed
+        if isinstance(generate_requirement, dict):
+            generate_requirement = GeneratedRequirement(**generate_requirement)
+
+        # Create both agents
+        booking_agent = BookingApifyAgent()
+        airbnb_agent = AirbnbApifyAgent()
+
+        # Get properties from both sources
+        booking_request = booking_agent.generate_request(generate_requirement)
+        airbnb_request = airbnb_agent.generate_request(generate_requirement)
+
+        # Get properties concurrently using asyncio.gather
+        booking_properties, airbnb_properties = await asyncio.gather(
+            booking_agent.get_properties(booking_request),
+            airbnb_agent.get_properties(airbnb_request)
+        )
+
+        # Combine properties from both sources
+        all_properties = booking_properties + airbnb_properties
+        
         start_time = time.time()
         evaluate_agent = EvaluateAgent()
         try:
             response = await evaluate_agent.evaluate(generate_requirement, all_properties)
-        finally:
-            # Ensure resources are cleaned up
-            await evaluate_agent.close()
-        end_time = time.time()
+            end_time = time.time()
 
-        # Check if response is None before calling len()
-        if response:
-            print(
-                f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds"
-            )
-            for prop in response:
-                print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
-        else:
-            print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")
+            # Check if response exists before processing
+            if response:
+                print(f"Evaluated {len(response)} properties in {end_time - start_time:.2f} seconds")
+                for prop in response:
+                    print(f"Property: {prop.name}, Score: {prop.score}, Source: {prop.source}")
+            else:
+                print(f"No properties were evaluated in {end_time - start_time:.2f} seconds")
+        except Exception as e:
+            print(f"Error during evaluation: {str(e)}")
+        finally:
+            # Cleanup
+            if hasattr(evaluate_agent, 'close'):
+                await evaluate_agent.close()
     
     # Run the async main function
     asyncio.run(main())

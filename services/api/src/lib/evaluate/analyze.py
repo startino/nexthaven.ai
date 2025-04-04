@@ -44,8 +44,6 @@ class AnalyzeUserRequirement:
                 * Nightly budget should rounded to the nearest integer
                 """
                 
-            print(system_prompt)
-
             agent = Agent(
                 model=self.llm,
                 system_prompt=system_prompt,
@@ -84,8 +82,6 @@ if __name__ == "__main__":
         analyze = AnalyzeUserRequirement()
         response = await analyze.analyze_user_requirement(user_requirement)
         print(response)
-        print(response.budget)
-        print(response.date_range)
         
     # Run the async main function
     asyncio.run(main())
