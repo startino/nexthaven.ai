@@ -11,6 +11,7 @@
   import { CollectionService } from '$lib/services/collection.service';
   import { HtmlContent } from '$lib/components/ui/html-content';
   import { getScoreStopColors, getScoreLabel, getScoreBadgeColors } from '$lib/utils/score-colors';
+  import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
   
   // Props - simplified
   let { 
@@ -21,6 +22,100 @@
     showGallery: boolean
   }>();
 
+  // Map related state
+  let map: any; // Google Map instance
+  let mapElement: HTMLElement | null = $state(null); // Reference to the map container element
+  let isMapLoaded = $state(false);
+  let hasMapError = $state(false);
+  let errorMessage = $state('');
+
+  // Initialize map when component mounts
+  function initializeMap() {
+    if (!mapElement || !property?.coordinates) return;
+
+    try {
+      // @ts-ignore - Ignore TypeScript error for Google Maps API
+      const mapInstance = new google.maps.Map(mapElement, {
+        zoom: 14,
+        center: { 
+          lat: property.coordinates.lat, 
+          lng: property.coordinates.lng 
+        },
+        mapTypeControl: false,
+        fullscreenControl: false,
+        streetViewControl: false,
+        zoomControl: true,
+        styles: [
+          {
+            elementType: "geometry",
+            stylers: [{ color: "#f5f5f0" }]
+          },
+          {
+            featureType: "road",
+            elementType: "geometry",
+            stylers: [{ color: "#eeeeee" }]
+          },
+          {
+            featureType: "water",
+            elementType: "geometry",
+            stylers: [{ color: "#c9e2f7" }]
+          }
+        ]
+      });
+
+      // Add marker for the property
+      // @ts-ignore - Ignore TypeScript error for Google Maps API
+      new google.maps.Marker({
+        position: { 
+          lat: property.coordinates.lat, 
+          lng: property.coordinates.lng 
+        },
+        map: mapInstance,
+        title: property.name || 'Property Location'
+      });
+
+      map = mapInstance;
+      isMapLoaded = true;
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      hasMapError = true;
+      errorMessage = 'Failed to initialize the map. Please refresh and try again.';
+    }
+  }
+
+  // Load Google Maps script
+  function loadGoogleMapsScript() {
+    if (!PUBLIC_GOOGLE_MAPS_API_KEY) {
+      hasMapError = true;
+      errorMessage = 'Google Maps API key is missing';
+      return;
+    }
+
+    // Check if script is already loaded
+    // @ts-ignore - Checking if google is defined
+    if (typeof google !== 'undefined' && google.maps) {
+      initializeMap();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${PUBLIC_GOOGLE_MAPS_API_KEY}`;
+    script.async = true;
+    script.onload = initializeMap;
+    script.onerror = () => {
+      hasMapError = true;
+      errorMessage = 'Failed to load Google Maps. Please check your connection.';
+    };
+
+    document.head.appendChild(script);
+  }
+
+  // Initialize map when gallery is shown
+  $effect(() => {
+    if (showGallery && property?.coordinates) {
+      loadGoogleMapsScript();
+    }
+  });
   
   // Event dispatcher
   const dispatch = createEventDispatcher<{
@@ -125,66 +220,55 @@
         class="flex items-center gap-2 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft size={20} />
-        <span>Back</span>
+        <span>Back</span> 
       </button>
       
-      <div class="flex gap-2">
-        {#if property}
-          <button 
-            onclick={(e) => e.stopPropagation()} 
-            class="z-10"
-            aria-label="Add to collection"
-            role="button"
-          >
-            <AddToCollection property={property} />
-          </button>
-        {:else}
-          <Button
-            onclick={handleSave}
-            variant="outline"
-            class="rounded-full px-4"
-          >
-            <BookmarkPlus size={18} class="mr-2" />
-            Save
-          </Button>
-        {/if}
+      <div class="flex items-center gap-4">
         
-        <Button
-          onclick={handleBook}
-          class="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6"
-        >
-          <ExternalLink size={18} class="mr-2" />
-          Book
-        </Button>
+        <div class="flex gap-2">
+          {#if property}
+            <button 
+              onclick={(e) => e.stopPropagation()} 
+              class="z-10"
+              aria-label="Add to collection"
+              role="button"
+            >
+              <AddToCollection property={property} />
+            </button>
+          {:else}
+            <Button
+              onclick={handleSave}
+              variant="outline"
+              class="rounded-full px-4"
+            >
+              <BookmarkPlus size={18} class="mr-2" />
+              Save
+            </Button>
+          {/if}
+          
+          <Button
+            onclick={handleBook}
+            class="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6"
+          >
+            <ExternalLink size={18} class="mr-2" />
+            Book
+          </Button>
+        </div>
       </div>
     </div>
     
     <!-- Gallery Content - Scrollable area -->
     <ScrollArea class="flex-1 h-full">
       <div class="px-4 py-8 md:px-8 max-w-7xl mx-auto">
-        <!-- Property Header Section -->
-        <div class="mb-8">
-          <h1 class="text-2xl font-bold">${Math.round(property.pricing.total)}/night - {property.name}</h1>
-          <p class="text-muted-foreground mt-1">{property.location}</p>
-          
-          <div class="flex gap-4 mt-4">
-            {#if property.capacity.bedrooms}
-              <div class="px-4 py-2 rounded-full bg-secondary/20">
-                <span class="text-foreground/90">{property.capacity.bedrooms} {property.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</span>
-              </div>
-            {/if}
-            {#if property.capacity.beds}
-              <div class="px-4 py-2 rounded-full bg-secondary/20">
-                <span class="text-foreground/90">{property.capacity.beds} {property.capacity.beds === 1 ? 'bed' : 'beds'}</span>
-              </div>
-            {/if}
-          </div>
-        </div>
-        
-        <!-- Two column layout for property details and booking card -->
+
+        <!-- Two column layout for prop erty details and booking card -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           <!-- Left side - AI Recommendation -->
           <div class="lg:col-span-2">
+          <div class="mb-8">
+              <h1 class="text-xl font-bold">{property.name}</h1>
+              <p class="text-muted-foreground mt-1">{property.location}</p>
+</div>
             <div class="flex gap-6 mb-8">
               <!-- Score circle - Properly aligned -->
               <div class="flex-shrink-0">
@@ -237,7 +321,6 @@
               
               <!-- Reasoning -->
               <div class="flex-1">
-                <h3 class="text-lg font-medium mb-3">Why this property matches your preferences:</h3>
                 <div class="bg-primary/5 rounded-lg p-4 border border-primary/10">
                   <HtmlContent 
                     content={property.reasoning} 
@@ -246,8 +329,7 @@
                 </div>
                 
                 <div class="mt-4 space-y-2">
-                  <div class="flex items-center">
-                    <span class="mr-2 text-muted-foreground">Price:</span>
+                  <div class="flex items-end">
                     <span class="text-2xl font-bold text-foreground">${Math.round(property.pricing.total)}</span>
                     <span class="ml-2 text-muted-foreground">per night</span>
                   </div>
@@ -256,8 +338,9 @@
             </div>
           </div>
           
-          <!-- Right side - Booking Card -->
+          <!-- Right side - Booking Cards -->
           <div class="lg:col-span-1 space-y-4">
+            <!-- Ready to Book Card -->
             <Card class="bg-gradient-to-r from-primary to-accent rounded-xl overflow-hidden">
               <CardContent class="p-6 space-y-4">
                 <h3 class="text-xl font-bold text-primary-foreground">Ready to book?</h3>
@@ -281,14 +364,26 @@
             
             <!-- Save for later -->
             <Card class="bg-card rounded-xl overflow-hidden">
-              <CardContent class=" flex flex-row justify-between items-center">
+              <CardContent class="flex flex-row justify-between items-center">
                 <h3 class="text-xl font-bold text-card-foreground">Save for later</h3>                
                 <AddToCollection property={property} triggerBtnStyle="gradient-primary text-primary-foreground hover:bg-gradient-primary/90 hover:text-primary-foreground/90 hover:scale-[1.1] transition-all duration-300" />
               </CardContent>
             </Card>
+
+            <!-- Property Location Map -->
+            <div class="rounded-xl overflow-hidden shadow-lg bg-card">
+              <div class="h-[300px] w-full relative">
+                {#if hasMapError}
+                  <div class="absolute inset-0 flex items-center justify-center bg-card">
+                    <p class="text-muted-foreground">{errorMessage}</p>
+                  </div>
+                {/if}
+                <div bind:this={mapElement} class="w-full h-full"></div>
+              </div>
+            </div>
           </div>
         </div>
-        
+
         <div class="mb-8">
           <h2 class="text-3xl font-serif">Gallery</h2>
           <p class="text-muted-foreground mt-2">Browse through the available images of {property.name}</p>
