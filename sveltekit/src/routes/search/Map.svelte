@@ -597,44 +597,38 @@
         // @ts-ignore - Ignore TypeScript error for Google Maps API
         google.maps.event.addListener(infoWindow, 'domready', () => {
           // Target the InfoWindow container and remove white background
-          const iwOuter = document.querySelector('.gm-style-iw-a');
+          const iwOuter = document.querySelector('.gm-style-iw');
           if (iwOuter) {
-            // Get parent element
-            const iwBackground = iwOuter.parentElement;
-            
-            // Remove all background elements added by Google Maps
+            // Remove all background and shadow
+            (iwOuter as HTMLElement).style.background = 'transparent';
+            (iwOuter as HTMLElement).style.boxShadow = 'none';
+            (iwOuter as HTMLElement).style.padding = '0';
+
+            // Remove the tail/arrow
+            const iwBackground = iwOuter.previousElementSibling;
             if (iwBackground) {
-              // Get all child elements
-              const childElements = iwBackground.children;
-              // Hide the Google Maps white background
-              for (let i = 0; i < childElements.length; i++) {
-                const child = childElements[i] as HTMLElement;
-                if (child.className.includes('gm-style-iw')) {
-                  // Style the inner window
-                  child.style.background = 'transparent';
-                  child.style.boxShadow = 'none';
-                } else {
-                  // Hide background elements by setting opacity to 0
-                  if (i !== 1) { // Keep the shadow
-                    child.style.display = 'none';
-                  }
-                }
-              }
+              iwBackground.remove();
             }
 
-            // Remove white background from the InfoWindow content container
-            const iwContainer = document.querySelector('.gm-style-iw');
+            // Remove the white background container
+            const iwContainer = iwOuter.querySelector('.gm-style-iw-d');
             if (iwContainer) {
               (iwContainer as HTMLElement).style.background = 'transparent';
-              (iwContainer as HTMLElement).style.padding = '0';
+              (iwContainer as HTMLElement).style.overflow = 'hidden';
             }
-            
-            // Always remove the close button from info windows
-            const iwCloseBtns = document.querySelectorAll('.gm-style-iw-t button, .gm-ui-hover-effect');
-            iwCloseBtns.forEach(btn => {
-              btn.remove();
+
+            // Remove any additional background elements
+            const iwBackgrounds = document.querySelectorAll('.gm-style-iw-t');
+            iwBackgrounds.forEach(bg => {
+              (bg as HTMLElement).style.background = 'transparent';
             });
           }
+
+          // Always remove the close button from info windows
+          const iwCloseBtns = document.querySelectorAll('.gm-ui-hover-effect');
+          iwCloseBtns.forEach(btn => {
+            btn.remove();
+          });
         });
         
         // Add click listener to open info window
@@ -839,18 +833,6 @@
   {:else}
     <div bind:this={mapElement} class="w-full h-full" data-testid="google-map-container"></div>
     
-    <!-- Map Legend - Moved to top right and styled with bg-card -->
-    <div class="absolute top-2 right-2 bg-card text-card-foreground rounded p-2 shadow-md z-10 text-xs">
-      <div class="font-semibold mb-1 text-sm">Score Legend</div>
-      <div class="flex flex-col gap-1">
-        {#each scoreLegend as item}
-          <div class="flex items-center gap-1.5">
-            <div class="w-3 h-3 rounded" style="background-color: {item.color}"></div>
-            <div class="text-xs">{item.label}</div>
-          </div>
-        {/each}
-      </div>
-    </div>
     
     <!-- Debug Info -->
     <div class="absolute bottom-2 left-2 bg-white/90 rounded px-2 py-1 shadow-sm z-10 text-xs max-w-[80%] truncate">
@@ -927,8 +909,8 @@
                    alt="${property.name || 'Property'}" 
                    class="w-full h-full object-cover" />
               
-              <!-- Action Buttons -->
-              <div class="absolute top-3 left-3 z-10 flex gap-2">
+              <!-- Action Buttons and Score - Now grouped together in the top right -->
+              <div class="absolute top-3 right-3 z-10 flex flex-col items-end gap-2">
                 <!-- Close Button -->
                 <div class="bg-black/70 text-white rounded-full px-4 py-1.5 flex items-center gap-2 text-sm" 
                      data-close-button 
@@ -939,10 +921,8 @@
                   </svg>
                   <span>Close</span>
                 </div>
-              </div>
-              
-              <!-- Score Circle -->
-              <div class="absolute top-3 right-3 z-10">
+                
+                <!-- Score Circle -->
                 <div class="bg-neutral-800 rounded-full flex items-center justify-center w-12 h-12 border-3 ${scoreColorClass}">
                   <span class="text-white font-bold text-lg">${Math.round(score)}</span>
                 </div>
