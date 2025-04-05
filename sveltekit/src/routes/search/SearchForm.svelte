@@ -36,6 +36,7 @@
     isLoading = false,
     previousPreferences = [] as SavedPreference[],
     onSubmit = () => {},
+    onLocationSelect = $bindable((location: string) => {})
   } = $props();
   
   // UI state
@@ -760,6 +761,8 @@
     console.log('Location selected:', location);
     destination = location.description;
     console.log('Destination updated to:', destination);
+    // Call the onLocationSelect prop with the selected location
+    onLocationSelect(location.description);
   }
 
   // Toggle debug mode
@@ -1058,7 +1061,7 @@
         {#if showTagInput && editingTagIndex === null}
           <Input 
             bind:value={tagInputValue}
-            placeholder={selectedTags.length > 0 ? "Add or edit tag... (use Enter or comma)" : "Add your own unique tags like 'I don't like tile floors' or 'Apartment or condo'..."}
+            placeholder={selectedTags.length > 0 ? "Add tag... (use Enter or comma)" : "Add your own unique tags like 'I don't like tile floors' or 'Apartment or condo'..."}
             onkeydown={handleCustomTagKeydown}
             oninput={handleTagInput}
             class="border-0 shadow-none focus-visible:ring-0 flex-1 h-8 min-w-[180px] text-sm"
@@ -1192,7 +1195,7 @@
       {:else if searchQuotaState.remainingSearches === 1}
         <span>This is your last free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> for unlimited searches.</span>
       {:else}
-        <span>You have {searchQuotaState.remainingSearches} search{searchQuotaState.remainingSearches !== 1 ? 'es' : ''} remaining as an anonymous user.</span>
+        <span>You have {searchQuotaState.remainingSearches} search{searchQuotaState.remainingSearches !== 1 ? 'es' : ''} remaining. Simply create an account to get a 14-day premium trial!</span>
       {/if}
     </div>
   {/if}

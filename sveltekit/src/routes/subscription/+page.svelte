@@ -192,8 +192,7 @@
 				<h1 class="text-2xl font-bold mb-4">Create a Permanent Account</h1>
 				<div class="mb-6 p-4 bg-amber-900/20 border border-amber-600/30 rounded-lg max-w-xl mx-auto">
 					<p class="text-amber-200">
-						You're currently using a temporary anonymous account. To subscribe to a premium plan, 
-						you'll need to create a permanent account first.
+						You're currently using a temporary account.
 					</p>
 				</div>
 				
@@ -204,11 +203,12 @@
 						</div>
 						
 						<div class="text-center max-w-md">
-							<h2 class="text-xl font-semibold mb-2">Benefits of a Permanent Account</h2>
+							<h2 class="text-xl font-semibold mb-2">Get a 2 week free trial</h2>
+							<p class="text-muted-foreground mb-6">No credit card required</p>
 							<ul class="text-left space-y-2 mb-6">
 								<li class="flex items-start gap-2">
 									<span class="text-primary mt-1">✓</span>
-									<span>Access to premium features and subscription options</span>
+									<span>Access to all premium features</span>
 								</li>
 								<li class="flex items-start gap-2">
 									<span class="text-primary mt-1">✓</span>
@@ -216,11 +216,11 @@
 								</li>
 								<li class="flex items-start gap-2">
 									<span class="text-primary mt-1">✓</span>
-									<span>Retain your current data when you upgrade</span>
+									<span>Retain your current data</span>
 								</li>
 								<li class="flex items-start gap-2">
 									<span class="text-primary mt-1">✓</span>
-									<span>Secure access from any device</span>
+									<span>Access your account from any device</span>
 								</li>
 							</ul>
 							

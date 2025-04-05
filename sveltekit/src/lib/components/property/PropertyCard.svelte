@@ -8,6 +8,7 @@
   import { AddToCollection } from '$lib/components/folder';
   import { Skeleton } from '$lib/components/ui/skeleton';
   import { HtmlContent } from '$lib/components/ui/html-content';
+  import { getScoreStopColors } from '$lib/utils/score-colors';
 
   // Props
   let { property, showCollectionButton = true, isLoading = false } = $props<{ 
@@ -20,13 +21,6 @@
   const dispatch = createEventDispatcher<{
     select: UnifiedProperty;
   }>();
-  
-  // Function to get score color based on score value
-  function getScoreColor(score: number): string {
-    if (score >= 80) return 'from-green-500 to-green-400';
-    if (score >= 70) return 'from-yellow-500 to-yellow-400';
-    return 'from-orange-500 to-orange-400';
-  }
   
   // Helper to check if a property field is undefined or null
   function isPending(value: any): boolean {
@@ -95,8 +89,11 @@
           />
           <defs>
             <linearGradient id="gradient-{property.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" class="{property.score >= 80 ? 'stop-color-purple-500' : property.score >= 70 ? 'stop-color-yellow-500' : 'stop-color-orange-500'}" />
-              <stop offset="100%" class="{property.score >= 80 ? 'stop-color-purple-400' : property.score >= 70 ? 'stop-color-yellow-400' : 'stop-color-orange-400'}" />
+              {#if !isPending(property.score) && !isLoading}
+                {@const [startColor, endColor] = getScoreStopColors(property.score)}
+                <stop offset="0%" class={startColor} />
+                <stop offset="100%" class={endColor} />
+              {/if}
             </linearGradient>
           </defs>
         </svg>
@@ -176,31 +173,6 @@
 </button>
 
 <style>
-  .stop-color-purple-500 {
-    stop-color: #8b5cf6;
-  }
-  .stop-color-purple-400 {
-    stop-color: #a78bfa;
-  }
-  .stop-color-green-500 {
-    stop-color: #10b981;
-  }
-  .stop-color-green-400 {
-    stop-color: #34d399;
-  }
-  .stop-color-yellow-500 {
-    stop-color: #eab308;
-  }
-  .stop-color-yellow-400 {
-    stop-color: #facc15;
-  }
-  .stop-color-orange-500 {
-    stop-color: #f97316;
-  }
-  .stop-color-orange-400 {
-    stop-color: #fb923c;
-  }
-  
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }

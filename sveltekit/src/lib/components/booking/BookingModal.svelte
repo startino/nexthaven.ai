@@ -3,6 +3,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Card, CardContent } from '$lib/components/ui/card';
   import { X, ExternalLink } from 'lucide-svelte';
+  import { getScoreColor } from '$lib/utils';
 
   // Props
   let { 
@@ -115,7 +116,7 @@
               <Card class="bg-white/5 border-white/10 rounded-xl overflow-hidden shadow-lg">
                 <CardContent class="p-6">
                   <div class="flex items-center gap-3 mb-3">
-                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl">
+                    <div class="w-12 h-12 rounded-full {getScoreColor(property.score)} flex items-center justify-center text-white font-bold text-xl">
                       {property.score}
                     </div>
                     <div>

@@ -10,6 +10,7 @@
   import { page } from '$app/stores';
   import { CollectionService } from '$lib/services/collection.service';
   import { HtmlContent } from '$lib/components/ui/html-content';
+  import { getScoreStopColors, getScoreLabel, getScoreBadgeColors } from '$lib/utils/score-colors';
   
   // Props - simplified
   let { 
@@ -67,13 +68,6 @@
     const mainImage = property.media.main_image;
     const galleryImages = property.media.gallery || [];
     return [mainImage, ...galleryImages].filter(Boolean);
-  }
-  
-  // Get score color based on score value
-  function getScoreColor(score: number): string {
-    if (score >= 80) return 'bg-gradient-to-r from-purple-500 to-purple-400 text-white';
-    if (score >= 70) return 'bg-gradient-to-r from-yellow-500 to-yellow-400 text-white';
-    return 'bg-gradient-to-r from-orange-500 to-orange-400 text-white';
   }
   
   // Monitor gallery state changes to control body scroll
@@ -213,17 +207,23 @@
                     />
                     <defs>
                       <linearGradient id="gradient-gallery-{property.id}" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" class="{property.score >= 80 ? 'stop-color-purple-500' : property.score >= 70 ? 'stop-color-yellow-500' : 'stop-color-orange-500'}" />
-                        <stop offset="100%" class="{property.score >= 80 ? 'stop-color-purple-400' : property.score >= 70 ? 'stop-color-yellow-400' : 'stop-color-orange-400'}" />
+                        {#if property.score !== undefined}
+                          {@const [startColor, endColor] = getScoreStopColors(property.score)}
+                          <stop offset="0%" class={startColor} />
+                          <stop offset="100%" class={endColor} />
+                        {/if}
                       </linearGradient>
                     </defs>
                   </svg>
                   <span class="relative">{property.score}</span>
                 </div>
                 <div class="text-center mt-2">
-                  <div class={`text-sm px-3 py-1 rounded-full inline-block font-medium ${property.score >= 80 ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : property.score >= 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'}`}>
-                    {property.score >= 80 ? 'Excellent Match' : property.score >= 70 ? 'Good Match' : 'Average Match'}
-                  </div>
+                  {#if property.score !== undefined}
+                    {@const badgeColors = getScoreBadgeColors(property.score, true)}
+                    <div class={`text-sm px-3 py-1 rounded-full inline-block font-medium ${badgeColors.bg} ${badgeColors.text}`}>
+                      {getScoreLabel(property.score)}
+                    </div>
+                  {/if}
                 </div>
                 
                 <!-- Source information -->
@@ -370,31 +370,4 @@
       </ScrollArea>
     </div>
   {/if}
-{/if}
-
-<style>
-  .stop-color-purple-500 {
-    stop-color: #8b5cf6;
-  }
-  .stop-color-purple-400 {
-    stop-color: #a78bfa;
-  }
-  .stop-color-green-500 {
-    stop-color: #10b981;
-  }
-  .stop-color-green-400 {
-    stop-color: #34d399;
-  }
-  .stop-color-yellow-500 {
-    stop-color: #eab308;
-  }
-  .stop-color-yellow-400 {
-    stop-color: #facc15;
-  }
-  .stop-color-orange-500 {
-    stop-color: #f97316;
-  }
-  .stop-color-orange-400 {
-    stop-color: #fb923c;
-  }
-</style> 
+{/if} 

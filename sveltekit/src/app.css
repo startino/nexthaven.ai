@@ -88,6 +88,21 @@
 	h6 {
 		@apply font-serif;
 	}
+
+	/* SVG Stop Colors for Score Gradients */
+	.stop-color-green-500 { stop-color: #22c55e; }
+	.stop-color-green-400 { stop-color: #4ade80; }
+	.stop-color-lime-500 { stop-color: #84cc16; }
+	.stop-color-lime-400 { stop-color: #a3e635; }
+	.stop-color-yellow-400 { stop-color: #facc15; }
+	.stop-color-yellow-300 { stop-color: #fde047; }
+	.stop-color-yellow-200 { stop-color: #fef08a; }
+	.stop-color-amber-500 { stop-color: #f59e0b; }
+	.stop-color-amber-400 { stop-color: #fbbf24; }
+	.stop-color-orange-500 { stop-color: #f97316; }
+	.stop-color-orange-400 { stop-color: #fb923c; }
+	.stop-color-red-500 { stop-color: #ef4444; }
+	.stop-color-red-400 { stop-color: #f87171; }
 }
 
 @layer utilities {

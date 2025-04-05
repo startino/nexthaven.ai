@@ -710,7 +710,7 @@
 	}
 </script>
 
-<div class="w-full h-full overflow-hidden" transition:fade={{ duration: 300 }}>
+<div class="w-full h-[calc(100dvh-75px)] overflow-hidden" transition:fade={{ duration: 300 }}>
 	<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden ">
 		<!-- Left sidebar with search inputs and results -->
 		<ResizablePane minSize={20} defaultSize={50} class="overflow-hidden">
@@ -743,6 +743,7 @@
 						{previousPreferences}
 						isLoading={isSearching}
 						onSubmit={handleSearch}
+						onLocationSelect={(location) => destination = location}
 					/>
 					
 					<!-- Search Progress Bar (when searching) -->

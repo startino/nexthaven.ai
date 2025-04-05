@@ -6,6 +6,7 @@
   import { Badge } from '$lib/components/ui/badge';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { ArrowLeft, ExternalLink } from 'lucide-svelte';
+  import { getScoreColor } from '$lib/utils';
 
   // Props
   let { 
@@ -125,7 +126,7 @@
               <CardContent class="p-6">
                 <h3 class="text-xl font-bold text-foreground mb-4">AI Recommendation</h3>
                 <div class="flex items-center gap-4 mb-4">
-                  <div class="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-2xl">
+                  <div class="w-16 h-16 rounded-full {getScoreColor(property.score)} flex items-center justify-center text-primary-foreground font-bold text-2xl">
                     {property.score}
                   </div>
                   <div>

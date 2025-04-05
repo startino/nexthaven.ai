@@ -9,6 +9,7 @@
   import type { UnifiedProperty } from '$lib/types/unified-property';
   import { Info } from 'lucide-svelte';
   import { AddToCollection } from '$lib/components/folder';
+  import { getScoreColor } from '$lib/utils/score-colors';
   
   // Immediately log when the component script is executed
   console.log('MAP COMPONENT SCRIPT EXECUTED');
@@ -123,13 +124,13 @@
   
   // Color gradient for scores (0-100)
   const getMarkerColor = (score: number): string => {
-    if (score >= 90) return '#4CAF50'; // Green
-    if (score >= 80) return '#8BC34A'; // Light Green
-    if (score >= 70) return '#CDDC39'; // Lime
-    if (score >= 60) return '#FFEB3B'; // Yellow
-    if (score >= 50) return '#FFC107'; // Amber
-    if (score >= 40) return '#FF9800'; // Orange
-    return '#F44336'; // Red for below 40
+    if (score >= 90) return '#22c55e'; // green-500
+    if (score >= 80) return '#84cc16'; // lime-500
+    if (score >= 70) return '#facc15'; // yellow-400
+    if (score >= 60) return '#fde047'; // yellow-300
+    if (score >= 50) return '#f59e0b'; // amber-500
+    if (score >= 40) return '#f97316'; // orange-500
+    return '#ef4444'; // red-500
   };
   
   // Legend configuration for score colors
@@ -145,10 +146,7 @@
   
   // Get color class based on score for the circular score indicator
   function getScoreColorClass(score: number): string {
-    if (score >= 90) return 'border-purple-500';
-    if (score >= 80) return 'border-green-500';
-    if (score >= 70) return 'border-yellow-500';
-    return 'border-orange-500';
+    return getScoreColor(score, 'border');
   }
   
   // Load Google Maps with geocoding library
