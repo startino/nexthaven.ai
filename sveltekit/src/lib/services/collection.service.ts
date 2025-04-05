@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { createSupabaseBrowserClient } from '$lib/supabase';
 import type { PropertyCollection, CollectionProperty } from '$lib/stores/collections';
 import type { UnifiedProperty } from '$lib/types/unified-property';
+import type { Json } from '$lib/types/database.types';
 
 export class CollectionService {
 	/**
@@ -23,7 +24,13 @@ export class CollectionService {
 				throw error;
 			}
 
-			return data || [];
+			// Transform null descriptions to undefined to match PropertyCollection type
+			return (data || []).map(collection => ({
+				...collection,
+				description: collection.description || undefined,
+				created_at: collection.created_at ? new Date(collection.created_at) : undefined,
+				updated_at: collection.updated_at ? new Date(collection.updated_at) : undefined
+			}));
 		} catch (error) {
 			console.error('Failed to get collections:', error);
 			throw error;
@@ -53,7 +60,12 @@ export class CollectionService {
 					.single();
 
 				if (existingCollection) {
-					return existingCollection;
+					return {
+						...existingCollection,
+						description: existingCollection.description || undefined,
+						created_at: existingCollection.created_at ? new Date(existingCollection.created_at) : undefined,
+						updated_at: existingCollection.updated_at ? new Date(existingCollection.updated_at) : undefined
+					};
 				}
 			}
 
@@ -75,7 +87,12 @@ export class CollectionService {
 				throw error;
 			}
 
-			return data;
+			return {
+				...data,
+				description: data.description || undefined,
+				created_at: data.created_at ? new Date(data.created_at) : undefined,
+				updated_at: data.updated_at ? new Date(data.updated_at) : undefined
+			};
 		} catch (error) {
 			console.error('Failed to create collection:', error);
 			throw error;
@@ -110,7 +127,12 @@ export class CollectionService {
 				throw error;
 			}
 
-			return data;
+			return {
+				...data,
+				description: data.description || undefined,
+				created_at: data.created_at ? new Date(data.created_at) : undefined,
+				updated_at: data.updated_at ? new Date(data.updated_at) : undefined
+			};
 		} catch (error) {
 			console.error('Failed to update collection:', error);
 			throw error;
@@ -159,7 +181,7 @@ export class CollectionService {
 				.from('collection_properties')
 				.select('*')
 				.eq('collection_id', collectionId)
-				.eq('property.id', property.id)
+				.eq('property->id', property.id)
 				.single();
 
 			if (existingRelation) {
@@ -170,7 +192,7 @@ export class CollectionService {
 			// Add property to collection
 			const { error } = await supabase.from('collection_properties').insert({
 				collection_id: collectionId,
-				property,
+				property: property as unknown as Json,
 				created_at: new Date().toISOString()
 			});
 
@@ -200,7 +222,7 @@ export class CollectionService {
 				.from('collection_properties')
 				.delete()
 				.eq('collection_id', collectionId)
-				.eq('property ->> id', propertyId);
+				.eq('property->id', propertyId);
 
 			if (error) {
 				console.error('Error removing property from collection:', error);
@@ -231,7 +253,7 @@ export class CollectionService {
 				throw error;
 			}
 
-			return (data || []).map((item: { property: UnifiedProperty }) => item.property);
+			return (data || []).map((item) => item.property as unknown as UnifiedProperty);
 		} catch (error) {
 			console.error('Failed to get collection properties:', error);
 			throw error;
