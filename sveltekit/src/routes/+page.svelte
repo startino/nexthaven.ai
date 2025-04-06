@@ -64,7 +64,7 @@
 			{#if $page.data.session}
 				<Button 
 					variant="default" 
-					class="h-14 button-gradient text-primary-foreground text-lg font-semibold flex items-center justify-between group rounded-2xl shadow-lg p-4"
+					class="h-14 text-lg font-semibold flex items-center justify-between group rounded-2xl shadow-lg p-4"
 					href="/search"
 				>
 					<div class="flex items-center">
@@ -139,11 +139,11 @@
 	<section class="w-full py-16 bg-gradient-to-r from-[hsl(var(--hotel))] to-[hsl(var(--apartment))]">
 		<div class="max-w-3xl mx-auto px-4 text-center">
 			<h2 class="text-3xl font-serif mb-6 text-primary-foreground">25 seconds, or 10 clicks is all it takes.</h2>
-			<Button 
-				variant="secondary" 
+			<Button  
+				variant="card"
 				size="lg"
 				class="font-semibold"
-				href={$page.data.session ? '/search' : '/login'}
+				href='/search'
 			>
 				Find My Next Haven
 				<ChevronRight class="ml-2" />

@@ -18,18 +18,20 @@
 	import { ResizablePane, ResizablePaneGroup, ResizableHandle } from '$lib/components/ui/resizable';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { X, MapPin, Search, Check } from 'lucide-svelte';
+	import { X, MapPin, Search, Check, ChevronUp } from 'lucide-svelte';
 	import { searchQuotaState } from '$lib/stores/search-quota.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
-		
+	import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '$lib/components/ui/sheet';
+	import { browser } from '$app/environment';
+	import { fade, slide } from 'svelte/transition';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	
 	// Import utilities
 	import { loadPreviousPreferences } from './preferences';
 	import { parseDateRange, isValidDate } from './dateHelpers';
-	import { fade } from 'svelte/transition';
 	
 	// Import necessary types
 	import type { SavedPreference, SearchFormParams } from './types';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import posthog from 'posthog-js';
 	
 	// Define interface for page data
@@ -114,6 +116,10 @@
 	let propertyCount = $state(0);
 	let streamedProperties = $state<UnifiedProperty[]>([]);
 	let progressInterval: ReturnType<typeof setInterval> | undefined;
+	
+	// Add mobile detection state
+	let isMobile = $state(false);
+	let isSearchFormOpen = $state(false);
 	
 	// Create an effect to clear the error after a timeout
 	$effect(() => {
@@ -215,12 +221,21 @@
 			resumeSearch();
 		}
 		
+		// Add mobile detection
+		const checkMobile = () => {
+			isMobile = browser && window.innerWidth < 768;
+		};
+		
+		checkMobile();
+		window.addEventListener('resize', checkMobile);
+		
 		return () => {
 			// Clean up the popstate listener
 			window.removeEventListener('popstate', parseSearchQuery);
 			
 			// Clean up intervals
 			if (progressInterval) clearInterval(progressInterval);
+			window.removeEventListener('resize', checkMobile);
 		};
 	});
 	// Function to start or resume a search
@@ -721,79 +736,186 @@
 	}
 </script>
 
-<div class="w-full h-[calc(100dvh-75px)] overflow-hidden" transition:fade={{ duration: 300 }}>
-	<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden ">
-		<!-- Left sidebar with search inputs and results -->
-		<ResizablePane minSize={20} defaultSize={50} class="overflow-hidden">
-			<ScrollArea class="h-full">
-				<div class="h-full">
-					<div class="pr-4 pl-2 md:pr-6 md:pl-4">
-						<!-- Error message box -->
-					{#if error}
-					<div 
-						class="w-full mb-4 p-3 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
-						transition:fade={{ duration: 200 }}
-					>
-						<div class="flex items-start gap-3">
-							<div class="mt-1">⚠️</div>
-							<div>
-								<h3 class="font-medium mb-1 text-sm">Error</h3>
-								<p class="text-xs">{error}</p>
-							</div>
+<div class="w-full h-[calc(100dvh-65px)] overflow-hidden" transition:fade={{ duration: 300 }}>
+	{#if isMobile}
+		<!-- Mobile Layout -->
+		<div class="h-full relative">
+			<!-- Error message box -->
+			{#if error}
+				<div 
+					class="absolute top-4 left-4 right-4 z-40 p-3 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
+					transition:fade={{ duration: 200 }}
+				>
+					<div class="flex items-start gap-3">
+						<div class="mt-1">⚠️</div>
+						<div>
+							<h3 class="font-medium mb-1 text-sm">Error</h3>
+							<p class="text-xs">{error}</p>
 						</div>
 					</div>
-					{/if} 					
-					
-					<!-- Search Inputs -->
-					<SearchForm
-						{destination}
-						{dateRange}
-						{budget}
-						bind:preferences
-						{selectedRooms}
-						{previousPreferences}
-						isLoading={isSearching}
-						onSubmit={handleSearch}
-						onLocationSelect={(location) => destination = location}
-					/>
-					
-					<!-- Search Progress Bar (when searching) -->
-					<SearchProgress
-						{progress}
-						{currentStep}
-						{currentStepName}
-						isSearching={isSearching}
-					/>
-					
-					<!-- Properties Section -->
-					<PropertyResults
-						bind:externalSelectedProperty={selectedProperty}
-						properties={streamedProperties}
-						{propertyCount}
-						isSearching={isSearching}
-						{currentStepName}
-					/>
 				</div>
-			</ScrollArea>
-		</ResizablePane>
-		
-		{#if showMap}
-			<!-- Resizable handle with visible grip -->
-			<ResizableHandle withHandle />
-			
-			<!-- Map section (right side - 1/3 of screen width) -->
-			<ResizablePane minSize={20} defaultSize={34} class="overflow-hidden">
+			{/if}
+
+			<!-- Search button -->
+			<Button 
+				variant="default" 
+				class="absolute top-4 left-4 right-4 z-30 shadow-lg"
+				on:click={() => isSearchFormOpen = true}
+			>
+				<Search class="w-4 h-4 mr-2" />
+				<span class="truncate">
+					{destination || 'Where do you want to go?'}
+				</span>
+			</Button>
+
+			<!-- Full height map -->
+			<div class="h-full">
 				<Map 
 					properties={streamedProperties} 
 					selectedLocation={destination}
 					height="100%"
 					onSelectProperty={handlePropertySelection}
 				/>
+			</div>
+
+			<!-- Bottom Sheet for Results -->
+			<Sheet>
+				<SheetTrigger class="fixed bottom-4 left-4 right-4 z-30">
+					<div class="bg-background rounded-lg shadow-lg p-4 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<ChevronUp class="w-5 h-5" />
+							{#if streamedProperties.length === 0}
+								<span>Discover properties</span>
+							{:else}
+								<span>{streamedProperties.length} properties found</span>
+							{/if}
+						</div>
+						{#if isSearching}
+							<div class="flex items-center gap-2">
+								<span class="text-sm">Searching...</span>
+								<div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+							</div>
+						{/if}
+					</div>
+				</SheetTrigger>
+				<SheetContent side="bottom" class="h-[85vh] pt-8">
+					<SheetHeader>
+						<SheetTitle>
+							{#if streamedProperties.length === 0 && !isSearching}
+								Start Your Search
+							{:else}
+								Search Results
+							{/if}
+						</SheetTitle>
+					</SheetHeader>
+					<div class="h-full overflow-y-auto pt-4 pb-safe">
+						{#if streamedProperties.length === 0 && !isSearching}
+							<div class="flex flex-col items-center justify-center h-[50vh] text-center p-4 space-y-4">
+								<Search class="w-12 h-12 text-muted-foreground" />
+								<div class="space-y-2">
+									<h3 class="font-semibold text-lg">No properties found yet</h3>
+									<p class="text-muted-foreground text-sm">
+										Click the search button above to discover properties in your desired location
+									</p>
+								</div>
+								<Button variant="outline" on:click={() => isSearchFormOpen = true}>
+									Start Search
+								</Button>
+							</div>
+						{:else}
+							<SearchProgress
+								{progress}
+								{currentStep}
+								{currentStepName}
+								isSearching={isSearching}
+							/>
+							<PropertyResults
+								bind:externalSelectedProperty={selectedProperty}
+								properties={streamedProperties}
+								{propertyCount}
+								isSearching={isSearching}
+								{currentStepName}
+							/>
+						{/if}
+					</div>
+				</SheetContent>
+			</Sheet>
+		</div>
+	{:else}
+		<!-- Desktop Layout -->
+		<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden">
+			<!-- Left sidebar with search inputs and results -->
+			<ResizablePane minSize={20} defaultSize={30} class="overflow-hidden">
+				<ScrollArea class="h-full">
+					<div class="h-full">
+						<div class="pr-4 pl-2 md:pr-6 md:pl-4">
+							<!-- Error message box -->
+						{#if error}
+						<div 
+							class="w-full mb-4 p-3 bg-destructive/20 text-destructive rounded-lg border border-destructive/30"
+							transition:fade={{ duration: 200 }}
+						>
+							<div class="flex items-start gap-3">
+								<div class="mt-1">⚠️</div>
+								<div>
+									<h3 class="font-medium mb-1 text-sm">Error</h3>
+									<p class="text-xs">{error}</p>
+								</div>
+							</div>
+						</div>
+						{/if} 						
+						
+						<!-- Search Inputs -->
+						<SearchForm
+							{destination}
+							{dateRange}
+							{budget}
+							bind:preferences
+							{selectedRooms}
+							{previousPreferences}
+							isLoading={isSearching}
+							onSubmit={handleSearch}
+							onLocationSelect={(location: string) => destination = location}
+						/>
+						
+						<!-- Search Progress Bar (when searching) -->
+						<SearchProgress
+							{progress}
+							{currentStep}
+							{currentStepName}
+							isSearching={isSearching}
+						/>
+						
+						<!-- Properties Section -->
+						<PropertyResults
+							bind:externalSelectedProperty={selectedProperty}
+							properties={streamedProperties}
+							{propertyCount}
+							isSearching={isSearching}
+							{currentStepName}
+						/>
+					</div>
+				</ScrollArea>
 			</ResizablePane>
-		{:else}
-			<!-- Map is hidden but no button to show it since we're removing close functionality -->
-		{/if}
-	</ResizablePaneGroup>
+			
+			{#if showMap}
+				<!-- Resizable handle with visible grip -->
+				<ResizableHandle withHandle />
+				
+				<!-- Map section (right side - 1/3 of screen width) -->
+				<ResizablePane minSize={20} defaultSize={34} class="overflow-hidden">
+					<Map 
+						properties={streamedProperties} 
+						selectedLocation={destination}
+						height="100%"
+						onSelectProperty={handlePropertySelection}
+					/>
+				</ResizablePane>
+			{:else}
+				<!-- Map is hidden but no button to show it since we're removing close functionality -->
+			{/if}
+		</ResizablePaneGroup>
+	{/if}
 </div>
 <!-- Anonymous limit reached screen - simplified with shadcn -->
 <Dialog.Root bind:open={showLimitReachedDialog}>
@@ -856,9 +978,63 @@
 	</Dialog.Content>
 </Dialog.Root>
 
+<!-- Mobile Search Dialog -->
+<Dialog.Root bind:open={isSearchFormOpen}>
+	<Dialog.Portal>
+		<Dialog.Overlay class="fixed inset-0 bg-black/50 z-50" />
+		<Dialog.Content class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg">
+			<div class="flex flex-col h-[85vh] sm:h-auto">
+				<Dialog.Close class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+					<X class="h-4 w-4" />
+					<span class="sr-only">Close</span>
+				</Dialog.Close>
+
+				<div class="flex-1 overflow-y-auto p-6">
+					<SearchForm
+						{destination}
+						{dateRange}
+						{budget}
+						bind:preferences
+						{selectedRooms}
+						{previousPreferences}
+						isLoading={isSearching}
+						onSubmit={(params: SearchFormParams) => {
+							handleSearch(params);
+							isSearchFormOpen = false;
+						}}
+						onLocationSelect={(location: string) => destination = location}
+					/>
+				</div>
+
+				<div class="border-t p-4 space-y-4">
+					<Button variant="outline" class="w-full" on:click={() => isSearchFormOpen = false}>
+						Close
+					</Button>
+				</div>
+			</div>
+		</Dialog.Content>
+	</Dialog.Portal>
+</Dialog.Root>
+
 <style>
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+
+  /* Add mobile-specific styles */
+  :global(.mobile-sheet) {
+    height: 85vh !important;
+    max-height: 85vh !important;
+  }
+
+  :global(.mobile-sheet-content) {
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Add safe area padding for mobile devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
   }
 </style> 

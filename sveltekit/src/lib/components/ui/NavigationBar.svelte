@@ -90,16 +90,15 @@
 			<!-- Navigation buttons - always shown when logged in -->
 			{#if page.data.session}
 				<Button 
-					variant="ghost" 
-					size="sm"
-					class="flex items-center gap-2 text-sm"
+					variant="default"
+					class="flex items-center gap-2 "
 					href="/search"
 				>
 					<Search size={16} />
 					<span class="hidden sm:inline">Search</span>
 				</Button>
 				
-				<Button 
+				<!-- <Button 
 					variant="ghost" 
 					size="sm"
 					class="flex items-center gap-2 text-sm"
@@ -107,7 +106,7 @@
 				>
 					<History size={16} />
 					<span class="hidden sm:inline">History</span>
-				</Button>
+				</Button> -->
 				
 				<Button 
 					variant="ghost" 

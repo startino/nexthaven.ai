@@ -1061,14 +1061,14 @@
         {#if showTagInput && editingTagIndex === null}
           <Input 
             bind:value={tagInputValue}
-            placeholder={selectedTags.length > 0 ? "Add tag... (use Enter or comma)" : "Add your own unique tags like 'I don't like tile floors' or 'Apartment or condo'..."}
+            placeholder={selectedTags.length > 0 ? "Add tag... (use Enter or comma)" : "Like \"No tile floors\" or \"Toilet bidet\""}
             onkeydown={handleCustomTagKeydown}
             oninput={handleTagInput}
             class="border-0 shadow-none focus-visible:ring-0 flex-1 h-8 min-w-[180px] text-sm"
             data-tag-input
           />
         {:else if selectedTags.length === 0}
-          <span class="text-muted-foreground text-sm">Add your own unique tags like "I don't like tile floors" or "Apartment or condo"...</span>
+          <span class="text-muted-foreground text-sm">Write literally anything...</span>
         {/if}
       </div>
     </div>
