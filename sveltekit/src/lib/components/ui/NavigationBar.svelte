@@ -45,7 +45,7 @@
 </script>
 
 <header class="w-full bg-white/5 backdrop-blur-md py-3 px-6 border-b border-border fixed top-0 z-50">
-	<div class="container mx-auto flex justify-between items-center">
+	<div class="max-w-7xl mx-auto flex justify-between items-center">
 		<div class="flex items-center">
 			<a href="/" class="text-xl flex flex-row place-items-center">
 				<img src="/favicon.png" alt="nexthaven" class="w-10 h-10 sm:w-12 sm:h-12" />
