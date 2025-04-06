@@ -514,8 +514,10 @@ class AirbnbApifyAgent:
                 htmlDescription=html_description,
                 brandHighlights=brand_highlights,
                 cancellationPolicies=cancellation_policies,
-                checkIn=item.get("checkIn"),
-                checkOut=item.get("checkOut"),
+                # checkIn=item.get("checkIn"),
+                # checkOut=item.get("checkOut"),
+                checkIn=item.get("checkInDate", item.get("checkIn")),
+                checkOut=item.get("checkOutDate", item.get("checkOut")),
                 timestamp=item.get("timestamp"),
             )
         except Exception as e:
