@@ -845,7 +845,7 @@
 		<!-- Desktop Layout -->
 		<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden">
 			<!-- Left sidebar with search inputs and results -->
-			<ResizablePane minSize={20} defaultSize={30} class="overflow-hidden">
+			<ResizablePane minSize={40} defaultSize={40} class="overflow-hidden">
 				<ScrollArea class="h-full">
 					<div class="h-full">
 						<div class="pr-4 pl-2 md:pr-6 md:pl-4">
@@ -981,32 +981,30 @@
 <!-- Mobile Search Dialog -->
 <Dialog.Root bind:open={isSearchFormOpen}>
 	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 bg-black/50 z-50" />
-		<Dialog.Content class="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg">
-			<div class="flex flex-col h-[85vh] sm:h-auto">
+		<Dialog.Overlay class="bg-black/50 z-50" />
+		<Dialog.Content class="">
+			<div class="flex flex-col h-[95vh] w-full sm:h-auto">
 				<Dialog.Close class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
 					<X class="h-4 w-4" />
 					<span class="sr-only">Close</span>
 				</Dialog.Close>
-
-				<div class="flex-1 overflow-y-auto p-6">
+				<ScrollArea class="h-full">
 					<SearchForm
 						{destination}
 						{dateRange}
 						{budget}
 						bind:preferences
 						{selectedRooms}
-						{previousPreferences}
-						isLoading={isSearching}
-						onSubmit={(params: SearchFormParams) => {
-							handleSearch(params);
-							isSearchFormOpen = false;
-						}}
-						onLocationSelect={(location: string) => destination = location}
-					/>
-				</div>
-
-				<div class="border-t p-4 space-y-4">
+							{previousPreferences}
+							isLoading={isSearching}
+							onSubmit={(params: SearchFormParams) => {
+								handleSearch(params);
+								isSearchFormOpen = false;
+							}}
+							onLocationSelect={(location: string) => destination = location}
+						/>
+				</ScrollArea>
+				<div class="border-t p-4">
 					<Button variant="outline" class="w-full" on:click={() => isSearchFormOpen = false}>
 						Close
 					</Button>

@@ -798,9 +798,8 @@
     <!-- Date Selection Box -->
     <div class="border rounded-md p-4 bg-card">
       <div class="flex items-center gap-2 mb-3">
-        <Calendar class="h-5 w-5 text-primary" />
-        <h3 class="font-medium">When</h3>
-        <span class="ml-auto text-sm text-muted-foreground">Choose your stay dates</span>
+          <Calendar class="h-5 w-5 text-primary" />
+          <h3 class="font-medium">When</h3>
       </div>
       
       <div class="relative">
@@ -849,7 +848,6 @@
       <div class="flex items-center gap-2 mb-3">
         <Search class="h-5 w-5 text-primary" />
         <h3 class="font-medium">Where</h3>
-        <span class="ml-auto text-sm text-muted-foreground">Enter your destination</span>
       </div>
       
       <div class="relative">
@@ -869,7 +867,6 @@
       <div class="flex items-center gap-2 mb-3">
         <DollarSign class="h-5 w-5 text-primary" />
         <h3 class="font-medium">Budget Range</h3>
-        <span class="ml-auto text-sm text-muted-foreground">Drag the the slider to set your budget</span>
       </div>
       
       <!-- Tab-like system for nightly vs total -->
@@ -956,23 +953,14 @@
   {/if}
   
   <div class="border rounded-md p-4 bg-card">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-col gap-2  md:flex-row items-start md:items-center justify-between mb-4">
       <div class="flex items-center gap-2">
         <Sparkle class="h-5 w-5 text-primary" />
         <h3 class="font-medium">Your Unique Preferences</h3>
       </div>
       
       <div class="flex items-center gap-2">
-        {#if selectedTags.length > 0}
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onclick={clearAllTags}
-          class="h-6 text-xs text-muted-foreground hover:text-primary"
-        >
-          Clear all
-        </Button>
-        {/if}
+
         {#if previousPreferences.length > 0}
           <Select.Root onSelectedChange={handlePreviousPreferenceChange}>
             <Select.Trigger class="text-xs h-8 gap-1 px-2 w-[220px]">
@@ -1000,10 +988,20 @@
     <!-- Tag input area -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div 
+    <Button 
+      variant="ghost" 
+      size="sm"
+      disabled={selectedTags.length === 0}
+      onclick={clearAllTags}
+      class="h-6 text-xs text-muted-foreground hover:text-primary mb-1  "
+    >
+      Clear all
+    </Button>
+    <div
       class="relative border rounded-md px-3 py-2 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-colors cursor-text"
       onclick={handleTagContainerClick}
     >
+    
       <div class="flex flex-wrap gap-2 items-center min-h-[38px]">
         {#each selectedTags as tag, index}
           {#if editingTagIndex === index}
@@ -1022,7 +1020,7 @@
           {:else}
             <Badge  
               class={cn(
-                "flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-sm group cursor-pointer transition-colors",
+                "flex items-center gap-1 font-normal py-1 pl-3 pr-2 text-sm group cursor-pointer transition-colors",
                 editingTagIndex !== null && editingTagIndex !== index ? "opacity-50" : ""
               )}
               ondblclick={() => handleTagDoubleClick(index)}
