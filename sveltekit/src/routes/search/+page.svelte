@@ -30,6 +30,7 @@
 	// Import necessary types
 	import type { SavedPreference, SearchFormParams } from './types';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import posthog from 'posthog-js';
 	
 	// Define interface for page data
 	interface PageData {
@@ -186,6 +187,16 @@
 	
 	// Handle URL changes and parse the search query
 	onMount(() => {
+
+		if (data.anonymousSearchInfo.isAnonymous) {
+			posthog.identify(data.session?.user?.id, {
+				email: data.session?.user?.email,
+				phone: data.session?.user?.phone,
+				firstName: data.session?.user?.user_metadata?.first_name,
+				lastName: data.session?.user?.user_metadata?.last_name
+			});
+		}
+	
 		parseSearchQuery();
 		
 		// Load previously saved preferences

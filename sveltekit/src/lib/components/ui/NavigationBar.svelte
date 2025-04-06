@@ -44,13 +44,13 @@
 	}
 </script>
 
-<header class="w-full bg-white/5 backdrop-blur-md py-3 px-6 border-b border-white/10 fixed top-0 z-50">
+<header class="w-full bg-white/5 backdrop-blur-md py-3 px-6 border-b border-border fixed top-0 z-50">
 	<div class="container mx-auto flex justify-between items-center">
 		<div class="flex items-center">
 			<a href="/" class="text-xl flex flex-row place-items-center">
-				<img src="/favicon.png" alt="nexthaven.ai" class="w-10 h-10 sm:w-12 sm:h-12" />
+				<img src="/favicon.png" alt="nexthaven" class="w-10 h-10 sm:w-12 sm:h-12" />
 				<span class="font-serif ml-1 sm:ml-2 text-lg sm:text-xl">
-					nexthaven.ai
+					nexthaven
 				</span>
 			</a>
 		</div>
@@ -190,7 +190,7 @@
 
 <!-- Mobile Navigation Menu -->
 <Sheet.Root open={isMenuOpen} onOpenChange={toggleMenu}>
-	<Sheet.Content side="top" class="pt-14 pb-6 px-4 w-full bg-gray-900/95 backdrop-blur-md">
+	<Sheet.Content side="top" class="pt-14 pb-6 px-4 w-full bg-card backdrop-blur-md">
 		<div class="flex flex-col space-y-4">
 			<!-- Mobile subscription badge -->
 			{#if page.data.subscriptionStatus?.isActive && page.data.subscriptionStatus.isInTrial && page.data.subscriptionStatus.trialEnd}
@@ -208,10 +208,10 @@
 			{/if}
 			
 			{#if page.data.session}
-				<div class="grid grid-cols-2 gap-2">
+				<div class="grid grid-cols-2 gap-2 justify-items-start">
 					<Button 
 						variant="ghost" 
-						class="flex items-center justify-center gap-2 w-full"
+						class="flex items-center gap-2 w-full justify-start"
 						href="/search"
 					>
 						<Search size={18} />
@@ -220,7 +220,7 @@
 					
 					<Button 
 						variant="ghost" 
-						class="flex items-center justify-center gap-2 w-full"
+						class="flex items-center gap-2 w-full justify-start"
 						href="/history"
 					>
 						<History size={18} />
@@ -229,7 +229,7 @@
 					
 					<Button 
 						variant="ghost" 
-						class="flex items-center justify-center gap-2 w-full"
+						class="flex items-center gap-2 w-full justify-start"
 						href="/collections"
 					>
 						<Folder size={18} />
@@ -238,7 +238,7 @@
 					
 					<Button
 						variant="ghost"
-						class="flex items-center justify-center gap-2 w-full"
+						class="flex items-center gap-2 w-full justify-start"
 						href="/subscription"
 					>
 						<CreditCard size={18} />
@@ -247,7 +247,7 @@
 					
 					<Button
 						variant="ghost"
-						class="flex items-center justify-center gap-2 w-full"
+						class="flex items-center gap-2 w-full justify-start"
 						href="/account"
 					>
 						<User size={18} />
@@ -258,7 +258,7 @@
 						<form action="/logout" method="POST" class="w-full">
 							<Button
 								variant="ghost"
-								class="flex items-center justify-center gap-2 w-full"
+								class="flex items-center gap-2 w-full justify-start"
 								type="submit"
 							>
 								<LogOut size={18} />

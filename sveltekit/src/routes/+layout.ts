@@ -4,6 +4,7 @@ import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import type { LayoutLoad } from './$types';
 import { ANONYMOUS_SEARCH_LIMIT } from '$lib/utils/anonymousSearch';
+import posthog from 'posthog-js'
 
 // Importing anonymousSearch utilities - will be created if they don't exist
 import {
@@ -14,6 +15,13 @@ import {
 export const load: LayoutLoad = async ({ data, depends, url }) => {
 	depends('supabase:auth');
 	depends('subscription:status');
+
+	if (browser) {
+		posthog.init(
+			'phc_i8XkSi2R4IeHgpZoLAzk65Rf4KtJd7FvLT9FgWEN8EE',
+			{ api_host: 'https://us.i.posthog.com' }
+		)
+	}
 
 	// Check if this is a page refresh specifically for anonymous search info
 	const isRefreshForAnonInfo = url.searchParams.has('refresh_anon_info');

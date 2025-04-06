@@ -4,6 +4,7 @@ import type { PageLoad } from './$types';
 import type { AnonymousSearchInfo } from './types';
 import { ANONYMOUS_SEARCH_LIMIT } from '$lib/utils/anonymousSearch';
 import { ensureCompleteAnonymousSearchInfo } from './anonymousSearch';
+import posthog from 'posthog-js';
 
 // This loads initial data needed for the search page
 export const load: PageLoad = async ({ parent, url }) => {
@@ -16,6 +17,8 @@ export const load: PageLoad = async ({ parent, url }) => {
 		isAnonymous: isAnonymous,
 		session: !!session
 	});
+
+
 
 	// Get search ID from URL if present
 	const searchId = url.searchParams.get('searchId');
@@ -40,15 +43,6 @@ export const load: PageLoad = async ({ parent, url }) => {
 			anonymousSearchInfo: searchInfo
 		};
 	}
-
-	// Sample data for now
-	const sampleData = [
-		{ name: 'Paris, France', id: 'paris' },
-		{ name: 'Tokyo, Japan', id: 'tokyo' },
-		{ name: 'New York, USA', id: 'new-york' },
-		{ name: 'Barcelona, Spain', id: 'barcelona' },
-		{ name: 'Sydney, Australia', id: 'sydney' }
-	];
 
 	return {
 		popularDestinations,
