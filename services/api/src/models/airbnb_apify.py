@@ -9,17 +9,32 @@ load_dotenv()
 # Get the default max items from environment variable or use 10 as fallback
 APIFY_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
 
+
 class AirbnbApifyRequest(BaseModel):
     """
     Request model for the Airbnb Apify scraper.
     Based on: https://apify.com/tri_angle/airbnb-scraper/input-schema
     """
-    locationQueries: Optional[List[str]] = Field(default=None, description="List of location queries to scrape")
-    startUrls: Optional[List[Dict[str, str]]] = Field(default=None, description="List of Airbnb URLs to start with")
-    checkIn: Optional[str] = Field(default=None, description="Check-in date in YYYY-MM-DD format")
-    checkOut: Optional[str] = Field(default=None, description="Check-out date in YYYY-MM-DD format")
-    locale: str = Field(default="en-US", description="Localized results in this locale will be extracted")
-    currency: str = Field(default="USD", description="Currency that will be extracted for prices")
+
+    locationQueries: Optional[List[str]] = Field(
+        default=None, description="List of location queries to scrape"
+    )
+    startUrls: Optional[List[Dict[str, str]]] = Field(
+        default=None, description="List of Airbnb URLs to start with"
+    )
+    checkIn: Optional[str] = Field(
+        default=None, description="Check-in date in YYYY-MM-DD format"
+    )
+    checkOut: Optional[str] = Field(
+        default=None, description="Check-out date in YYYY-MM-DD format"
+    )
+    locale: str = Field(
+        default="en-US",
+        description="Localized results in this locale will be extracted",
+    )
+    currency: str = Field(
+        default="USD", description="Currency that will be extracted for prices"
+    )
     priceMin: Optional[int] = Field(default=None, description="Minimum price")
     priceMax: Optional[int] = Field(default=None, description="Maximum price")
     minBeds: Optional[int] = Field(default=None, description="Minimum beds")
@@ -29,11 +44,15 @@ class AirbnbApifyRequest(BaseModel):
     children: Optional[int] = Field(default=None, description="Number of children")
     infants: Optional[int] = Field(default=None, description="Number of infants")
     pets: Optional[int] = Field(default=None, description="Number of pets")
-    proxyConfiguration: Optional[Dict[str, Any]] = Field(default=None, description="Proxy configuration")
+    proxyConfiguration: Optional[Dict[str, Any]] = Field(
+        default=None, description="Proxy configuration"
+    )
+
 
 class AirbnbCoordinates(BaseModel):
     latitude: float
     longitude: float
+
 
 class Rating(BaseModel):
     accuracy: Optional[float] = None
@@ -45,19 +64,23 @@ class Rating(BaseModel):
     guestSatisfaction: Optional[float] = None
     reviewsCount: Optional[int] = None
 
+
 class RuleValue(BaseModel):
     title: str
     icon: Optional[str] = None
     subtitle: Optional[str] = None
     available: Optional[Union[bool, str]] = None
 
+
 class RuleGroup(BaseModel):
     title: str
     values: List[RuleValue]
 
+
 class HouseRules(BaseModel):
     additional: Optional[str] = ""
     general: List[RuleGroup] = []
+
 
 class Host(BaseModel):
     id: Optional[str] = None
@@ -72,9 +95,11 @@ class Host(BaseModel):
     timeAsHost: Optional[Dict[str, Any]] = None
     isVerified: Optional[bool] = None
 
+
 class SubDescription(BaseModel):
     title: Optional[str] = None
     items: List[str] = []
+
 
 class AmenityValue(BaseModel):
     title: str
@@ -82,14 +107,17 @@ class AmenityValue(BaseModel):
     icon: Optional[str] = None
     available: Optional[Union[bool, str]] = True
 
+
 class AmenityGroup(BaseModel):
     title: str
     values: List[AmenityValue] = []
+
 
 class LocationDescription(BaseModel):
     title: str
     content: Optional[str] = None
     mapMarkerRadiusInMeters: Optional[int] = None
+
 
 class Highlight(BaseModel):
     title: str
@@ -97,9 +125,11 @@ class Highlight(BaseModel):
     icon: Optional[str] = None
     type: Optional[str] = None
 
+
 class PriceBreakdownItem(BaseModel):
     description: str
     price: str
+
 
 class PriceBreakdown(BaseModel):
     basePrice: Optional[PriceBreakdownItem] = None
@@ -112,6 +142,7 @@ class PriceBreakdown(BaseModel):
     specialOffer: Optional[PriceBreakdownItem] = None
     earlyBirdDiscount: Optional[PriceBreakdownItem] = None
 
+
 class Price(BaseModel):
     label: Optional[str] = None
     amount: Optional[str] = None
@@ -121,34 +152,41 @@ class Price(BaseModel):
     originalPrice: Optional[str] = None
     discountedPrice: Optional[str] = None
 
+
 class Image(BaseModel):
     caption: Optional[str] = None
     imageUrl: Optional[str] = None
     orientation: Optional[str] = None
 
+
 class HtmlDescription(BaseModel):
     htmlText: Optional[str] = None
     recommendedNumberOfLines: Optional[int] = None
+
 
 class Breadcrumb(BaseModel):
     linkRoute: Optional[str] = None
     linkText: Optional[str] = None
     searchText: Optional[str] = None
 
+
 class BrandHighlights(BaseModel):
     title: Optional[str] = None
     subtitle: Optional[str] = None
     hasGoldenLaurel: Optional[bool] = None
+
 
 class CancellationPolicy(BaseModel):
     title: Optional[str] = None
     policyName: Optional[str] = None
     policyId: Optional[int] = None
 
+
 class AirbnbApifyResponse(BaseModel):
     """
     Response model for the Airbnb Apify scraper.
     """
+
     id: str
     coordinates: AirbnbCoordinates
     description: Optional[str] = ""
@@ -187,8 +225,6 @@ class AirbnbApifyResponse(BaseModel):
     checkIn: Optional[str] = None
     checkOut: Optional[str] = None
     timestamp: Optional[str] = None
-    
+
     # Add model_config to allow extra fields
-    model_config = {
-        "extra": "ignore"
-    } 
+    model_config = {"extra": "ignore"}

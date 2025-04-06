@@ -84,6 +84,10 @@ class BookingApifyAgent:
         """
         run_input = request.model_dump()
 
+        # Store the original checkIn and checkOut dates from the request
+        original_check_in = request.checkIn
+        original_check_out = request.checkOut
+
         logging.info(f"Running Apify actor with input: {run_input}")
 
         # Run in a thread to avoid blocking the event loop
@@ -105,7 +109,8 @@ class BookingApifyAgent:
                     ).call(
                         run_input=input,
                         memory_mbytes=8192,
-                        max_items=request.maxItems / CONCURRENT_APIFY_API_CALLS,
+                        # Calculate max_items before passing to avoid float issue
+                        max_items=request.maxItems // CONCURRENT_APIFY_API_CALLS,
                     ),
                 )
             )
@@ -123,6 +128,29 @@ class BookingApifyAgent:
                     None, lambda: list(self.client.dataset(dataset_id).iterate_items())
                 )
 
+                # Add detailed logging of the first item structure
+                if items:
+                    try:
+                        logging.info(
+                            f"First Booking.com Apify item keys: {list(items[0].keys())}"
+                        )
+                        logging.info(
+                            f"checkIn value: {items[0].get('checkIn', 'NOT FOUND')}"
+                        )
+                        logging.info(
+                            f"checkOut value: {items[0].get('checkOut', 'NOT FOUND')}"
+                        )
+                        logging.info(
+                            f"checkInDate value: {items[0].get('checkInDate', 'NOT FOUND')}"
+                        )
+                        logging.info(
+                            f"checkOutDate value: {items[0].get('checkOutDate', 'NOT FOUND')}"
+                        )
+                    except Exception as e:
+                        logging.error(f"Error examining Booking.com Apify results: {e}")
+                else:
+                    logging.info("No items found in Booking.com Apify results")
+
                 for item in items:
                     parsed_item = BookingApifyResponse(
                         url=item.get("url", ""),
@@ -130,8 +158,9 @@ class BookingApifyAgent:
                         type=item.get("type", ""),
                         description=item.get("description", ""),
                         price=item.get("price", 0),
-                        checkIn=item.get("checkIn", ""),
-                        checkOut=item.get("checkOut", ""),
+                        # Use the original dates from the request (reliable formatted dates)
+                        checkIn=original_check_in,
+                        checkOut=original_check_out,
                         location=Location(
                             lat=float(item.get("location", {}).get("lat", 0)),
                             lng=float(item.get("location", {}).get("lng", 0)),

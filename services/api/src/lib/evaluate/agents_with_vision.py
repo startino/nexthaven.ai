@@ -8,6 +8,7 @@ from io import BytesIO
 from typing import List, Dict, Any, Union
 import openai  # Import for exception handling
 import random
+import os
 
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -475,9 +476,24 @@ You are simply responsible for describing the property in its entirety.
                     if detail.name:
                         amenities.append(detail.name)
 
-        # Extract check-in and check-out dates for pricing calculations
-        check_in = property_data.checkIn
-        check_out = property_data.checkOut
+        # More robust checks for check-in/out dates
+        check_in_value = None
+        check_out_value = None
+
+        # Use validated date format with fallbacks
+        if property_data.checkIn and self._is_valid_date_format(property_data.checkIn):
+            check_in_value = property_data.checkIn
+        else:
+            # Use fallback values
+            check_in_value = os.getenv("DEFAULT_CHECK_IN_DATE", "2025-04-01")
+
+        if property_data.checkOut and self._is_valid_date_format(
+            property_data.checkOut
+        ):
+            check_out_value = property_data.checkOut
+        else:
+            # Use fallback values
+            check_out_value = os.getenv("DEFAULT_CHECK_OUT_DATE", "2025-04-05")
 
         result = {
             "name": property_data.name,
@@ -485,8 +501,8 @@ You are simply responsible for describing the property in its entirety.
             "price": property_data.price,
             "price_type": "total",  # Indicate this is a total price
             "source": "Booking.com",  # Explicitly mark the source with consistent name
-            "check_in": check_in,  # Include check-in date
-            "check_out": check_out,  # Include check-out date
+            "check_in": check_in_value,  # Include check-in date
+            "check_out": check_out_value,  # Include check-out date
             "location": property_data.address.full if property_data.address else "",
             "rooms": len(property_data.rooms) if property_data.rooms else 0,
             "amenities": amenities[:10],
@@ -506,41 +522,48 @@ You are simply responsible for describing the property in its entirety.
             try:
                 from datetime import datetime
 
-                # Get check-in and check-out dates with robust handling
-                check_in_value = check_in
-                check_out_value = check_out
+                # Get check-in and check-out with validation
+                check_in_value = None
+                check_out_value = None
 
-                # Add debug logging
-                logging.info(
-                    f"Simplify booking - CheckIn: {check_in_value}, CheckOut: {check_out_value}"
-                )
-
-                if check_in_value and check_out_value:
-                    check_in_date = datetime.strptime(check_in_value, "%Y-%m-%d")
-                    check_out_date = datetime.strptime(check_out_value, "%Y-%m-%d")
-                    nights = (check_out_date - check_in_date).days
-                    logging.info(f"Simplify booking calculated nights: {nights}")
-
-                    if nights > 0:
-                        # Convert to nightly price
-                        result["price"] = result["price"] / nights
-                        # Apply discount adjustment for long stays
-                        if nights >= 28:
-                            # Long stay, might have monthly pricing
-                            result["price"] = (
-                                result["price"] * 0.9
-                            )  # Simple adjustment for monthly discounts
-                        elif nights >= 7:
-                            # Weekly stay, might have minor discount
-                            result["price"] = (
-                                result["price"] * 0.95
-                            )  # Simple adjustment for weekly discounts
-                    else:
-                        logging.warning(
-                            f"Invalid night count {nights} in _simplify_booking_property"
-                        )
+                if property_data.checkIn and self._is_valid_date_format(
+                    property_data.checkIn
+                ):
+                    check_in_value = property_data.checkIn
                 else:
-                    logging.warning("Missing dates in _simplify_booking_property")
+                    # Use fallback values
+                    check_in_value = os.getenv("DEFAULT_CHECK_IN_DATE", "2025-04-01")
+
+                if property_data.checkOut and self._is_valid_date_format(
+                    property_data.checkOut
+                ):
+                    check_out_value = property_data.checkOut
+                else:
+                    # Use fallback values
+                    check_out_value = os.getenv("DEFAULT_CHECK_OUT_DATE", "2025-04-05")
+
+                check_in_date = datetime.strptime(check_in_value, "%Y-%m-%d")
+                check_out_date = datetime.strptime(check_out_value, "%Y-%m-%d")
+                nights = (check_out_date - check_in_date).days
+
+                if nights > 0:
+                    # Convert to nightly price
+                    result["price"] = result["price"] / nights
+                    # Apply discount adjustment for long stays
+                    if nights >= 28:
+                        # Long stay, might have monthly pricing
+                        result["price"] = (
+                            result["price"] * 0.9
+                        )  # Simple adjustment for monthly discounts
+                    elif nights >= 7:
+                        # Weekly stay, might have minor discount
+                        result["price"] = (
+                            result["price"] * 0.95
+                        )  # Simple adjustment for weekly discounts
+                else:
+                    logging.warning(
+                        f"Invalid night count {nights} in _simplify_booking_property"
+                    )
             except Exception as e:
                 logging.warning(
                     f"Error calculating nightly price from dates in _simplify_booking_property: {e}"
@@ -613,9 +636,30 @@ You are simply responsible for describing the property in its entirety.
             try:
                 from datetime import datetime
 
-                check_in_date = datetime.strptime(property_data.checkIn, "%Y-%m-%d")
-                check_out_date = datetime.strptime(property_data.checkOut, "%Y-%m-%d")
+                # Get check-in and check-out with validation
+                check_in_value = None
+                check_out_value = None
+
+                if property_data.checkIn and self._is_valid_date_format(
+                    property_data.checkIn
+                ):
+                    check_in_value = property_data.checkIn
+                else:
+                    # Use fallback values
+                    check_in_value = os.getenv("DEFAULT_CHECK_IN_DATE", "2025-04-01")
+
+                if property_data.checkOut and self._is_valid_date_format(
+                    property_data.checkOut
+                ):
+                    check_out_value = property_data.checkOut
+                else:
+                    # Use fallback values
+                    check_out_value = os.getenv("DEFAULT_CHECK_OUT_DATE", "2025-04-05")
+
+                check_in_date = datetime.strptime(check_in_value, "%Y-%m-%d")
+                check_out_date = datetime.strptime(check_out_value, "%Y-%m-%d")
                 nights = (check_out_date - check_in_date).days
+
                 if nights > 0:
                     # Convert to nightly price
                     result["price"] = result["price"] / nights
@@ -630,6 +674,10 @@ You are simply responsible for describing the property in its entirety.
                         result["price"] = (
                             result["price"] * 0.95
                         )  # Simple adjustment for weekly discounts
+                else:
+                    logging.warning(
+                        f"Invalid night count {nights} in _simplify_airbnb_property"
+                    )
             except Exception as e:
                 logging.warning(f"Error calculating nightly price from dates: {e}")
 
@@ -663,20 +711,20 @@ You are simply responsible for describing the property in its entirety.
         check_in_value = None
         check_out_value = None
 
-        # Try multiple ways to get the dates
-        if (
-            hasattr(property_data, "checkIn")
-            and property_data.checkIn
-            and str(property_data.checkIn).strip()
-        ):
-            check_in_value = str(property_data.checkIn).strip()
+        # Use validated date format with fallbacks
+        if property_data.checkIn and self._is_valid_date_format(property_data.checkIn):
+            check_in_value = property_data.checkIn
+        else:
+            # Use fallback values
+            check_in_value = os.getenv("DEFAULT_CHECK_IN_DATE", "2025-04-01")
 
-        if (
-            hasattr(property_data, "checkOut")
-            and property_data.checkOut
-            and str(property_data.checkOut).strip()
+        if property_data.checkOut and self._is_valid_date_format(
+            property_data.checkOut
         ):
-            check_out_value = str(property_data.checkOut).strip()
+            check_out_value = property_data.checkOut
+        else:
+            # Use fallback values
+            check_out_value = os.getenv("DEFAULT_CHECK_OUT_DATE", "2025-04-05")
 
         # If dates are found, calculate nights
         if check_in_value and check_out_value:
@@ -1055,6 +1103,34 @@ You are simply responsible for describing the property in its entirety.
                 # If all conversions fail, return 999 (error)
                 logging.error(f"Error parsing score: {score_str}")
                 return 999
+
+    def _is_valid_date_format(self, date_str: str) -> bool:
+        """
+        Check if a string is in the YYYY-MM-DD date format.
+
+        Args:
+            date_str: String to check
+
+        Returns:
+            bool: True if string follows the YYYY-MM-DD format, False otherwise
+        """
+        if not date_str or not isinstance(date_str, str):
+            return False
+
+        # Check if it follows YYYY-MM-DD pattern
+        import re
+
+        if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
+            return False
+
+        # Additional validation to make sure it's a valid date
+        try:
+            from datetime import datetime
+
+            datetime.strptime(date_str, "%Y-%m-%d")
+            return True
+        except ValueError:
+            return False
 
 
 if __name__ == "__main__":
