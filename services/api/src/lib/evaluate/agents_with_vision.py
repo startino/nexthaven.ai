@@ -945,57 +945,43 @@ You are simply responsible for describing the property in its entirety.
             # For Booking.com, convert total price to nightly price using LLM chain
             if source == "Booking.com" and total:
                 # Use LLM to calculate nightly price considering all factors
-                # This is replaced with a sync version for simplicity - in production use asyncio.run()
                 import asyncio
 
                 try:
-                    total = asyncio.get_event_loop().run_until_complete(
-                        self._convert_booking_price_with_llm(property_data, total)
-                    )
+                    loop = asyncio.get_event_loop()
+                    # Only try to run the LLM calculation if loop isn't already running
+                    if not loop.is_running():
+                        total = loop.run_until_complete(
+                            self._convert_booking_price_with_llm(property_data, total)
+                        )
+                    else:
+                        # If loop is already running, just use simple division
+                        # Calculate nights using the same approach as in the fallback
+                        nights = 1
+                        if (
+                            hasattr(property_data, "checkIn")
+                            and property_data.checkIn
+                            and hasattr(property_data, "checkOut")
+                            and property_data.checkOut
+                        ):
+                            try:
+                                from datetime import datetime
+
+                                check_in = datetime.strptime(
+                                    property_data.checkIn, "%Y-%m-%d"
+                                )
+                                check_out = datetime.strptime(
+                                    property_data.checkOut, "%Y-%m-%d"
+                                )
+                                nights = (check_out - check_in).days
+                                if nights <= 0:
+                                    nights = 1
+                            except Exception:
+                                pass
+                        # Simple nightly calculation
+                        total = total / max(1, nights)
                 except Exception as e:
                     logging.error(f"Error calculating nightly price with LLM: {e}")
-                    # Fall back to simple calculation if LLM fails
-                    nights = 1
-
-                    # Try to get check-in and check-out dates with robust handling
-                    check_in_value = None
-                    check_out_value = None
-
-                    if hasattr(property_data, "checkIn") and property_data.checkIn:
-                        check_in_value = property_data.checkIn
-
-                    if hasattr(property_data, "checkOut") and property_data.checkOut:
-                        check_out_value = property_data.checkOut
-
-                    # Calculate nights if dates are available
-                    if check_in_value and check_out_value:
-                        try:
-                            from datetime import datetime
-
-                            logging.info(
-                                f"Fallback calculation - CheckIn: {check_in_value}, CheckOut: {check_out_value}"
-                            )
-                            check_in = datetime.strptime(check_in_value, "%Y-%m-%d")
-                            check_out = datetime.strptime(check_out_value, "%Y-%m-%d")
-                            nights = (check_out - check_in).days
-                            logging.info(f"Fallback calculated nights: {nights}")
-
-                            if nights <= 0:
-                                nights = 1
-                        except Exception as e:
-                            logging.warning(
-                                f"Error in fallback nights calculation: {e}"
-                            )
-                    else:
-                        logging.warning(
-                            "Missing dates for fallback calculation, using default nights=1"
-                        )
-
-                    # Ensure nights is at least 1
-                    nights = max(1, nights)
-
-                    # Calculate the nightly price
-                    total = total / nights
 
             # Extract capacity
             bedrooms = len(property_data.rooms) if property_data.rooms else 1
