@@ -217,7 +217,7 @@
 						<span>Search</span>
 					</Button>
 					
-					<Button 
+					<!-- <Button 
 						variant="ghost" 
 						class="flex items-center gap-2 w-full justify-start"
 						href="/history"
@@ -225,7 +225,7 @@
 						<History size={18} />
 						<span>History</span>
 					</Button>
-					
+					 -->
 					<Button 
 						variant="ghost" 
 						class="flex items-center gap-2 w-full justify-start"
