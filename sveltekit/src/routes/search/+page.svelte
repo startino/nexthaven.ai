@@ -120,6 +120,7 @@
 	// Add mobile detection state
 	let isMobile = $state(false);
 	let isSearchFormOpen = $state(false);
+	let isSheetOpen = $state(false);
 	
 	// Create an effect to clear the error after a timeout
 	$effect(() => {
@@ -779,7 +780,7 @@
 			</div>
 
 			<!-- Bottom Sheet for Results -->
-			<Sheet>
+			<Sheet bind:open={isSheetOpen}>
 				<SheetTrigger class="fixed bottom-4 left-4 right-4 z-30">
 					<div class="bg-background rounded-lg shadow-lg p-4 flex items-center justify-between">
 						<div class="flex items-center gap-2">
@@ -818,7 +819,13 @@
 										Click the search button above to discover properties in your desired location
 									</p>
 								</div>
-								<Button variant="outline" on:click={() => isSearchFormOpen = true}>
+								<Button 
+									variant="outline" 
+									on:click={() => {
+										isSheetOpen = false;
+										isSearchFormOpen = true;
+									}}
+								>
 									Start Search
 								</Button>
 							</div>
@@ -988,7 +995,7 @@
 					<X class="h-4 w-4" />
 					<span class="sr-only">Close</span>
 				</Dialog.Close>
-				<ScrollArea class="h-full">
+				<ScrollArea class="h-full py-4">
 					<SearchForm
 						{destination}
 						{dateRange}
