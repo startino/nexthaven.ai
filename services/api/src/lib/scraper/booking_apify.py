@@ -60,7 +60,7 @@ class BookingApifyAgent:
             user_request_obj = user_request
 
         logging.info(
-            f"Using GeneratedRequirement object: {user_request_obj.model_dump_json()}"
+            f"Using GeneratedRequirement object: {user_request_obj}"
         )
 
         # # Default to Hotels if property_type is not specified or invalid
