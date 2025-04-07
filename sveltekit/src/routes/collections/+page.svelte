@@ -8,7 +8,7 @@
 	// Check authentication on mount
 	$effect(() => {
 		if (!$page.data.session) {
-			goto('/auth/login');
+			goto('/login');
 		}
 	});
 </script>
