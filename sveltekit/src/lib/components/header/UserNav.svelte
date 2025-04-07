@@ -27,7 +27,7 @@
 	async function handleSignOut() {
 		const { supabase } = $page.data;
 		await supabase.auth.signOut();
-		goto('/auth/login');
+		goto('/login');
 	}
 </script>
 

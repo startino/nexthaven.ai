@@ -174,7 +174,7 @@ export async function requireSubscription(
 
 	// If not logged in, redirect to login first
 	if (!session) {
-		const loginRedirect = `/auth/login?redirectTo=${url.pathname}${url.search}`;
+		const loginRedirect = `/login?redirectTo=${url.pathname}${url.search}`;
 		redirect(303, loginRedirect);
 	}
 
@@ -211,7 +211,7 @@ export async function checkUserAuthentication(
 
 	// If not logged in, redirect to login first
 	if (!session) {
-		const loginRedirect = `/auth/login?redirectTo=${url.pathname}${url.search}`;
+		const loginRedirect = `/login?redirectTo=${url.pathname}${url.search}`;
 		redirect(303, loginRedirect);
 	}
 

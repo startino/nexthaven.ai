@@ -8,7 +8,7 @@ export const load: PageLoad = async ({ parent }) => {
 
 	// If not logged in, redirect to login
 	if (!session) {
-		redirect(303, '/auth/login');
+		redirect(303, '/login');
 	}
 
 	return {

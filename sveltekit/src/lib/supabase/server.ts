@@ -44,7 +44,7 @@ export const getServerSession = async ({ locals }: { locals: App.Locals }) => {
 	} = await supabase.auth.getSession();
 
 	if (!session) {
-		redirect(303, '/auth/login');
+		redirect(303, '/login');
 	}
 
 	return session;
@@ -64,7 +64,7 @@ export const requireSession = async ({
 	} = await supabase.auth.getSession();
 
 	if (!session) {
-		redirect(303, redirectUrl || '/auth/login');
+		redirect(303, redirectUrl || '/login');
 	}
 
 	return session;

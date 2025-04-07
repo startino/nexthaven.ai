@@ -791,7 +791,7 @@
   }
 </script>
 
-<form class="grid grid-cols-1 gap-4 ">
+<form class="grid grid-cols-1 gap-4 " onsubmit={(e) => e.preventDefault()}>
 
   <!-- When & Where Section - Now as individual boxes -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
