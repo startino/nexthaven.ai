@@ -7,6 +7,7 @@
 	import { User, Mail, Key, ArrowUp, AlertTriangle } from "lucide-svelte";
 	import { isAnonymousUser } from "$lib/supabase/auth";
 	import { onMount } from "svelte";
+	import PartnerSection from "$lib/components/partner/PartnerSection.svelte";
 
 	let { data } = $props();
 	const { supabase, session } = data;
@@ -114,6 +115,9 @@
 <div class="container mx-auto py-8 px-4">
 	<div class="max-w-3xl mx-auto">		
 		<div class="space-y-6">
+
+			<!-- Partner Section -->
+			<PartnerSection {data} />
 			{#if isAnonymous}
 				<!-- Anonymous Account Warning -->
 				<Card class="bg-gradient-to-r from-amber-900/30 to-amber-800/20 border border-amber-500/30">
@@ -248,21 +252,9 @@
 						</CardTitle>
 						<CardDescription>Set a password for your account</CardDescription>
 					</CardHeader>
-					<CardContent>
-						<div class="p-4 bg-gray-800/40 rounded-lg">
-							<p class="text-sm">You'll be able to set a password after creating a permanent account.</p>
-							<Button 
-								onclick={handleSignUp}
-								variant="outline" 
-								class="mt-4"
-							>
-								Sign Up Now
-							</Button>
-						</div>
-					</CardContent>
 				</Card>
 			{/if}
-			
+
 		</div>
 	</div>
 </div> 

@@ -14,6 +14,7 @@
 	import { Loader2 } from 'lucide-svelte';
 	import { searchQuotaState } from '$lib/stores/search-quota.svelte';
 	import { ANONYMOUS_SEARCH_LIMIT } from '$lib/utils/anonymousSearch';
+	import { Toaster } from '$lib/components/ui/sonner';
 
 	// Get data from layout load
 	let { data, children } = $props();
@@ -243,6 +244,8 @@
 		}
 	}
 </script>
+
+<Toaster richColors />
 
 <div class="min-h-screen bg-black dark text-foreground relative">
 	<!-- Tolt Tracker (invisible) -->
