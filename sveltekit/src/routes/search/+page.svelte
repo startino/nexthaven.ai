@@ -802,7 +802,7 @@
 						{/if}
 					</div>
 				</SheetTrigger>
-				<SheetContent side="bottom" class="h-[85vh] pt-8">
+				<SheetContent side="bottom" class="h-[85dvh] pt-8">
 					<SheetHeader>
 						<SheetTitle>
 							{#if streamedProperties.length === 0 && !isSearching}
