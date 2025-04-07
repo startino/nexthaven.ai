@@ -225,6 +225,9 @@
 		// Add mobile detection
 		const checkMobile = () => {
 			isMobile = browser && window.innerWidth < 768;
+			if (!isMobile) {
+				isSearchFormOpen = false;
+			}
 		};
 		
 		checkMobile();
@@ -737,7 +740,7 @@
 	}
 </script>
 
-<div class="w-full h-[calc(100dvh-var(--navbar-height))] overflow-hidden" transition:fade={{ duration: 300 }}>
+<div class="w-full h-[calc(100dvh-var(--navbar-height))] overflow-hidden py-4" transition:fade={{ duration: 300 }}>
 	{#if isMobile}
 		<!-- Mobile Layout -->
 		<div class="h-dvh relative">
@@ -821,7 +824,7 @@
 								</div>
 								<Button 
 									variant="outline" 
-									on:click={() => {
+									onclick={() => {
 										isSheetOpen = false;
 										isSearchFormOpen = true;
 									}}
@@ -853,7 +856,7 @@
 		<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden">
 			<!-- Left sidebar with search inputs and results -->
 			<ResizablePane minSize={40} defaultSize={40} class="overflow-hidden">
-				<ScrollArea class="h-full py-4">
+				<ScrollArea class="h-full">
 					<div class="h-full">
 						<div class="pr-4 pl-2 md:pr-6 md:pl-4">
 							<!-- Error message box -->
@@ -924,66 +927,6 @@
 		</ResizablePaneGroup>
 	{/if}
 </div>
-<!-- Anonymous limit reached screen - simplified with shadcn -->
-<Dialog.Root bind:open={showLimitReachedDialog}>
-
-	<Dialog.Content class="max-w-md w-full">
-		<Card class="overflow-hidden border-primary/10">
-			<CardHeader class="bg-primary/5 border-b">
-				<CardTitle class="flex items-center gap-2">
-					<Search class="h-5 w-5 text-primary" />
-					<span>Free Search Used</span>
-				</CardTitle>
-			</CardHeader>
-			
-			<CardContent class="pt-6">
-				<div class="space-y-4">
-					<div>
-						<h3 class="text-xl font-medium mb-2">Create an account to continue</h3>
-						<CardDescription class="text-base">
-							You've used your free anonymous search. Create an account now to unlock the full experience.
-						</CardDescription>
-					</div>
-					
-					<div class="bg-muted/50 rounded-lg p-4 border">
-						<h4 class="font-medium mb-2">With an account, you'll get:</h4>
-						<ul class="space-y-2">
-							<li class="flex items-start gap-2 text-sm">
-								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-								<span>Full 14-day trial with <strong>unlimited searches</strong></span>
-							</li>
-							<li class="flex items-start gap-2 text-sm">
-								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-								<span>Save your favorite properties for later comparison</span>
-							</li>
-							<li class="flex items-start gap-2 text-sm">
-								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-								<span>Personalized recommendations based on your preferences</span>
-							</li>
-							<li class="flex items-start gap-2 text-sm">
-								<Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-								<span>Access to search filters and tools</span>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</CardContent>
-			
-			<CardFooter class="flex flex-col sm:flex-row gap-3 border-t pt-4 pb-4 bg-muted/20">
-				<Button href="/signup?redirect=/search" class="w-full sm:w-auto">
-					Create Free Account
-				</Button>
-				<Button href="/login?redirect=/search" variant="outline" class="w-full sm:w-auto">
-					Sign In
-				</Button>
-				
-				<p class="text-xs text-muted-foreground mt-3 sm:ml-auto sm:mt-auto">
-					No credit card required
-				</p>
-			</CardFooter>
-		</Card>
-	</Dialog.Content>
-</Dialog.Root>
 
 <!-- Mobile Search Dialog -->
 <Dialog.Root bind:open={isSearchFormOpen}>
@@ -1012,7 +955,7 @@
 						/>
 				</ScrollArea>
 				<div class="border-t p-4">
-					<Button variant="outline" class="w-full" on:click={() => isSearchFormOpen = false}>
+					<Button variant="outline" class="w-full" onclick={() => isSearchFormOpen = false}>
 						Close
 					</Button>
 				</div>

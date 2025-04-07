@@ -1170,7 +1170,7 @@
   </div>
 
   <Button 
-    type="submit"
+    type="button"
     onclick={handleSubmit}
     class={cn(
       "h-12 mt-1 text-base"
