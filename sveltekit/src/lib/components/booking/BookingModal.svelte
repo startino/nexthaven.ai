@@ -3,7 +3,7 @@
   import { Button } from '$lib/components/ui/button';
   import { Card, CardContent } from '$lib/components/ui/card';
   import { X, ExternalLink } from 'lucide-svelte';
-  import { getScoreColor } from '$lib/utils';
+  import { getScoreColor } from '$lib/utils/score-colors';
 
   // Props
   let { 

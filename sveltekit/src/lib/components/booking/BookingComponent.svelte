@@ -6,7 +6,7 @@
   import { Badge } from '$lib/components/ui/badge';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
   import { ArrowLeft, ExternalLink } from 'lucide-svelte';
-  import { getScoreColor } from '$lib/utils';
+  import { getScoreColor } from '$lib/utils/score-colors';
 
   // Props
   let { 
