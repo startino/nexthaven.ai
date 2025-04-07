@@ -949,39 +949,51 @@ You are simply responsible for describing the property in its entirety.
 
                 try:
                     loop = asyncio.get_event_loop()
-                    # Only try to run the LLM calculation if loop isn't already running
+                    # Store original price for logging
+                    original_price = total
+
+                    # Handle both running and non-running event loop cases
                     if not loop.is_running():
+                        # If no loop is running, we can use run_until_complete
                         total = loop.run_until_complete(
                             self._convert_booking_price_with_llm(property_data, total)
                         )
                     else:
-                        # If loop is already running, just use simple division
-                        # Calculate nights using the same approach as in the fallback
-                        nights = 1
-                        if (
-                            hasattr(property_data, "checkIn")
-                            and property_data.checkIn
-                            and hasattr(property_data, "checkOut")
-                            and property_data.checkOut
-                        ):
-                            try:
-                                from datetime import datetime
+                        # If a loop is already running, we need a different approach
+                        import concurrent.futures
+                        import functools
 
-                                check_in = datetime.strptime(
-                                    property_data.checkIn, "%Y-%m-%d"
+                        # Create a function that wraps our async LLM call in a new event loop
+                        def run_in_new_loop(property_data, price):
+                            # Create a new event loop in this thread
+                            new_loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(new_loop)
+                            try:
+                                # Run the async function in the new loop
+                                return new_loop.run_until_complete(
+                                    self._convert_booking_price_with_llm(
+                                        property_data, price
+                                    )
                                 )
-                                check_out = datetime.strptime(
-                                    property_data.checkOut, "%Y-%m-%d"
-                                )
-                                nights = (check_out - check_in).days
-                                if nights <= 0:
-                                    nights = 1
-                            except Exception:
-                                pass
-                        # Simple nightly calculation
-                        total = total / max(1, nights)
+                            finally:
+                                new_loop.close()
+
+                        # Run the function in a ThreadPoolExecutor
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            future = executor.submit(
+                                run_in_new_loop, property_data, total
+                            )
+                            # Wait for and get the result
+                            total = future.result()
+
+                    # Log the price change
+                    if abs(original_price - total) > 0.01:
+                        logging.warning(
+                            f"LLM PRICE CHANGE: ${original_price:.2f} → ${total:.2f}"
+                        )
                 except Exception as e:
                     logging.error(f"Error calculating nightly price with LLM: {e}")
+                    # Fall back to simple division if the LLM fails
 
             # Extract capacity
             bedrooms = len(property_data.rooms) if property_data.rooms else 1
