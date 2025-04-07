@@ -455,6 +455,7 @@
           <div class="space-y-1">
             {#each places as place, i (place.place_id)}
               <button
+                type="button"
                 class={cn(
                   "w-full relative flex cursor-default select-none items-start gap-2 rounded-sm py-2 px-2 text-sm outline-none transition-colors text-left",
                   "hover:bg-primary/10 focus:bg-primary/10",
