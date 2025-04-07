@@ -44,8 +44,8 @@
 	}
 </script>
 
-<header class="w-full bg-white/5 backdrop-blur-md py-3 px-6 border-b border-border fixed top-0 z-50">
-	<div class="max-w-7xl mx-auto flex justify-between items-center">
+<header class="w-full bg-white/5 backdrop-blur-md border-b border-border sticky top-0 z-50 h-[var(--navbar-height)]">
+	<div class="max-w-7xl mx-auto flex justify-between items-center h-full px-6">
 		<div class="flex items-center">
 			<a href="/" class="text-xl flex flex-row place-items-center">
 				<img src="/favicon.png" alt="nexthaven" class="w-10 h-10 sm:w-12 sm:h-12" />
@@ -189,7 +189,7 @@
 
 <!-- Mobile Navigation Menu -->
 <Sheet.Root open={isMenuOpen} onOpenChange={toggleMenu}>
-	<Sheet.Content side="top" class="pt-14 pb-6 px-4 w-full bg-card backdrop-blur-md">
+	<Sheet.Content side="top" class="pt-14 pb-6 px-4 w-full bg-card backdrop-blur-md" style="margin-top: var(--navbar-height);">
 		<div class="flex flex-col space-y-4">
 			<!-- Mobile subscription badge -->
 			{#if page.data.subscriptionStatus?.isActive && page.data.subscriptionStatus.isInTrial && page.data.subscriptionStatus.trialEnd}

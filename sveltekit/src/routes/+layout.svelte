@@ -251,7 +251,7 @@
 	<NavigationBar />
 
 	<!-- Page content -->
-	<main class="pt-20">
+	<main>
 		{@render children()}
 	</main>
 	

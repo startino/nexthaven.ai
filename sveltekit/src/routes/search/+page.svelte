@@ -737,10 +737,10 @@
 	}
 </script>
 
-<div class="w-full h-[calc(100dvh-65px)] overflow-hidden" transition:fade={{ duration: 300 }}>
+<div class="w-full h-[calc(100dvh-var(--navbar-height))] overflow-hidden" transition:fade={{ duration: 300 }}>
 	{#if isMobile}
 		<!-- Mobile Layout -->
-		<div class="h-full relative">
+		<div class="h-dvh relative">
 			<!-- Error message box -->
 			{#if error}
 				<div 
@@ -853,7 +853,7 @@
 		<ResizablePaneGroup direction="horizontal" class="h-full overflow-hidden">
 			<!-- Left sidebar with search inputs and results -->
 			<ResizablePane minSize={40} defaultSize={40} class="overflow-hidden">
-				<ScrollArea class="h-full">
+				<ScrollArea class="h-full py-4">
 					<div class="h-full">
 						<div class="pr-4 pl-2 md:pr-6 md:pl-4">
 							<!-- Error message box -->

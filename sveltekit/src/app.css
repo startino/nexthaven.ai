@@ -34,6 +34,8 @@
 		--ring: 222.2 84% 4.9%;
 
 		--radius: 0.5rem;
+
+		--navbar-height: 4rem;
 	}
 
 	.dark {
@@ -65,7 +67,7 @@
 		--hotel: 339 83% 66%;
 		--apartment: 291 76% 42%;
 		--hostel: 228 65% 45%;
-		
+
 		--destructive: 0 63% 31%;
 		--destructive-foreground: 210 40% 98%;
 
@@ -78,7 +80,7 @@
 		@apply border-border;
 	}
 	body {
-		@apply bg-background text-foreground dark font-sans;
+		@apply dark bg-background font-sans text-foreground;
 	}
 	h1,
 	h2,
@@ -90,19 +92,45 @@
 	}
 
 	/* SVG Stop Colors for Score Gradients */
-	.stop-color-green-500 { stop-color: #22c55e; }
-	.stop-color-green-400 { stop-color: #4ade80; }
-	.stop-color-lime-500 { stop-color: #84cc16; }
-	.stop-color-lime-400 { stop-color: #a3e635; }
-	.stop-color-yellow-400 { stop-color: #facc15; }
-	.stop-color-yellow-300 { stop-color: #fde047; }
-	.stop-color-yellow-200 { stop-color: #fef08a; }
-	.stop-color-amber-500 { stop-color: #f59e0b; }
-	.stop-color-amber-400 { stop-color: #fbbf24; }
-	.stop-color-orange-500 { stop-color: #f97316; }
-	.stop-color-orange-400 { stop-color: #fb923c; }
-	.stop-color-red-500 { stop-color: #ef4444; }
-	.stop-color-red-400 { stop-color: #f87171; }
+	.stop-color-green-500 {
+		stop-color: #22c55e;
+	}
+	.stop-color-green-400 {
+		stop-color: #4ade80;
+	}
+	.stop-color-lime-500 {
+		stop-color: #84cc16;
+	}
+	.stop-color-lime-400 {
+		stop-color: #a3e635;
+	}
+	.stop-color-yellow-400 {
+		stop-color: #facc15;
+	}
+	.stop-color-yellow-300 {
+		stop-color: #fde047;
+	}
+	.stop-color-yellow-200 {
+		stop-color: #fef08a;
+	}
+	.stop-color-amber-500 {
+		stop-color: #f59e0b;
+	}
+	.stop-color-amber-400 {
+		stop-color: #fbbf24;
+	}
+	.stop-color-orange-500 {
+		stop-color: #f97316;
+	}
+	.stop-color-orange-400 {
+		stop-color: #fb923c;
+	}
+	.stop-color-red-500 {
+		stop-color: #ef4444;
+	}
+	.stop-color-red-400 {
+		stop-color: #f87171;
+	}
 }
 
 @layer utilities {
@@ -111,14 +139,18 @@
 	}
 
 	.gradient-primary {
-		@apply from-primary to-secondary bg-gradient-to-r;
+		@apply bg-gradient-to-r from-primary to-secondary;
 	}
 
 	.text-gradient {
-		@apply from-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent;
+		@apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
 	}
 
 	.button-gradient {
-		@apply from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 bg-gradient-to-r;
+		@apply bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90;
+	}
+
+	.content-padding-top {
+		padding-top: var(--navbar-height);
 	}
 }
