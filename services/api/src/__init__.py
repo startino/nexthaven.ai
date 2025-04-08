@@ -14,7 +14,7 @@ setup_logging()
 def create_app() -> FastAPI:
     app = FastAPI()
 
-    logfire.configure(token=os.getenv("LOGFIRE_TOKEN"))
+    logfire.configure(environment=os.getenv("LOGFIRE_ENV", "local"),token=os.getenv("LOGFIRE_TOKEN"))
     logfire.instrument_fastapi(app, capture_headers=True)
     logfire.instrument_openai()
 
