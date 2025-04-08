@@ -366,7 +366,7 @@
             <Card class="bg-card rounded-xl overflow-hidden">
               <CardContent class="flex flex-row justify-between items-center">
                 <h3 class="text-xl font-bold text-card-foreground">Save for later</h3>                
-                <AddToCollection property={property} triggerBtnStyle="gradient-primary text-primary-foreground hover:bg-gradient-primary/90 hover:text-primary-foreground/90 hover:scale-[1.1] transition-all duration-300" />
+                <AddToCollection property={property} />
               </CardContent>
             </Card>
 

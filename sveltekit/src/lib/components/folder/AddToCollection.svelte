@@ -2,7 +2,7 @@
 	import { collectionState } from '$lib/stores/collections.svelte';
 	import { CollectionService } from '$lib/services/collection.service';
 	import { page } from '$app/stores';
-	import { Folder, Plus, X, Check } from 'lucide-svelte';
+	import { Folder, Plus, X, Check, Loader2 } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { 
@@ -23,9 +23,8 @@
 	import { cn } from '$lib/utils';
 	
 	// Props
-	let { property, triggerBtnStyle } = $props<{
+	let { property } = $props<{
 		property: UnifiedProperty,
-		triggerBtnStyle?: string,
 	}>();
 	
 	// Local state
@@ -35,15 +34,48 @@
 	let collectionDescription = $state('');
 	let isLoading = $state(false);
 	let savedCollections = $state(new Set<string>()); // IDs of collections this property is in
-	// Load collections when popover opens
-	async function handlePopoverOpen(open: boolean) {
-		isOpen = open;
-		if (open) {
-			await loadSavedStatus();
+	let isSaved = $derived(savedCollections.size > 0);
+	
+	// Check saved status without full reload when collections are already available
+	$effect(() => {
+		if ($page.data.session?.user?.id && collectionState.collections.length > 0 && !collectionState.isLoading) {
+			checkSavedStatus();
 		}
+	});
+	
+	// Check saved status without fetching collections again
+	function checkSavedStatus() {
+		if (!$page.data.session?.user?.id) return;
+		
+		isLoading = true;
+		
+		// Use the already loaded collections instead of fetching them again
+		Promise.all(
+			collectionState.collections.map(async (collection) => {
+				const collectionProperties = await CollectionService.getCollectionProperties(collection.id);
+				const isSaved = collectionProperties.some(p => p.id === property.id);
+				return { collection, isSaved };
+			})
+		).then(propertyCollections => {
+			savedCollections = new Set(
+				propertyCollections
+					.filter(item => item.isSaved)
+					.map(item => item.collection.id)
+			);
+		}).catch(error => {
+			console.error('Failed to check saved status:', error);
+		}).finally(() => {
+			isLoading = false;
+		});
 	}
 	
-	// Check which collections this property is saved in
+	// Use the optimized check instead of full loadSavedStatus when popover opens
+	async function handlePopoverOpen(open: boolean) {
+		isOpen = open;
+		// Don't need to reload every time the popover opens since we're loading on component mount
+	}
+	
+	// Original loadSavedStatus as fallback for when collections aren't loaded
 	async function loadSavedStatus() {
 		try {
 			isLoading = true;
@@ -151,9 +183,26 @@
 
 <Popover onOpenChange={handlePopoverOpen}>
 	<PopoverTrigger>
-		<Button size="sm" variant="outline" class={cn("h-8 bg-card hover:bg-card/90 hover:scale-[1.01] transition-all duration-300", triggerBtnStyle)}>
-			<Folder class="h-3.5 w-3.5 mr-2" />
-			Save
+		<Button 
+			size="sm" 
+			variant={isSaved ? "secondary" : "outline"} 
+			class={cn(
+				"h-8 hover:scale-[1.01] transition-all duration-300 flex items-center justify-center gap-2",
+				isSaved ? "gradient-primary text-primary-foreground hover:bg-gradient-primary/90 hover:text-primary-foreground/90 hover:scale-[1.1] transition-all duration-300" : "bg-card hover:bg-card/90", 
+			)}
+			disabled={isLoading}
+		>
+			{#if isLoading}
+				<Loader2 class="h-3.5 w-3.5 animate-spin" />
+			{:else}
+				{#if isSaved}
+					<Check class="h-3.5 w-3.5" />
+					Saved
+				{:else}
+					<Folder class="h-3.5 w-3.5" />
+					Save
+				{/if}
+			{/if}
 		</Button>
 	</PopoverTrigger>
 	<PopoverContent class="w-80">
