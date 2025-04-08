@@ -27,6 +27,11 @@
     console.log('### LOCATION UPDATE DETECTED (root effect): ', selectedLocation);
   });
   
+  // Also track properties changes for debugging
+  $effect(() => {
+    console.log('### PROPERTIES UPDATE DETECTED: ', properties?.length || 0);
+  });
+  
   // Internal state variables
   let map: any; // Google Map instance
   let markers: any[] = []; // Array to track created markers
@@ -284,7 +289,7 @@
       // @ts-ignore - Ignore TypeScript error for Google Maps API
       google.maps.event.addListenerOnce(map, 'idle', () => {
         console.log('MAP COMPONENT: Map is fully loaded and idle');
-      isMapLoaded = true;
+        isMapLoaded = true;
       
         // Immediately log current selected location
         console.log('MAP COMPONENT: Selected location after map idle:', selectedLocation);
@@ -298,10 +303,14 @@
         }
         
         // Process any properties that arrived while the map was loading
-      if (properties.length > 0) {
+        console.log(`MAP COMPONENT: After map idle, properties length: ${properties?.length || 0}`);
+        if (properties && properties.length > 0) {
           console.log(`MAP COMPONENT: Processing ${properties.length} properties after map is idle`);
-        updateMarkers();
-      }
+          setTimeout(() => {
+            // Add a small delay to ensure the map is fully ready
+            updateMarkers();
+          }, 100);
+        }
       });
       
       // Listen for the tilesloaded event as a fallback
@@ -503,6 +512,17 @@
       
       // Debug log properties count
       console.log(`MAP COMPONENT: Processing ${properties.length} properties for markers`);
+      
+      // Debug: Log the first property to check coordinates
+      if (properties.length > 0) {
+        const firstProp = properties[0];
+        console.log('MAP COMPONENT: First property coordinates:', firstProp.coordinates);
+        console.log('MAP COMPONENT: First property data:', {
+          id: firstProp.id,
+          name: firstProp.name,
+          hasCoordinates: !!(firstProp.coordinates?.lat && firstProp.coordinates?.lng)
+        });
+      }
       
       // Prepare for bounds calculation
       // @ts-ignore - Ignore TypeScript error for Google Maps API
@@ -706,12 +726,29 @@
   // Watch for property changes to update markers
   $effect(() => {
     console.log(`MAP COMPONENT: Properties changed, count:`, properties?.length || 0);
-    if (properties && isMapLoaded) {
-      updateMarkers();
-    } else if (properties && properties.length > 0 && map && !isMapLoaded) {
-      // Store properties for when the map is loaded
-      console.log('MAP COMPONENT: Storing properties for when map is ready');
-      pendingProperties = [...properties];
+    
+    if (properties && properties.length > 0) {
+      // Check the first property's coordinates for debugging
+      const firstProp = properties[0];
+      if (firstProp) {
+        console.log('MAP COMPONENT: First property in updated array:', {
+          id: firstProp.id,
+          name: firstProp.name,
+          hasCoordinates: !!(firstProp.coordinates?.lat && firstProp.coordinates?.lng),
+          coordinates: firstProp.coordinates
+        });
+      }
+    
+      if (isMapLoaded && map) {
+        console.log('MAP COMPONENT: Map is loaded, updating markers immediately');
+        setTimeout(() => updateMarkers(), 10); // Small delay to ensure state is updated
+      } else if (map && !isMapLoaded) {
+        // Store properties for when the map is loaded
+        console.log('MAP COMPONENT: Storing properties for when map is ready');
+        pendingProperties = [...properties];
+      } else {
+        console.log('MAP COMPONENT: Map not initialized yet, will update markers after map loads');
+      }
     }
   });
   

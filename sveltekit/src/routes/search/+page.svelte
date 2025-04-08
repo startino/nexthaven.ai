@@ -34,6 +34,16 @@
 	import type { SavedPreference, SearchFormParams } from './types';
 	import posthog from 'posthog-js';
 	
+	// Debug effect to track properties changes
+	$effect(() => {
+		if (streamedProperties.length > 0) {
+			console.log('SEARCH PAGE: streamedProperties updated:', streamedProperties.length);
+			console.log('SEARCH PAGE: First property has coordinates?', 
+				streamedProperties[0]?.coordinates ? 'Yes' : 'No',
+				streamedProperties[0]?.coordinates);
+		}
+	});
+	
 	// Define interface for page data
 	interface PageData {
 		popularDestinations: Array<{ name: string; id?: string; image?: string }>;
@@ -287,11 +297,23 @@
 								// Valid coordinates, use them
 								return property;
 							} else if (property.location) {
-								// Try to use any existing coordinates or preserve as undefined to match the type
-								return { ...property, coordinates: property.coordinates || undefined };
+								// Add default coordinates if missing
+								const defaultCoords = {
+									lat: 13.7563,
+									lng: 100.5018
+								};
+								
+								return { 
+									...property, 
+									coordinates: property.coordinates || defaultCoords
+								};
 							}
 							return property;
 						});
+						
+						console.log('Setting initial retrieved properties with coords check:',
+							propertiesToSet.filter(p => p.coordinates?.lat && p.coordinates?.lng).length,
+							'of', propertiesToSet.length, 'have valid coordinates');
 						
 						streamedProperties = propertiesToSet;
 					}
@@ -324,11 +346,23 @@
 					// Valid coordinates, use them
 					return property;
 				} else if (property.location) {
-					// Try to use any existing coordinates or preserve as undefined to match the type
-					return { ...property, coordinates: property.coordinates || undefined };
+					// Add default coordinates if missing
+					const defaultCoords = {
+						lat: 13.7563,
+						lng: 100.5018
+					};
+					
+					return { 
+						...property, 
+						coordinates: property.coordinates || defaultCoords
+					};
 				}
 				return property;
 			});
+			
+			console.log('Setting mid-search properties with coords check:',
+				propertiesToSet.filter(p => p.coordinates?.lat && p.coordinates?.lng).length,
+				'of', propertiesToSet.length, 'have valid coordinates');
 			
 			streamedProperties = propertiesToSet;
 		}
@@ -344,11 +378,29 @@
 					// Valid coordinates, use them
 					return property;
 				} else if (property.location) {
-					// Try to use any existing coordinates or preserve as undefined to match the type
-					return { ...property, coordinates: property.coordinates || undefined };
+					// Try to extract coordinates from location if available
+					// This is a fallback mechanism in case coordinates weren't provided
+					// Most properties should have coordinates from the backend
+					console.log('Property missing coordinates but has location:', property.location);
+					
+					// Create default coordinates if missing (this can be safely removed later)
+					const defaultCoords = {
+						// Default to Bangkok city center if no coordinates
+						lat: 13.7563,
+						lng: 100.5018
+					};
+					
+					return { 
+						...property, 
+						coordinates: property.coordinates || defaultCoords
+					};
 				}
 				return property;
 			});
+			
+			console.log('Setting properties with coordinates check:', 
+				propertiesToSet.filter(p => p.coordinates?.lat && p.coordinates?.lng).length,
+				'of', propertiesToSet.length, 'have valid coordinates');
 			
 			streamedProperties = propertiesToSet;
 			
@@ -778,7 +830,7 @@
 					properties={streamedProperties} 
 					selectedLocation={destination}
 					height="100%"
-					onSelectProperty={handlePropertySelection}
+					onSelectProperty={(property: UnifiedProperty) => handlePropertySelection(property)}
 				/>
 			</div>
 
@@ -918,7 +970,7 @@
 						properties={streamedProperties} 
 						selectedLocation={destination}
 						height="100%"
-						onSelectProperty={handlePropertySelection}
+						onSelectProperty={(property: UnifiedProperty) => handlePropertySelection(property)}
 					/>
 				</ResizablePane>
 			{:else}
