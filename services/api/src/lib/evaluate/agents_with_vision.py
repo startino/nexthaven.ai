@@ -402,13 +402,6 @@ class EvaluateAgent:
         if not image_urls:
             return "No images available for analysis."
 
-        # Randomly select images up to max_images
-        # We select them randomly as the order of images is likely to be grouped by things like room, bathroom, nearby attractions, etc.
-        if len(image_urls) > max_images:
-            selected_urls = random.sample(image_urls, max_images)
-        else:
-            selected_urls = image_urls.copy()
-
         # Extract user preferences for the prompt
         preferences_text = "Not specified"
         if user_request and user_request.preferences:
@@ -423,11 +416,39 @@ class EvaluateAgent:
                         "text": f"""Analyze these property images comprehensively in two parts:
 
 PART 1 - GENERIC ANALYSIS:
-Describe the style, vibe, and aesthetic of the property.
-Focus on decor, design elements, ambiance, and overall feel.
-Is it modern, traditional, minimalist, luxurious, cozy, etc.?
-What are the key visual features of this property?
-Touch on each image, room, and area of the property available.
+
+#### GENERAL INSTRUCTIONS ####
+- Touch on each image, room, and area of the property available, as well as the overall property.
+- In your response, for each extracted item, cite which image it is from.
+- Describe the property in its entirety.
+- Be highly descriptive and specifc about the details found in the images
+- It's like you're making the image come to life through your analysis.
+- These are the aspects to focus on:
+  - Vibe, design, and aesthetic; Is it modern, traditional, minimalist, luxurious, cozy, etc.?
+  - Decor, design elements, and ambiance; Furniture, art, and other decor elements that set the tone.
+  - Size; focus on size (default to square meters if not specified)
+
+#### SIZE ####
+Work step by step as follows:
+1. **Identify reference objects with known real-world dimensions.**  
+   - Prioritize beds, doors, tables, chairs, or TVs.
+   - Assume a king-size bed is approximately 2 meters wide and 2 meters long.
+   - Assume a standard door is about 2 meters tall and 0.8–0.9 meters wide.
+2. **Estimate spatial gaps around reference objects.**  
+   - Estimate walking space on either side of the bed (usually around 0.7–0.8 meters).
+   - Estimate distance from the foot of the bed to the nearest furniture or wall (usually around 1.2–1.5 meters in hotel rooms).
+3. **Estimate total room dimensions.**  
+   - Width = bed width + left walking space + right walking space.
+   - Length = bed length + space in front of the bed + space at the headboard side.
+4. **Calculate the area in square meters.**  
+   - Multiply width x length.
+5. **Cross-check with typical hotel room sizes.**  
+   - Compare your estimate to common hotel room standards (e.g., compact hotel rooms: 18–22 m²).
+6. **Optional sanity check:**  
+   - Look at furniture scale, wall spacing, or ceiling height if visible.
+   - Avoid exaggeration based on wide-angle lens distortion.
+
+Finally, provide your estimated room size in square meters, and explain your assumptions and rough error margin (e.g., ± 2 m²).”
 
 PART 2 - USER PREFERENCE MATCH:
 The user has specified these preferences: '{preferences_text}'
@@ -443,7 +464,7 @@ You are simply responsible for describing the property in its entirety.
                     },
                     *[
                         {"type": "image_url", "image_url": {"url": url}}
-                        for url in selected_urls
+                        for url in image_urls # We are now sending all images, not a limited list anymore.
                         if url
                     ],
                 ]
