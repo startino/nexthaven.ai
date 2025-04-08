@@ -36,7 +36,8 @@
     isLoading = false,
     previousPreferences = [] as SavedPreference[],
     onSubmit = () => {},
-    onLocationSelect = $bindable((location: string) => {})
+    onLocationSelect = $bindable((location: string) => {}),
+    mobile = false
   } = $props();
   
   // UI state
@@ -1169,12 +1170,11 @@
     </div>
   </div>
 
-  <Button 
+ <div class="flex flex-col gap-2 {mobile ? 'sticky bottom-0 bg-background items-center justify-center py-4' : ''}">
+   <Button 
     type="button"
     onclick={handleSubmit}
-    class={cn(
-      "h-12 mt-1 text-base"
-    )}
+    class="h-12 w-full text-base"
     disabled={!destination || !dateRange || dateError !== null || isLoading}
   >
     <Search class={searchQuotaState.hasReachedLimit ? "h-0 w-0" : "h-5 w-5 mr-2"} />
@@ -1184,9 +1184,8 @@
       Discover Properties
     {/if}
   </Button>
-
-  {#if searchQuotaState.isAnonymous}
-    <div class="mt-3 text-xs flex items-center gap-1.5" class:text-yellow-500={searchQuotaState.remainingSearches > 1} class:text-amber-600={searchQuotaState.remainingSearches === 1} class:text-red-500={searchQuotaState.hasReachedLimit}>
+   {#if searchQuotaState.isAnonymous}
+    <div class="text-xs flex items-center gap-1.5" class:text-yellow-500={searchQuotaState.remainingSearches > 1} class:text-amber-600={searchQuotaState.remainingSearches === 1} class:text-red-500={searchQuotaState.hasReachedLimit}>
       <AlertCircle class="h-3.5 w-3.5" />
       {#if searchQuotaState.hasReachedLimit}
         <span>You've used your free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> to get a full 14-day trial with unlimited searches.</span>
@@ -1197,4 +1196,5 @@
       {/if}
     </div>
   {/if}
+ </div>
 </form> 

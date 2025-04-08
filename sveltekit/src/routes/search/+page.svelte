@@ -940,6 +940,7 @@
 				</Dialog.Close>
 				<ScrollArea class="h-full py-4">
 					<SearchForm
+						mobile={true}
 						{destination}
 						{dateRange}
 						{budget}
@@ -954,11 +955,6 @@
 							onLocationSelect={(location: string) => destination = location}
 						/>
 				</ScrollArea>
-				<div class="border-t p-4">
-					<Button variant="outline" class="w-full" onclick={() => isSearchFormOpen = false}>
-						Close
-					</Button>
-				</div>
 			</div>
 		</Dialog.Content>
 	</Dialog.Portal>
