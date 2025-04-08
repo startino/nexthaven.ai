@@ -418,7 +418,8 @@ class EvaluateAgent:
 PART 1 - GENERIC ANALYSIS:
 
 #### GENERAL INSTRUCTIONS ####
-- Touch on each image, room, and area of the property available, as well as the overall property.
+- Touch on each image, room, and area of the property available.
+- Label each image with the room or area it is from.
 - In your response, for each extracted item, cite which image it is from.
 - Describe the property in its entirety.
 - Be highly descriptive and specifc about the details found in the images
@@ -427,6 +428,9 @@ PART 1 - GENERIC ANALYSIS:
   - Vibe, design, and aesthetic; Is it modern, traditional, minimalist, luxurious, cozy, etc.?
   - Decor, design elements, and ambiance; Furniture, art, and other decor elements that set the tone.
   - Size; focus on size (default to square meters if not specified)
+- Complete with a summary of the property.
+  - Include the sizes of the rooms, noting if a room should be considered in the property's total size.
+  - For example, we shouldn't consider a lobby or elevator in the total size.
 
 #### SIZE ####
 Work step by step as follows:

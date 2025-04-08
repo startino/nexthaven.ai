@@ -998,7 +998,7 @@
     >
       Clear all
     </Button>
-    <div
+    <button
       class="relative border rounded-md px-3 py-2 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary transition-colors cursor-text"
       onclick={handleTagContainerClick}
     >
@@ -1070,7 +1070,7 @@
           <span class="text-muted-foreground text-sm">Write literally anything...</span>
         {/if}
       </div>
-    </div>
+    </button>
     <p class="text-xs text-muted-foreground mt-1.5">Double-click to edit tags directly or use Enter/comma to add multiple</p>
     
     <!-- Suggested tags section - now below the tag input -->

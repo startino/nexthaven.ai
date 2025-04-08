@@ -3,13 +3,12 @@
   import type { UnifiedProperty } from '$lib/types/unified-property';
   import { Button } from '$lib/components/ui/button';
   import { ScrollArea } from '$lib/components/ui/scroll-area';
-  import { ArrowLeft, ChevronLeft, ChevronRight, X, ExternalLink, Check, Star, BookmarkPlus } from 'lucide-svelte';
+  import { ArrowLeft, ChevronLeft, ChevronRight, X, ExternalLink, Check, Star, BookmarkPlus, ChevronDown, ChevronUp } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
   import { Card, CardContent } from '$lib/components/ui/card';
   import { AddToCollection } from '$lib/components/folder';
   import { page } from '$app/stores';
   import { CollectionService } from '$lib/services/collection.service';
-  import { HtmlContent } from '$lib/components/ui/html-content';
   import { getScoreStopColors, getScoreLabel, getScoreBadgeColors } from '$lib/utils/score-colors';
   import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
   
@@ -126,7 +125,23 @@
   
   // Local state
   let expandedImageIndex: number | null = $state(null);
-  
+  let isDescriptionExpanded = $state(false);
+  let isAmenitiesExpanded = $state(false);
+  let descriptionElement: HTMLElement | null = $state(null);
+  let amenitiesElement: HTMLElement | null = $state(null);
+  let showDescriptionButton = $state(false);
+  let showAmenitiesButton = $state(false);
+
+  // Check if content needs show more button
+  $effect(() => {
+    if (descriptionElement) {
+      showDescriptionButton = descriptionElement.scrollHeight > 200;
+    }
+    if (amenitiesElement) {
+      showAmenitiesButton = amenitiesElement.scrollHeight > 300;
+    }
+  });
+
   // Close expanded image
   function closeExpandedImage() {
     expandedImageIndex = null;
@@ -311,27 +326,78 @@
                 </div>
                 
                 <!-- Source information -->
-                <div class="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
-                  <span>Source:</span>
-                  <span class={`px-2 py-0.5 rounded text-xs font-medium ${property.source === 'Airbnb' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                    {property.source}
-                  </span>
+                <div class="mt-4 space-y-2">
+                  <div class="text-sm text-muted-foreground flex items-center justify-center gap-2">
+                    <span>Source:</span>
+                    <span class={`px-2 py-0.5 rounded text-xs font-medium ${property.source === 'Airbnb' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                      {property.source}
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-center">
+                    <span class="text-2xl font-bold text-foreground">${Math.round(property.pricing.total)}</span>
+                    <span class="ml-2 text-muted-foreground">per night</span>
+                  </div>
                 </div>
               </div>
               
               <!-- Reasoning -->
               <div class="flex-1">
-                <div class="bg-primary/5 rounded-lg p-4 border border-primary/10">
-                  <HtmlContent 
-                    content={property.reasoning} 
-                    className="text-sm leading-relaxed"
-                  />
+                <div class="bg-primary/5 rounded-lg p-4 border border-primary/10 max-w-3xl">
+                  {@html property.reasoning}
                 </div>
-                
-                <div class="mt-4 space-y-2">
-                  <div class="flex items-end">
-                    <span class="text-2xl font-bold text-foreground">${Math.round(property.pricing.total)}</span>
-                    <span class="ml-2 text-muted-foreground">per night</span>
+
+                <!-- Property Details -->
+                <div class="mt-8 bg-card rounded-xl p-6 border border-border">
+                  <h3 class="text-lg font-semibold mb-4">Property Details</h3>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <!-- Bedrooms -->
+                    <div class="flex flex-col">
+                      <span class="text-muted-foreground text-sm">Bedrooms</span>
+                      <span class="text-lg font-medium">{property.capacity.bedrooms}</span>
+                    </div>
+                    <!-- Beds -->
+                    <div class="flex flex-col">
+                      <span class="text-muted-foreground text-sm">Beds</span>
+                      <span class="text-lg font-medium">{property.capacity.beds}</span>
+                    </div>
+                    <!-- Size if available -->
+                    {#if property.features.size}
+                      <div class="flex flex-col">
+                        <span class="text-muted-foreground text-sm">Size</span>
+                        <span class="text-lg font-medium">{property.features.size} m²</span>
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mt-8">
+                  <h2 class="text-2xl font-serif mb-4">About this property</h2>
+                  <div class="relative">
+                    <div 
+                      bind:this={descriptionElement}
+                      class="prose prose-sm dark:prose-invert max-w-none overflow-hidden transition-[max-height] duration-300 ease-in-out"
+                      style:max-height="{isDescriptionExpanded ? descriptionElement?.scrollHeight + 'px' : '200px'}"
+                    >
+                      {@html property.description}
+                    </div>
+                    
+                    {#if showDescriptionButton}
+                      <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent {isDescriptionExpanded ? 'hidden' : ''}" />
+                      <button 
+                        type="button"
+                        class="w-full mt-2 flex items-center justify-center gap-2 py-2 px-4 border border-border rounded-lg hover:bg-secondary/20 transition-colors"
+                        on:click={() => { isDescriptionExpanded = !isDescriptionExpanded }}
+                      >
+                        {#if isDescriptionExpanded}
+                          <ChevronUp class="h-4 w-4" />
+                          Show Less
+                        {:else}
+                          <ChevronDown class="h-4 w-4" />
+                          Show More
+                        {/if}
+                      </button>
+                    {/if}
                   </div>
                 </div>
               </div>
@@ -361,14 +427,6 @@
                 </p>
               </CardContent>
             </Card>
-            
-            <!-- Save for later -->
-            <Card class="bg-card rounded-xl overflow-hidden">
-              <CardContent class="flex flex-row justify-between items-center">
-                <h3 class="text-xl font-bold text-card-foreground">Save for later</h3>                
-                <AddToCollection property={property} />
-              </CardContent>
-            </Card>
 
             <!-- Property Location Map -->
             <div class="rounded-xl overflow-hidden shadow-lg bg-card">
@@ -379,6 +437,42 @@
                   </div>
                 {/if}
                 <div bind:this={mapElement} class="w-full h-full"></div>
+              </div>
+            </div>
+
+            <!-- Amenities -->
+            <div class="bg-card rounded-xl p-6 border border-border">
+              <h3 class="text-lg font-semibold mb-4">Amenities</h3>
+              <div class="relative">
+                <div 
+                  bind:this={amenitiesElement}
+                  class="grid grid-cols-1 gap-2 overflow-hidden transition-[max-height] duration-300 ease-in-out"
+                  style:max-height="{isAmenitiesExpanded ? amenitiesElement?.scrollHeight + 'px' : '300px'}"
+                >
+                  {#each property.features.amenities as amenity}
+                    <div class="flex items-center gap-2 text-muted-foreground">
+                      <Check size={16} class="text-primary" />
+                      <span>{amenity}</span>
+                    </div>
+                  {/each}
+                </div>
+
+                {#if showAmenitiesButton}
+                  <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent {isAmenitiesExpanded ? 'hidden' : ''}" />
+                  <button 
+                    type="button"
+                    class="w-full mt-2 flex items-center justify-center gap-2 py-2 px-4 border border-border rounded-lg hover:bg-secondary/20 transition-colors"
+                    on:click={() => { isAmenitiesExpanded = !isAmenitiesExpanded }}
+                  >
+                    {#if isAmenitiesExpanded}
+                      <ChevronUp class="h-4 w-4" />
+                      Show Less
+                    {:else}
+                      <ChevronDown class="h-4 w-4" />
+                      Show More
+                    {/if}
+                  </button>
+                {/if}
               </div>
             </div>
           </div>
