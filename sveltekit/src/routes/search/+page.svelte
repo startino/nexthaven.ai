@@ -787,7 +787,7 @@
 				<SheetTrigger class="fixed bottom-4 left-4 right-4 z-30">
 					<div class="bg-background rounded-lg shadow-lg p-4 flex items-center justify-between">
 						<div class="flex items-center gap-2">
-							<ChevronUp class="w-5 h-5" />
+							<ChevronUp class="w-6 h-6" style="min-width: 24px; min-height: 24px;" />
 							{#if streamedProperties.length === 0}
 								<span>Discover properties</span>
 							{:else}

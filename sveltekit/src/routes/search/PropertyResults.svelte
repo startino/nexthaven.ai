@@ -157,8 +157,8 @@
 
 <div class="mt-8 border-t border-border pt-8">
   <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-medium flex items-center gap-2">
-      <Building2 class="h-5 w-5 text-primary" />
+    <h2 class="text-lg md:text-xl font-medium flex items-center gap-2">
+      <Building2 class="h-4 w-4 md:h-5 md:w-5 text-primary" />
       <span>
         {#if properties.length > 0}
           Properties Found: {properties.length} 
