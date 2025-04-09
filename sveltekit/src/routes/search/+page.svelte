@@ -795,7 +795,7 @@
 <div class="w-full h-[calc(100dvh-var(--navbar-height))] overflow-hidden py-4" transition:fade={{ duration: 300 }}>
 	{#if isMobile}
 		<!-- Mobile Layout -->
-		<div class="h-dvh relative">
+		<div class="h-full relative">
 			<!-- Error message box -->
 			{#if error}
 				<div 

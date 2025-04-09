@@ -247,7 +247,7 @@
 
 <Toaster richColors />
 
-<div class="min-h-screen bg-black dark text-foreground relative">
+<div class="min-h-dvh bg-black dark text-foreground relative">
 	<!-- Tolt Tracker (invisible) -->
 	<ToltTracker />
 	<!-- Navigation -->
