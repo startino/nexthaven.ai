@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/state';
+	import { page, navigating } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import { LogOut, User, CreditCard, Crown, Search, History, Home, Folder, Menu, X, ArrowUp, AlertTriangle, Bug } from 'lucide-svelte';
 	import { TrialBadge } from '$lib/components/trial-badge';
@@ -16,6 +16,12 @@
 
 	// Check if user is anonymous
 	let isAnonymous = $state(false);
+
+	$effect(() => {
+		if(navigating.from !== navigating.to) {
+			isMenuOpen = false;
+		}
+	});
 	
 	// Run this on component initialization
 	onMount(() => {
@@ -188,7 +194,7 @@
 </header>
 
 <!-- Mobile Navigation Menu -->
-<Sheet.Root open={isMenuOpen} onOpenChange={toggleMenu}>
+<Sheet.Root bind:open={isMenuOpen} onOpenChange={toggleMenu}>
 	<Sheet.Content side="top" class="pt-14 pb-6 px-4 w-full bg-card backdrop-blur-md" style="margin-top: var(--navbar-height);">
 		<div class="flex flex-col space-y-4">
 			<!-- Mobile subscription badge -->
