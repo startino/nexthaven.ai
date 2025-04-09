@@ -387,7 +387,7 @@
                       <button 
                         type="button"
                         class="w-full mt-2 flex items-center justify-center gap-2 py-2 px-4 border border-border rounded-lg hover:bg-secondary/20 transition-colors"
-                        on:click={() => { isDescriptionExpanded = !isDescriptionExpanded }}
+                        onclick={() => { isDescriptionExpanded = !isDescriptionExpanded }}
                       >
                         {#if isDescriptionExpanded}
                           <ChevronUp class="h-4 w-4" />
@@ -462,7 +462,7 @@
                   <button 
                     type="button"
                     class="w-full mt-2 flex items-center justify-center gap-2 py-2 px-4 border border-border rounded-lg hover:bg-secondary/20 transition-colors"
-                    on:click={() => { isAmenitiesExpanded = !isAmenitiesExpanded }}
+                    onclick={() => { isAmenitiesExpanded = !isAmenitiesExpanded }}
                   >
                     {#if isAmenitiesExpanded}
                       <ChevronUp class="h-4 w-4" />
