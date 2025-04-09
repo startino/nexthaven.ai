@@ -8,6 +8,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { SECRET_STRIPE_KEY } from '$env/static/private';
 import Stripe from 'stripe';
 import { PRIVATE_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
+import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
 
 // Initialize Stripe with the secret key once for the entire server
 const stripe = SECRET_STRIPE_KEY
@@ -264,13 +265,27 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	// Resolve the request
-	const response = await resolve(event, {
-		// filter() function to control serialization of privateData
-		filterSerializedResponseHeaders(name) {
-			return name === 'content-range';
-		}
-	});
+	// Get the response from downstream
+	const response = await resolve(event);
+
+	// Only process HTML responses
+	const contentType = response.headers.get('content-type');
+	if (contentType?.includes('text/html')) {
+		// Get the response text
+		const text = await response.text();
+
+		// Replace the Google Maps API key placeholder
+		const modifiedHtml = text.replace(
+			'GOOGLE_MAPS_API_KEY_PLACEHOLDER',
+			PUBLIC_GOOGLE_MAPS_API_KEY || ''
+		);
+
+		// Return new response with modified HTML
+		return new Response(modifiedHtml, {
+			status: response.status,
+			headers: response.headers
+		});
+	}
 
 	return response;
 };

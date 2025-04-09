@@ -156,7 +156,7 @@
   
   // Load Google Maps with geocoding library
   function loadGoogleMapsScript() {
-    console.log('MAP COMPONENT: Attempting to load Google Maps script');
+    console.log('MAP COMPONENT: Attempting to initialize map directly');
     
     // Check for API key
     if (!PUBLIC_GOOGLE_MAPS_API_KEY) {
@@ -166,76 +166,32 @@
       errorMessage = errorMsg;
       return;
     }
-    
-    // Check if the script is already loaded
-    // @ts-ignore - Checking if google is defined
-    if (typeof google !== 'undefined' && google.maps) {
-      console.log('MAP COMPONENT: Google Maps API already loaded, initializing map directly');
+
+    // Wait for Google Maps to be loaded globally
+    if (window.google?.maps) {
+      console.log('MAP COMPONENT: Google Maps already loaded');
       isScriptLoaded = true;
       initializeMap();
-      return;
-    }
-    
-    // Return if the script is already loading
-    if (document.querySelector('script[src*="maps.googleapis.com/maps/api"]')) {
-      console.log('MAP COMPONENT: Google Maps script already loading, waiting for it to load');
-      
-      // Set up a global callback to initialize our map when Google Maps loads
-      // @ts-ignore
-      const originalInitMap = window.initMap;
-      // @ts-ignore
-      window.initMap = () => {
-        // Call the original callback if it exists
-        if (originalInitMap) originalInitMap();
-        
-        console.log('MAP COMPONENT: Google Maps script finished loading via callback');
-        isScriptLoaded = true;
-        initializeMap();
-      };
-      
-      return;
-    }
-    
-    try {
-      // Set up a timeout for script loading
-      const scriptLoadTimeout = setTimeout(() => {
-        console.error('MAP COMPONENT: Google Maps script load timed out');
-        hasMapError = true;
-        errorMessage = 'Failed to load Google Maps. The script load timed out.';
-      }, 10000); // 10 second timeout
-    
-    // Define the global callback function before adding the script
-    // @ts-ignore - Ignore TypeScript error for window.initMap
-    window.initMap = () => {
-        console.log('MAP COMPONENT: Google Maps script loaded successfully via callback');
-        clearTimeout(scriptLoadTimeout);
-      isScriptLoaded = true;
-      initializeMap();
-    };
-    
-      // Important: Correctly include the geocoding library
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
-    script.async = true;
-    script.defer = true;
-      
-      console.log('MAP COMPONENT: Creating script element with API key and geocoding library');
-    
-    // Handle script loading errors
-      script.onerror = (error) => {
-        clearTimeout(scriptLoadTimeout);
-        console.error('MAP COMPONENT: Error loading Google Maps script', error);
-      hasMapError = true;
-        errorMessage = 'Failed to load Google Maps. Please check your API key and connection.';
-    };
-    
-    // Add the script to the document
-    document.head.appendChild(script);
-      console.log('MAP COMPONENT: Google Maps script added to document head');
-    } catch (scriptError) {
-      console.error('MAP COMPONENT: Error setting up script:', scriptError);
-      hasMapError = true;
-      errorMessage = 'Error setting up Google Maps. Please refresh and try again.';
+    } else {
+      console.log('MAP COMPONENT: Waiting for Google Maps to load');
+      const checkGoogleMaps = setInterval(() => {
+        if (window.google?.maps) {
+          console.log('MAP COMPONENT: Google Maps loaded via global check');
+          clearInterval(checkGoogleMaps);
+          isScriptLoaded = true;
+          initializeMap();
+        }
+      }, 100);
+
+      // Set a timeout to stop checking after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkGoogleMaps);
+        if (!isScriptLoaded) {
+          console.error('MAP COMPONENT: Google Maps failed to load after timeout');
+          hasMapError = true;
+          errorMessage = 'Failed to load Google Maps. Please refresh the page.';
+        }
+      }, 10000);
     }
   }
   
@@ -868,8 +824,13 @@
       </button>
     </div>
   {:else}
-    <div bind:this={mapElement} class="w-full h-full" data-testid="google-map-container"></div>
-    
+    <div bind:this={mapElement} class="w-full h-full" data-testid="google-map-container">
+      {#if !isMapLoaded}
+        <div class="absolute inset-0 flex items-center justify-center bg-gray-50/80 backdrop-blur-sm">
+          <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      {/if}
+    </div>
     
     <!-- Debug Info -->
     <div class="absolute bottom-2 left-2 bg-white/90 rounded px-2 py-1 shadow-sm z-10 text-xs max-w-[80%] truncate">

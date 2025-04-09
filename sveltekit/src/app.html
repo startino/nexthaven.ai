@@ -19,6 +19,17 @@
 			src="https://cdn.tolt.io/tolt.js"
 			data-tolt="pk_73joNrhergyrxqb3xK6BNg59"
 		></script>
+		<!-- Google Maps Script -->
+		<script id="google-maps-script">
+			window.initMap = function () {
+				window.googleMapsLoaded = true;
+			};
+		</script>
+		<script
+			async
+			defer
+			src="https://maps.googleapis.com/maps/api/js?key=GOOGLE_MAPS_API_KEY_PLACEHOLDER&libraries=places&callback=initMap"
+		></script>
 		%sveltekit.head%
 
 		<script>

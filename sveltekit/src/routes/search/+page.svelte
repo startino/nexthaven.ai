@@ -816,7 +816,7 @@
 			<Button 
 				variant="default" 
 				class="absolute top-4 left-4 right-4 z-30 shadow-lg"
-				on:click={() => isSearchFormOpen = true}
+				onclick={() => isSearchFormOpen = true}
 			>
 				<Search class="w-4 h-4 mr-2" />
 				<span class="truncate">
