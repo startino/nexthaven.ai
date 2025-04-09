@@ -866,7 +866,7 @@
 					</SheetHeader>
 					<div class="h-full overflow-y-auto pt-4 pb-safe">
 						{#if streamedProperties.length === 0 && !isSearching}
-							<div class="flex flex-col items-center justify-center h-[50vh] text-center p-4 space-y-4">
+							<div class="flex flex-col items-center justify-center h-[50dvh] text-center p-4 space-y-4">
 								<Search class="w-12 h-12 text-muted-foreground" />
 								<div class="space-y-2">
 									<h3 class="font-semibold text-lg">No properties found yet</h3>
@@ -1020,8 +1020,8 @@
 
   /* Add mobile-specific styles */
   :global(.mobile-sheet) {
-    height: 85vh !important;
-    max-height: 85vh !important;
+    height: 85dvh !important;
+    max-height: 85dvh !important;
   }
 
   :global(.mobile-sheet-content) {
