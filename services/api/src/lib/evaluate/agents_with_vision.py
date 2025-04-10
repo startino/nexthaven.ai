@@ -208,7 +208,7 @@ class EvaluateAgent:
                 success_count += 1
 
                 # Create a UnifiedProperty object
-                unified_prop = self._create_unified_property(prop, result)
+                unified_prop = self._create_unified_property(prop, result, user_request)
                 processed_results.append(unified_prop)
 
                 logging.info(
@@ -811,6 +811,7 @@ You are simply responsible for describing the property in its entirety.
         self,
         property_data: BookingApifyResponse | AirbnbApifyResponse,
         evaluation_result: Result,
+        user_request: GeneratedRequirement,
     ) -> UnifiedProperty:
         """Convert property data and evaluation result to a UnifiedProperty object"""
         # Determine source
@@ -949,6 +950,20 @@ You are simply responsible for describing the property in its entirety.
             )
             gallery = image_urls
 
+        # Get price value regardless of source
+        price_value = (
+            float(total.price.replace("$", "").replace(",", ""))
+            if isinstance(total, Price)
+            else float(total)
+        )
+
+        # Apply nightly budget cap
+        if user_request.nightly_budget and user_request.nightly_budget.max > 0:
+            max_budget = float(user_request.nightly_budget.max)
+            if price_value > max_budget:
+                logging.info(f"Capping price {price_value} → {max_budget}")
+                price_value = max_budget
+
         # Create UnifiedProperty object
         unified_property = UnifiedProperty(
             id=property_id,
@@ -962,13 +977,7 @@ You are simply responsible for describing the property in its entirety.
                 if coordinates
                 else Coordinates(lat=None, lng=None)
             ),
-            pricing=PricingModel(
-                total=(
-                    float(total.price.replace("$", "").replace(",", ""))
-                    if isinstance(total, Price) and total.price
-                    else (total if isinstance(total, (int, float)) else 0.0)
-                )
-            ),
+            pricing=PricingModel(total=price_value),
             capacity=CapacityModel(bedrooms=bedrooms, beds=beds),
             features=FeaturesModel(
                 size=None,  # Size information not consistently available
