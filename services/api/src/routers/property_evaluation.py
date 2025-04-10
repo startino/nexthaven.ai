@@ -215,7 +215,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                         "event": "property_evaluation",
                         "status": "started",
                         "message": "Starting property evaluation",
-                        "progress": 0,
+                        "progress": 5,
                     }
                 ),
                 event="property_evaluation",
@@ -351,7 +351,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                         "status": "in_progress",
                         "step": "retrieving",
                         "message": "Retrieving properties from cache",
-                        "progress": 30,
+                        "progress": 20,
                     }
                 ),
                 event="property_evaluation",
@@ -459,6 +459,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                         "status": "in_progress",
                         "step": "updating",
                         "message": "Updating requirements with user preferences",
+                        "progress": 35,
                         "progress": 50,
                         "properties_count": len(all_properties),
                     }
@@ -489,8 +490,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                         "event": "property_evaluation",
                         "status": "in_progress",
                         "step": "processing",
-                        "message": f"Evaluating {len(all_properties)} properties",
-                        "progress": 70,
+                        "message": "Processing images and data",
+                        "progress": 60,
                         "properties_count": len(all_properties),
                     }
                 ),
@@ -858,9 +859,9 @@ async def fetch_properties_background(
                 "started_at": time.time(),
                 "completed": False,
                 "properties_count": 0,
-                "message": "Fetching property data",
+                "message": "Fetching property data from Apify",
                 "step": "fetching",
-                "progress": 40,
+                "progress": 20,
             }
         )
 
