@@ -349,8 +349,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                     {
                         "event": "property_evaluation",
                         "status": "in_progress",
-                        "step": "retrieving",
-                        "message": "Retrieving properties from cache",
+                        "step": "retrieving_properties",
+                        "message": "Retrieving properties from database cache",
                         "progress": 20,
                     }
                 ),
@@ -404,8 +404,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                     {
                         "event": "property_evaluation",
                         "status": "retrieved",
-                        "step": "retrieved",
-                        "message": f"Retrieved {len(all_properties)} properties",
+                        "step": "properties_loaded",
+                        "message": f"Successfully retrieved {len(all_properties)} properties for analysis",
                         "progress": 40,
                         "properties_count": len(all_properties),
                         "properties": [
@@ -457,8 +457,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                     {
                         "event": "property_evaluation",
                         "status": "in_progress",
-                        "step": "updating",
-                        "message": "Updating requirements with user preferences",
+                        "step": "preparing_analysis",
+                        "message": "Preparing user preferences for property analysis",
                         "progress": 35,
                         "progress": 50,
                         "properties_count": len(all_properties),
@@ -489,8 +489,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                     {
                         "event": "property_evaluation",
                         "status": "in_progress",
-                        "step": "processing",
-                        "message": "Processing images and data",
+                        "step": "analyzing_images",
+                        "message": "Analyzing property images and features with AI",
                         "progress": 60,
                         "properties_count": len(all_properties),
                     }
@@ -512,8 +512,8 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                     {
                         "event": "property_evaluation",
                         "status": "in_progress",
-                        "step": "formatting",
-                        "message": "Formatting results",
+                        "step": "ranking_properties",
+                        "message": "Ranking and sorting properties based on match score",
                         "progress": 90,
                     }
                 ),
@@ -540,7 +540,7 @@ async def evaluate_properties(request: PropertyEvaluationRequest):
                     {
                         "event": "property_evaluation",
                         "status": "completed",
-                        "message": "Property evaluation completed",
+                        "message": "Property evaluation and image analysis completed",
                         "count": len(formatted_results),
                         "results": formatted_results,
                         "processing_time": f"{overall_time:.2f} seconds",
@@ -804,7 +804,7 @@ async def fetch_properties_background(
                 "started_at": time.time(),
                 "completed": False,
                 "properties_count": 0,
-                "message": "Starting property search",
+                "message": "Starting property search from multiple sources",
                 "progress": 5,
             }
         )
@@ -829,8 +829,8 @@ async def fetch_properties_background(
                 "started_at": time.time(),
                 "completed": False,
                 "properties_count": 0,
-                "message": "Analyzing search criteria",
-                "step": "analyzing",
+                "message": "Analyzing user search criteria for property matching",
+                "step": "analyzing_criteria",
                 "progress": 20,
             }
         )
@@ -859,8 +859,8 @@ async def fetch_properties_background(
                 "started_at": time.time(),
                 "completed": False,
                 "properties_count": 0,
-                "message": "Fetching property data from Apify",
-                "step": "fetching",
+                "message": "Fetching property listings from Booking.com and Airbnb",
+                "step": "fetching_listings",
                 "progress": 20,
             }
         )
@@ -1127,8 +1127,8 @@ async def fetch_properties_background(
                 "status": "in_progress",
                 "completed": False,
                 "properties_count": len(deduplicated_properties),
-                "message": "Finalizing property data",
-                "step": "finalizing",
+                "message": "Processing and removing duplicate property listings",
+                "step": "deduplicating_properties",
                 "progress": 90,
             }
         )
@@ -1147,7 +1147,7 @@ async def fetch_properties_background(
                 "completed": True,
                 "completed_at": time.time(),
                 "properties_count": len(deduplicated_properties),
-                "message": f"Found {len(deduplicated_properties)} unique properties",
+                "message": f"Successfully retrieved {len(deduplicated_properties)} unique properties from multiple sources",
                 "progress": 100,
                 "performance_metrics": {
                     "request_processing_time": f"{timings['request_processing']:.2f}s",
