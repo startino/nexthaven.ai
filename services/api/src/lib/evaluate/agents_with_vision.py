@@ -468,7 +468,7 @@ You are simply responsible for describing the property in its entirety.
                     },
                     *[
                         {"type": "image_url", "image_url": {"url": url}}
-                        for url in image_urls # We are now sending all images, not a limited list anymore.
+                        for url in image_urls  # We are now sending all images, not a limited list anymore.
                         if url
                     ],
                 ]
@@ -708,7 +708,7 @@ You are simply responsible for describing the property in its entirety.
 
         return result
 
-    async def _convert_booking_price_with_llm(self, property_data, total_price):
+    async def _convert_booking_price_to_nightly(self, property_data, total_price):
         """
         Uses LLM to intelligently convert Booking.com's total price to nightly price
         considering all pricing factors (discounts, duration, etc).
@@ -779,161 +779,33 @@ You are simply responsible for describing the property in its entirety.
         # Ensure nights is at least 1 to avoid division by zero
         nights = max(1, nights)
 
-        # Create a prompt for the LLM
-        prompt = PromptTemplate.from_template(
-            """You are an expert vacation rental pricing analyst with deep knowledge of global pricing trends.
-            
-            ## PROPERTY DETAILS:
-            - Property name: {name}
-            - Description: {description_snippet}
-            - Total price: ${total_price} for {nights} nights
-            - Check-in: {check_in}
-            - Check-out: {check_out}
-            - Property type: {property_type}
-            - Location: {location}
-            - Number of rooms: {room_count}
-            - Has reviews: {has_reviews}
-            
-            ## TASK:
-            Calculate a REALISTIC nightly price for this Booking.com property.
-            
-            ## CONSIDERATIONS:
-            
-            ### 1. LOCATION FACTORS:
-               - Typical hotel/accommodation prices per night in major cities:
-                 * New York: Budget $100-180, Standard $180-350, Luxury $350-800+
-                 * London: Budget $90-160, Standard $160-320, Luxury $320-750+
-                 * Paris: Budget $80-150, Standard $150-300, Luxury $300-700+
-                 * Tokyo: Budget $70-140, Standard $140-280, Luxury $280-650+
-                 * Miami: Budget $80-150, Standard $150-300, Luxury $300-700+
-               - Research typical pricing in this specific location/neighborhood
-               - Consider proximity to attractions, transit, business districts
-            
-            ### 2. TEMPORAL FACTORS:
-               - Weekend vs weekday rate differences (weekends typically 10-40% higher)
-               - Seasonal demand (high season can be 25-100% more expensive)
-               - Holiday/event premiums (can increase rates 50-200%)
-               - Length-of-stay discounts (weekly ~10-15%, monthly ~25-40%)
-            
-            ### 3. PROPERTY FACTORS:
-               - Property type and size impact on pricing
-               - Star rating and quality level
-               - Amenities that might justify premium pricing
-            
-            ### 4. REALITY CHECK:
-               - Simple division gives: ${total_price} ÷ {nights} = ${per_night_price:.2f}/night
-               - Does this price make sense for this property type in this location?
-               - If the simple division price seems unrealistic, estimate a more realistic price
-               - Most hotels (except ultra-luxury) rarely exceed $800/night in major cities
-            
-            ## EXAMPLES:
-            
-            ### Example 1: Standard Hotel in New York
-            - Total price: $1200 for 4 nights
-            - Simple division: $300/night
-            - Realistic price: $285/night (after accounting for Sunday at lower rate)
-            
-            ### Example 2: Luxury Resort in Miami Beach
-            - Total price: $3500 for 7 nights
-            - Simple division: $500/night
-            - Realistic price: $550/night (weekend nights priced higher, offsetting weekly discount)
-            
-            ### Example 3: Budget Accommodation in London
-            - Total price: $900 for 6 nights
-            - Simple division: $150/night
-            - Realistic price: $145/night (weekly discount applied)
-            
-            ### Example 4: Extended Stay Apartment in Paris
-            - Total price: $4200 for 30 nights
-            - Simple division: $140/night
-            - Realistic price: $170/night (monthly discount already applied to total, actual nightly rate higher)
-            
-            Return ONLY a single numeric value representing the most realistic nightly price in USD - no explanation or text.
-            """
-        )
+        # Log price conversion details
+        original_price = total_price
+        nightly_price = total_price / nights
+        logging.info(f"Price conversion details:")
+        logging.info(f"  - Original total price: ${original_price:.2f}")
+        logging.info(f"  - Number of nights: {nights}")
+        logging.info(f"  - Calculated nightly price: ${nightly_price:.2f}")
 
-        # Create the chain with structured output
-        chain = (
-            prompt
-            | gpt_4o_mini(0).bind_tools([NightlyPriceOutput], tool_choice="any")
-            | JsonOutputToolsParser(return_id=True)
-        )
+        # Apply adjustments based on stay length
+        adjusted_price = nightly_price
+        if nights >= 28:
+            adjusted_price = nightly_price * 0.9  # 10% discount for monthly stays
+            logging.info(
+                f"  - Applied monthly stay discount (10%): ${adjusted_price:.2f}"
+            )
+        elif nights >= 7:
+            adjusted_price = nightly_price * 0.95  # 5% discount for weekly stays
+            logging.info(
+                f"  - Applied weekly stay discount (5%): ${adjusted_price:.2f}"
+            )
 
-        # Invoke the chain
-        try:
-            # Prepare the input with detailed context
-            chain_input = {
-                "total_price": total_price,
-                "nights": nights,
-                "check_in": property_data.checkIn or "Unknown",
-                "check_out": property_data.checkOut or "Unknown",
-                "property_type": property_data.type or "Accommodation",
-                "location": (
-                    property_data.address.full
-                    if property_data.address
-                    else "Unknown location"
-                ),
-                # Add more context for better analysis
-                "name": (
-                    property_data.name[:100] if hasattr(property_data, "name") else ""
-                ),
-                "description_snippet": (
-                    property_data.description[:200]
-                    if hasattr(property_data, "description")
-                    else ""
-                ),
-                "room_count": (
-                    len(property_data.rooms)
-                    if hasattr(property_data, "rooms") and property_data.rooms
-                    else 1
-                ),
-                "has_reviews": (
-                    bool(property_data.categoryReviews)
-                    if hasattr(property_data, "categoryReviews")
-                    else False
-                ),
-                # Calculate the per night price to avoid template calculation issues
-                # Using max(1, nights) to ensure we never divide by zero
-                "per_night_price": (
-                    total_price / max(1, nights) if nights > 0 else total_price
-                ),
-            }
+        # Log price change percentage
+        price_change_pct = ((adjusted_price - nightly_price) / nightly_price) * 100
+        logging.info(f"  - Price adjustment: {price_change_pct:.2f}%")
 
-            # Get the calculated price with structured output
-            response = await chain.ainvoke(chain_input)
-
-            # Extract the price from the structured output
-            try:
-                if response and isinstance(response, list) and len(response) > 0:
-                    calculated_price = float(response[0]["args"]["price"])
-
-                    # Enhanced logging with more details about the calculation
-                    logging.info(
-                        f"Price calculation for {property_data.name[:30]}... in {chain_input['location'][:30]}...:"
-                        + f"\n  Original total: ${chain_input['total_price']:.2f} for {chain_input['nights']} nights"
-                        + f"\n  Calculated nightly: ${calculated_price:.2f}"
-                        + f"\n  Simple division: ${chain_input['total_price']/max(1,chain_input['nights']):.2f}"
-                        + f"\n  Diff from simple division: {(calculated_price - chain_input['total_price']/max(1,chain_input['nights']))/max(0.01, chain_input['total_price']/max(1,chain_input['nights']))*100:.1f}%"
-                    )
-
-                    return calculated_price
-                else:
-                    # Fall back to simple division if response format is unexpected
-                    logging.warning(
-                        "Unexpected response format from LLM, falling back to simple calculation"
-                    )
-                    return total_price / nights
-            except (KeyError, ValueError, TypeError) as e:
-                # If we can't parse the price, fall back to simple division
-                logging.warning(
-                    f"Error extracting price from LLM response: {e}, falling back to simple calculation"
-                )
-                return total_price / nights
-
-        except Exception as e:
-            logging.error(f"Error in LLM price calculation: {e}")
-            # Fall back to simple division if LLM fails
-            return total_price / nights
+        # For now, just return the simple division
+        return adjusted_price
 
     def _create_unified_property(
         self,
@@ -981,7 +853,7 @@ You are simply responsible for describing the property in its entirety.
                     if not loop.is_running():
                         # If no loop is running, we can use run_until_complete
                         total = loop.run_until_complete(
-                            self._convert_booking_price_with_llm(property_data, total)
+                            self._convert_booking_price_to_nightly(property_data, total)
                         )
                     else:
                         # If a loop is already running, we need a different approach
@@ -996,7 +868,7 @@ You are simply responsible for describing the property in its entirety.
                             try:
                                 # Run the async function in the new loop
                                 return new_loop.run_until_complete(
-                                    self._convert_booking_price_with_llm(
+                                    self._convert_booking_price_to_nightly(
                                         property_data, price
                                     )
                                 )
