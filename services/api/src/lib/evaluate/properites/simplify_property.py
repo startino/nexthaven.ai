@@ -2,7 +2,7 @@ import logging, os
 from typing import Any
 from src.models.booking_apify import BookingApifyResponse
 from src.models.airbnb_apify import AirbnbApifyResponse
-
+from src.lib.evaluate.properites.utils import is_valid_date_format
 
 class SimplifyProperty:
     def __init__(self):
@@ -39,15 +39,13 @@ class SimplifyProperty:
         check_out_value = None
 
         # Use validated date format with fallbacks
-        if property_data.checkIn and self._is_valid_date_format(property_data.checkIn):
+        if property_data.checkIn and is_valid_date_format(property_data.checkIn):
             check_in_value = property_data.checkIn
         else:
             # Use fallback values
             check_in_value = self.default_check_in_date
 
-        if property_data.checkOut and self._is_valid_date_format(
-            property_data.checkOut
-        ):
+        if property_data.checkOut and is_valid_date_format(property_data.checkOut):
             check_out_value = property_data.checkOut
         else:
             # Use fallback values
@@ -84,17 +82,13 @@ class SimplifyProperty:
                 check_in_value = None
                 check_out_value = None
 
-                if property_data.checkIn and self._is_valid_date_format(
-                    property_data.checkIn
-                ):
+                if property_data.checkIn and is_valid_date_format(property_data.checkIn):
                     check_in_value = property_data.checkIn
                 else:
                     # Use fallback values
                     check_in_value = self.default_check_in_date
 
-                if property_data.checkOut and self._is_valid_date_format(
-                    property_data.checkOut
-                ):
+                if property_data.checkOut and is_valid_date_format(property_data.checkOut):
                     check_out_value = property_data.checkOut
                 else:
                     # Use fallback values
@@ -198,17 +192,13 @@ class SimplifyProperty:
                 check_in_value = None
                 check_out_value = None
 
-                if property_data.checkIn and self._is_valid_date_format(
-                    property_data.checkIn
-                ):
+                if property_data.checkIn and is_valid_date_format(property_data.checkIn):
                     check_in_value = property_data.checkIn
                 else:
                     # Use fallback values
                     check_in_value = self.default_check_in_date
 
-                if property_data.checkOut and self._is_valid_date_format(
-                    property_data.checkOut
-                ):
+                if property_data.checkOut and is_valid_date_format(property_data.checkOut):
                     check_out_value = property_data.checkOut
                 else:
                     # Use fallback values

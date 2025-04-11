@@ -19,7 +19,7 @@ from src.models.unified_property import (
     MediaModel,
 )
 
-
+from src.lib.evaluate.properites.utils import is_valid_date_format
 class UnifyProperties:
     def __init__(self):
         pass
@@ -291,15 +291,13 @@ class UnifyProperties:
         check_out_value = None
 
         # Use validated date format with fallbacks
-        if property_data.checkIn and self._is_valid_date_format(property_data.checkIn):
+        if property_data.checkIn and is_valid_date_format(property_data.checkIn):
             check_in_value = property_data.checkIn
         else:
             # Use fallback values
             check_in_value = os.getenv("DEFAULT_CHECK_IN_DATE", "2025-04-01")
 
-        if property_data.checkOut and self._is_valid_date_format(
-            property_data.checkOut
-        ):
+        if property_data.checkOut and is_valid_date_format(property_data.checkOut):
             check_out_value = property_data.checkOut
         else:
             # Use fallback values
@@ -358,32 +356,6 @@ class UnifyProperties:
 
         # For now, just return the simple division
         return adjusted_price
-
-    def _is_valid_date_format(self, date_str: str) -> bool:
-        """
-        Check if a string is in the YYYY-MM-DD date format.
-
-        Args:
-            date_str: String to check
-
-        Returns:
-            bool: True if string follows the YYYY-MM-DD format, False otherwise
-        """
-        if not date_str or not isinstance(date_str, str):
-            return False
-
-        # Check if it follows YYYY-MM-DD pattern
-        import re
-
-        if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
-            return False
-
-        # Additional validation to make sure it's a valid date
-        try:
-            datetime.strptime(date_str, "%Y-%m-%d")
-            return True
-        except ValueError:
-            return False
 
     def _parse_score(self, score_str: int | str | None) -> int:
         """Handle the parsing and error handling of the score from evaluation result"""
