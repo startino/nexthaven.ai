@@ -1179,8 +1179,14 @@
     class="h-12 w-full text-base"
     disabled={!destination || !dateRange || dateError !== null || isLoading}
   >
-    <Search class={searchQuotaState.hasReachedLimit ? "h-0 w-0" : "h-5 w-5 mr-2"} />
-    {#if searchQuotaState.isAnonymous}
+    <Search class={cn(
+      "h-5 w-5 mr-2",
+      isLoading ? "animate-spin" : "",
+      searchQuotaState.hasReachedLimit ? "h-0 w-0" : ""
+    )} />
+    {#if isLoading}
+      Searching...
+    {:else if searchQuotaState.isAnonymous}
       Use Your Free Search
     {:else}
       Discover Properties
