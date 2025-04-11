@@ -19,7 +19,6 @@ class AnalyzeUserRequirement:
 
     def __init__(self):
         self.llm = ministral_8b()
-        # self.llm = gemini_flash_2()
         self.today_date = datetime.now().strftime("%Y-%m-%d")
 
     def analyze_user_requirement(
@@ -68,15 +67,15 @@ class AnalyzeUserRequirement:
         return GeneratedRequirement(**response[0]["args"])
 
 
-if __name__ == "__main__":
-    user_requirement = UserRequirement(
-        query="I want to find a property in New York",
-        date="from tomorrow to until the end of next week",
-        budget=Budget(min=100, max=200),
-        adults=2,
-        number_of_rooms=1,
-        preferences="I want a property with a pool, quiet location, a good view, proximity to co-working space",
-    )
-    analyze = AnalyzeUserRequirement()
-    response = analyze.analyze_user_requirement(user_requirement)
-    print(response)
+# if __name__ == "__main__":
+#     user_requirement = UserRequirement(
+#         query="I want to find a property in New York",
+#         date="from tomorrow to until the end of next week",
+#         budget=Budget(min=100, max=200),
+#         adults=2,
+#         number_of_rooms=1,
+#         preferences="I want a property with a pool, quiet location, a good view, proximity to co-working space",
+#     )
+#     analyze = AnalyzeUserRequirement()
+#     response = analyze.analyze_user_requirement(user_requirement)
+#     print(response)

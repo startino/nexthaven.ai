@@ -35,10 +35,6 @@ class BookingApifyRequest(BaseModel):
     maxItems: int = Field(
         default=APIFY_MAX_ITEMS, description="The maximum number of items to return"
     )
-    # propertyType: Literal["Apartments", "Hotels", "Hostels", "Guest houses",
-    # "Homestays", "Bed and breakfasts", "Holiday homes",
-    # "Boats","Villas", "Motels", "Resorts", "Holiday parks",
-    # "Campsites", "Luxury tents"] = Field(description="The type of property to search for")
     sortBy: str = Field(default="review_score_and_price", description="The sort order")
     starsCountFilter: str = Field(default="any", description="The stars count filter")
     currency: str = Field(

@@ -43,7 +43,7 @@ APIFY_MAX_ITEMS = int(os.getenv("APIFY_MAX_ITEMS", 10))
 AIRBNB_ACTOR_ID = "dtrungtin/airbnb-scraper"
 
 
-class AirbnbApifyAgent:
+class AirbnbApifyScraper:
     """
     This class is used to interact with the Apify API for Airbnb scraping.
     """
@@ -525,68 +525,68 @@ class AirbnbApifyAgent:
             raise
 
 
-if __name__ == "__main__":
-    # Example usage
-    import json
-    from datetime import datetime, timedelta
+# if __name__ == "__main__":
+#     # Example usage
+#     import json
+#     from datetime import datetime, timedelta
 
-    # Set up test parameters
-    location = "New York"
-    check_in = (datetime.now() + timedelta(days=30)).strftime(
-        "%Y-%m-%d"
-    )  # 30 days from now
-    check_out = (datetime.now() + timedelta(days=37)).strftime(
-        "%Y-%m-%d"
-    )  # 7 days stay
+#     # Set up test parameters
+#     location = "New York"
+#     check_in = (datetime.now() + timedelta(days=30)).strftime(
+#         "%Y-%m-%d"
+#     )  # 30 days from now
+#     check_out = (datetime.now() + timedelta(days=37)).strftime(
+#         "%Y-%m-%d"
+#     )  # 7 days stay
 
-    print(f"Testing Airbnb scraper with the following parameters:")
-    print(f"Location: {location}")
-    print(f"Check-in: {check_in}")
-    print(f"Check-out: {check_out}")
-    print(f"Adults: 2, Children: 0")
-    print(f"Price range: $100-$500 per night")
-    print(f"Max items: {os.getenv('APIFY_MAX_ITEMS', 10)}")
-    print("-----------------------------------")
+#     print(f"Testing Airbnb scraper with the following parameters:")
+#     print(f"Location: {location}")
+#     print(f"Check-in: {check_in}")
+#     print(f"Check-out: {check_out}")
+#     print(f"Adults: 2, Children: 0")
+#     print(f"Price range: $100-$500 per night")
+#     print(f"Max items: {os.getenv('APIFY_MAX_ITEMS', 10)}")
+#     print("-----------------------------------")
 
-    # Initialize the agent and create a request
-    airbnb_agent = AirbnbApifyAgent()
-    request = AirbnbApifyRequest(
-        locationQueries=[location],
-        checkIn=check_in,
-        checkOut=check_out,
-        adults=2,
-        children=0,
-        priceMin=100,
-        priceMax=500,  # Increased max price for more results
-        currency="USD",
-        locale="en-US",
-    )
+#     # Initialize the agent and create a request
+#     airbnb_agent = AirbnbApifyAgent()
+#     request = AirbnbApifyRequest(
+#         locationQueries=[location],
+#         checkIn=check_in,
+#         checkOut=check_out,
+#         adults=2,
+#         children=0,
+#         priceMin=100,
+#         priceMax=500,  # Increased max price for more results
+#         currency="USD",
+#         locale="en-US",
+#     )
 
-    print("Sending request to Apify...")
-    properties = asyncio.run(airbnb_agent.get_properties(request))
-    print(f"Found {len(properties)} properties")
+#     print("Sending request to Apify...")
+#     properties = asyncio.run(airbnb_agent.get_properties(request))
+#     print(f"Found {len(properties)} properties")
 
-    if properties:
-        print("\nProperty details:")
-        for i, prop in enumerate(properties):
-            print(f"\n{i+1}. {prop.title}")
-            print(f"   ID: {prop.id}")
-            print(f"   Type: {prop.roomType}")
-            print(f"   URL: {prop.url}")
-            print(f"   Price: {prop.price.label if prop.price else 'N/A'}")
-            print(
-                f"   Rating: {prop.rating.guestSatisfaction if prop.rating else 'N/A'} ({prop.rating.reviewsCount if prop.rating and prop.rating.reviewsCount else 0} reviews)"
-            )
-            print(f"   Host: {prop.host.name} (SuperHost: {prop.host.isSuperHost})")
-            print(f"   Capacity: {prop.personCapacity} guests")
-            print(
-                f"   Location: {prop.coordinates.latitude}, {prop.coordinates.longitude}"
-            )
+#     if properties:
+#         print("\nProperty details:")
+#         for i, prop in enumerate(properties):
+#             print(f"\n{i+1}. {prop.title}")
+#             print(f"   ID: {prop.id}")
+#             print(f"   Type: {prop.roomType}")
+#             print(f"   URL: {prop.url}")
+#             print(f"   Price: {prop.price.label if prop.price else 'N/A'}")
+#             print(
+#                 f"   Rating: {prop.rating.guestSatisfaction if prop.rating else 'N/A'} ({prop.rating.reviewsCount if prop.rating and prop.rating.reviewsCount else 0} reviews)"
+#             )
+#             print(f"   Host: {prop.host.name} (SuperHost: {prop.host.isSuperHost})")
+#             print(f"   Capacity: {prop.personCapacity} guests")
+#             print(
+#                 f"   Location: {prop.coordinates.latitude}, {prop.coordinates.longitude}"
+#             )
 
-            # Save the first property to a JSON file for inspection
-            if i == 0:
-                with open("airbnb_sample_property.json", "w") as f:
-                    json.dump(prop.model_dump(), f, indent=2)
-                print(f"   First property saved to airbnb_sample_property.json")
-    else:
-        print("No properties found. Check your API key and request parameters.")
+#             # Save the first property to a JSON file for inspection
+#             if i == 0:
+#                 with open("airbnb_sample_property.json", "w") as f:
+#                     json.dump(prop.model_dump(), f, indent=2)
+#                 print(f"   First property saved to airbnb_sample_property.json")
+#     else:
+#         print("No properties found. Check your API key and request parameters.")

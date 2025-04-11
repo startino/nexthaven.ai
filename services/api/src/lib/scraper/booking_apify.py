@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import asyncio
 
 from apify_client import ApifyClient
-from src.models.apify import (
+from src.models.booking_apify import (
     BookingApifyRequest,
     BookingApifyResponse,
     Room,
@@ -24,7 +24,7 @@ load_dotenv()
 CONCURRENT_APIFY_API_CALLS = int(os.getenv("CONCURRENT_APIFY_API_CALLS", 3))
 
 
-class BookingApifyAgent:
+class BookingApifyScraper:
     """
     This class is used to interact with the Apify API for Booking.com scraping.
     """
@@ -62,9 +62,6 @@ class BookingApifyAgent:
         logging.info(
             f"Using GeneratedRequirement object: {user_request_obj.model_dump_json()}"
         )
-
-        # # Default to Hotels if property_type is not specified or invalid
-        # property_type = "Hotels"
 
         return BookingApifyRequest(
             search=user_request_obj.query,
@@ -219,23 +216,23 @@ class BookingApifyAgent:
         return properties
 
 
-if __name__ == "__main__":
-    apify_agent = BookingApifyAgent()
-    request = BookingApifyRequest(
-        search="New York",
-        maxItems=2,
-        sortBy="review_score_and_price",
-        starsCountFilter="any",
-        currency="USD",
-        language="en-gb",
-        rooms=2,
-        adults=3,
-        children=0,
-        minMaxPrice="0-2000",
-        checkIn="2025-04-11",
-        checkOut="2025-04-20",
-    )
+# if __name__ == "__main__":
+#     apify_agent = BookingApifyScraper()
+#     request = BookingApifyRequest(
+#         search="New York",
+#         maxItems=2,
+#         sortBy="review_score_and_price",
+#         starsCountFilter="any",
+#         currency="USD",
+#         language="en-gb",
+#         rooms=2,
+#         adults=3,
+#         children=0,
+#         minMaxPrice="0-2000",
+#         checkIn="2025-04-11",
+#         checkOut="2025-04-20",
+#     )
 
-    # Run the async function in a new event loop
-    properties = asyncio.run(apify_agent.get_properties(request))
-    print(properties)
+#     # Run the async function in a new event loop
+#     properties = asyncio.run(apify_agent.get_properties(request))
+#     print(properties)

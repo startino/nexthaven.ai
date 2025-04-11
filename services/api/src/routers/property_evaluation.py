@@ -11,7 +11,7 @@ from pathlib import Path
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
 from dotenv import load_dotenv, find_dotenv
-from src.models.apify import (
+from src.models.booking_apify import (
     BookingApifyRequest,
     BookingApifyResponse,
     Location,
@@ -27,10 +27,10 @@ from src.models.requirement import (
 from src.models.request import PropertyQueryRequest, PropertyEvaluationRequest
 
 # from src.lib.evaluate.agents import EvaluateAgent
-from src.lib.evaluate.agents_with_vision import EvaluateAgent
+from src.lib.evaluate import EvaluateAgent
 from src.lib.evaluate.analyze import AnalyzeUserRequirement
-from src.lib.scraper.booking_apify import BookingApifyAgent
-from src.lib.scraper.airbnb_apify import AirbnbApifyAgent
+from src.lib.scraper.booking_apify import BookingApifyScraper
+from src.lib.scraper.airbnb_apify import AirbnbApifyScraper
 from src.models.result import Result
 from src.models.unified_property import (
     UnifiedProperty,
@@ -1056,8 +1056,8 @@ async def fetch_properties_background(
             logging.info("Using production API data")
 
             # Query Apify
-            booking_agent = BookingApifyAgent()
-            airbnb_agent = AirbnbApifyAgent()
+            booking_agent = BookingApifyScraper()
+            airbnb_agent = AirbnbApifyScraper()
 
             # Run both request generations concurrently
             booking_request, airbnb_request = await asyncio.gather(
