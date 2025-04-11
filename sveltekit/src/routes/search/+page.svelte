@@ -272,6 +272,7 @@
 		// Update progress based on the event data
 		if (data.progress !== undefined) {
 			targetProgress = data.progress;
+			console.log('Target progress updated:', targetProgress);
 		}
 		
 		// Update the display message based on the step

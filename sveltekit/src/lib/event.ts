@@ -8,6 +8,7 @@ export type PropertyEvaluationStep =
 	| 'retrieving'
 	| 'retrieved'
 	| 'updating'
+	| 'analyzing_images'
 	| 'processing'
 	| 'formatting';
 

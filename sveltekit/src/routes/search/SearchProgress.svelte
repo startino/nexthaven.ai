@@ -1,15 +1,13 @@
 <!-- 
-  SearchProgress.svelte - Shows a multi-step loading indicator for search process
+  SearchProgress.svelte - Shows a single circular loading indicator with current step label
 -->
 <script lang="ts">
   import { 
     Database,
     Image,
     Sparkle,
-    Check,
   } from 'lucide-svelte';
   import type { PropertyEvaluationStep } from '$lib/event';
-  import { Badge } from '$lib/components/ui/badge';
 
   // Props
   let { progress, currentStep, currentStepName, isSearching } = $props<{
@@ -38,105 +36,105 @@
     }
   ];
   
-  // Computed values for step statuses
-  let retrievingStatus = $derived(getStepStatus('retrieving'));
-  let analyzingStatus = $derived(getStepStatus('analyzing'));
-  let evaluatingStatus = $derived(getStepStatus('evaluating'));
-  
-  // Map the current step name to our simplified 3-step process
-  function getStepStatus(stepId: string): 'pending' | 'active' | 'completed' {
-    if (!isSearching) return 'pending';
+  // Get current active step index
+  let activeStepIndex = $derived(() => {
+    if (!isSearching) return -1;
     
-    if (progress >= 100) return 'completed';
-    
-    // Logic to map the current API step to our 3 visual steps
-    switch (stepId) {
-      case 'retrieving':
-        if (currentStepName === 'started' || currentStepName === 'checking' || 
-            currentStepName === 'retrieving' || currentStepName === 'retrieved') {
-          return 'active';
-        } else if (progress > 40) {
-          return 'completed';
-        }
-        break;
-      case 'analyzing':
-        if (currentStepName === 'updating' || currentStepName === 'processing') {
-          return 'active';
-        } else if (progress > 70) {
-          return 'completed';
-        } else if (progress > 40) {
-          return 'active';
-        }
-        break;
-      case 'evaluating':
-        if (currentStepName === 'formatting' || currentStepName === 'completed') {
-          return 'active';
-        } else if (progress > 90) {
-          return 'completed';
-        } else if (progress > 70) {
-          return 'active';
-        }
-        break;
+    if (currentStepName === 'started' || currentStepName === 'checking' || 
+        currentStepName === 'retrieving' || currentStepName === 'retrieved') {
+      return 0;
+    } else if (currentStepName === 'updating' || currentStepName === 'analyzing_images' || currentStepName === 'processing') {
+      return 1;
+    } else if (currentStepName === 'formatting' || currentStepName === 'completed') {
+      return 2;
     }
-    
-    // Default cases
-    if (progress > 0 && stepId === 'retrieving') return 'active';
-    return 'pending';
-  }
+    return 0;
+  });
+
+  // Get current step info
+  let currentStepInfo = $derived(() => searchSteps[activeStepIndex()] || searchSteps[0]);
+
+  // Calculate circle properties
+  const strokeWidth = 12; // Stroke width
+  const size = 200; // SVG size
+  const radius = (size - strokeWidth * 2) / 2; // Adjust radius to account for stroke width
+  const center = size / 2;
+  const circumference = 2 * Math.PI * radius;
   
-  // Helper function to get status for a specific step
-  function getStatusForStep(index: number): 'pending' | 'active' | 'completed' {
-    if (index === 0) return retrievingStatus;
-    if (index === 1) return analyzingStatus;
-    if (index === 2) return evaluatingStatus;
-    return 'pending';
-  }
+  // Calculate stroke dash offset based on progress
+  let dashOffset = $derived(circumference - (progress / 100) * circumference);
 </script>
 
 {#if isSearching}
-  <div class="mb-6 mt-6 animate-fadeIn">
-    <div class="flex items-center justify-between max-w-2xl mx-auto">
-      {#each searchSteps as step, index}
-        {@const status = getStatusForStep(index)}
-        <div class="flex flex-col items-center">
-          <div class={`
-            w-14 h-14 rounded-full flex items-center justify-center
-            transition-all duration-300 
-            ${status === 'completed' ? 'bg-primary text-primary-foreground' : 
-              status === 'active' ? 'bg-primary/10 text-primary border-2 border-primary' : 
-              'bg-background text-muted-foreground border-2 border-muted'}
-          `}>
-            {#if status === 'completed'}
-              <Check class="h-6 w-6" />
-            {:else}
-              <svelte:component 
-                this={step.icon} 
-                class={`h-6 w-6 ${status === 'active' ? 'animate-pulse' : ''}`} 
-              />
-            {/if}
-          </div>
-          
-          <span class={`
-            text-xs mt-2 font-medium
-            ${status === 'completed' ? 'text-primary' : 
-              status === 'active' ? 'text-foreground' : 
-              'text-muted-foreground'}
-          `}>
-            {step.label}
-          </span>
-          
-          {#if status === 'active'}
-            <Badge variant="outline" class="mt-1 text-[10px] py-0 h-4 animate-pulse">In progress</Badge>
-          {/if}
+  <div class="flex flex-col items-center justify-center py-8 animate-fadeIn">
+    <!-- SVG Circle Container -->
+    <div class="relative w-48 h-48">
+      <!-- Define gradients -->
+      <svg width="0" height="0">
+        <defs>
+          <!-- Main gradient -->
+          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#FF00FF;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#9333EA;stop-opacity:1" />
+          </linearGradient>
+          <!-- Background gradient -->
+          <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#E5E7EB;stop-opacity:0.3" />
+            <stop offset="100%" style="stop-color:#E5E7EB;stop-opacity:0.1" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <!-- Main circle SVG -->
+      <div class="animate-spin-slow">
+        <svg 
+          class="w-full h-full -rotate-90 drop-shadow-xl filter blur-[1px]"
+          viewBox="0 0 {size} {size}"
+          width={size}
+          height={size}
+        >
+          <!-- Background circle -->
+          <circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke="url(#bgGradient)"
+            stroke-width={strokeWidth}
+            fill="none"
+            class="opacity-30"
+          />
+          <!-- Progress circle with shimmer effect -->
+          <circle
+            cx={center}
+            cy={center}
+            r={radius}
+            stroke="url(#progressGradient)"
+            stroke-width={strokeWidth}
+            fill="none"
+            stroke-dasharray={circumference}
+            stroke-dashoffset={dashOffset}
+            stroke-linecap="round"
+            class="transition-all duration-300 ease-in-out animate-shimmer"
+          />
+        </svg>
+      </div>
+      
+      <!-- White background for percentage -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="w-32 h-32 bg-background rounded-full shadow-inner flex items-center justify-center">
+          <span class="text-4xl font-semibold text-foreground">{Math.round(progress)}%</span>
         </div>
-        
-        {#if index < searchSteps.length - 1}
-          <div class={`
-            flex-1 h-[2px] mx-2
-            ${status === 'completed' ? 'bg-primary' : 'bg-muted'}
-          `}></div>
-        {/if}
-      {/each}
+      </div>
+    </div>
+    
+    <!-- Current step label -->
+    <div class="mt-8 flex items-center gap-3 px-4">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center bg-primary text-primary-foreground animate-pulse">
+        <svelte:component this={currentStepInfo().icon} class="w-4 h-4" />
+      </div>
+      <span class="text-sm font-medium text-foreground">
+        {currentStepInfo().label}
+      </span>
     </div>
   </div>
 {/if}
@@ -158,5 +156,29 @@
   
   .animate-pulse {
     animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+
+  @keyframes shimmer {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  /* Add a subtle glow effect to the progress circle */
+  :global(.drop-shadow-xl) {
+    filter: drop-shadow(0 0 8px rgba(147, 51, 234, 0.3));
   }
 </style> 
