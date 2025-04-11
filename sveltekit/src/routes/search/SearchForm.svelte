@@ -37,6 +37,7 @@
     previousPreferences = [] as SavedPreference[],
     onSubmit = () => {},
     onLocationSelect = $bindable((location: string) => {}),
+    onCancel = $bindable(() => {}),
     mobile = false
   } = $props();
   
@@ -790,6 +791,12 @@
       selectPreviousPreference(selected.value);
     }
   }
+
+  // Define a function to handle cancellation
+  function handleCancel() {
+    // Call the provided onCancel handler
+    onCancel();
+  }
 </script>
 
 <form class="grid grid-cols-1 gap-4 " onsubmit={(e) => e.preventDefault()}>
@@ -1173,36 +1180,51 @@
   </div>
 
  <div class="flex flex-col gap-2 {mobile ? 'sticky bottom-0 bg-background items-center justify-center py-4' : ''}">
-   <Button 
-    type="button"
-    onclick={handleSubmit}
-    class="h-12 w-full text-base"
-    disabled={!destination || !dateRange || dateError !== null || isLoading}
-  >
-    <Search class={cn(
-      "h-5 w-5 mr-2",
-      isLoading ? "animate-spin" : "",
-      searchQuotaState.hasReachedLimit ? "h-0 w-0" : ""
-    )} />
-    {#if isLoading}
-      Searching...
-    {:else if searchQuotaState.isAnonymous}
-      Use Your Free Search
-    {:else}
-      Discover Properties
-    {/if}
-  </Button>
+   {#if isLoading}
+     <div class="flex gap-2 w-full">
+       <Button 
+         type="button"
+         class="h-12 flex-1 text-base"
+         disabled={true}
+       >
+         <Search class="h-5 w-5 mr-2 animate-spin" />
+         Searching...
+       </Button>
+       <Button 
+         type="button"
+         variant="outline"
+         class="h-12 px-4"
+         onclick={() => onCancel()}
+       >
+         <X class="h-5 w-5" />
+       </Button>
+     </div>
+   {:else}
+     <Button 
+       type="button"
+       onclick={handleSubmit}
+       class="h-12 w-full text-base"
+       disabled={!destination || !dateRange || dateError !== null || isLoading}
+     >
+       <Search class={searchQuotaState.hasReachedLimit ? "h-0 w-0" : "h-5 w-5 mr-2"} />
+       {#if searchQuotaState.isAnonymous}
+         Use Your Free Search
+       {:else}
+         Discover Properties
+       {/if}
+     </Button>
+   {/if}
    {#if searchQuotaState.isAnonymous}
-    <div class="text-xs flex items-center gap-1.5" class:text-yellow-500={searchQuotaState.remainingSearches > 1} class:text-amber-600={searchQuotaState.remainingSearches === 1} class:text-red-500={searchQuotaState.hasReachedLimit}>
-      <AlertCircle class="h-3.5 w-3.5" />
-      {#if searchQuotaState.hasReachedLimit}
-        <span>You've used your free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> to get a full 14-day trial with unlimited searches.</span>
-      {:else if searchQuotaState.remainingSearches === 1}
-        <span>This is your last free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> for unlimited searches.</span>
-      {:else}
-        <span>You have {searchQuotaState.remainingSearches} search{searchQuotaState.remainingSearches !== 1 ? 'es' : ''} remaining. Simply create an account to get a 14-day premium trial!</span>
-      {/if}
-    </div>
-  {/if}
+     <div class="text-xs flex items-center gap-1.5" class:text-yellow-500={searchQuotaState.remainingSearches > 1} class:text-amber-600={searchQuotaState.remainingSearches === 1} class:text-red-500={searchQuotaState.hasReachedLimit}>
+       <AlertCircle class="h-3.5 w-3.5" />
+       {#if searchQuotaState.hasReachedLimit}
+         <span>You've used your free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> to get a full 14-day trial with unlimited searches.</span>
+       {:else if searchQuotaState.remainingSearches === 1}
+         <span>This is your last free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> for unlimited searches.</span>
+       {:else}
+         <span>You have {searchQuotaState.remainingSearches} search{searchQuotaState.remainingSearches !== 1 ? 'es' : ''} remaining. Simply create an account to get a 14-day premium trial!</span>
+       {/if}
+     </div>
+   {/if}
  </div>
 </form> 

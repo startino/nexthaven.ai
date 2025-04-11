@@ -105,12 +105,16 @@ export const propertyService = {
 	 * Query for properties with given parameters
 	 * This starts the search process
 	 */
-	async queryProperties(payload: PropertyQueryRequest): Promise<PropertyQueryResponse> {
+	async queryProperties(
+		payload: PropertyQueryRequest,
+		signal?: AbortSignal
+	): Promise<PropertyQueryResponse> {
 		try {
 			const response = await fetch(`${API_BASE_URL}/properties/query`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(transformQueryRequest(payload))
+				body: JSON.stringify(transformQueryRequest(payload)),
+				signal: signal
 			});
 
 			if (!response.ok) {
@@ -149,49 +153,36 @@ export const propertyService = {
 	 */
 	async evaluatePropertiesWithPreferences(
 		sessionId: string,
-		preferences: string
+		preferences: string,
+		signal?: AbortSignal
 	): Promise<Response> {
 		return await fetch(`${API_BASE_URL}/properties/evaluate`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', Connection: 'keep-alive' },
-			body: JSON.stringify(transformEvaluationRequest(sessionId, preferences))
+			body: JSON.stringify(transformEvaluationRequest(sessionId, preferences)),
+			signal: signal
 		});
 	},
 
 	/**
-	 * Legacy endpoint: Evaluate properties all in one step (backwards compatibility)
+	 * Cancel an ongoing search session
 	 */
-	// async evaluateProperties(payload: LegacyPropertyEvaluationRequest): Promise<UnifiedProperty[]> {
-	// 	try {
-	// 		const response = await fetch(`${API_BASE_URL}/properties/evaluateAll`, {
-	// 			method: 'POST',
-	// 			headers: { 'Content-Type': 'application/json' },
-	// 			body: JSON.stringify(transformLegacyRequest(payload))
-	// 		});
+	async cancelSearch(sessionId: string): Promise<boolean> {
+		try {
+			const response = await fetch(`${API_BASE_URL}/properties/cancel/${sessionId}`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' }
+			});
 
-	// 		if (!response.ok) {
-	// 			const error = await response.text();
-	// 			throw new Error(`Failed to evaluate properties: ${error}`);
-	// 		}
+			if (!response.ok) {
+				console.error(`Failed to cancel search: ${await response.text()}`);
+				return false;
+			}
 
-	// 		const data: PropertyEvaluationResponse = await response.json();
-	// 		return data.results;
-	// 	} catch (error) {
-	// 		console.error('Error evaluating properties:', error);
-	// 		throw error;
-	// 	}
-	// }
-};
-
-const handleCallExpert = async (): Promise<Response> => {
-	body = {};
-
-	return fetch(`${getURL(PUBLIC_API_URL)}experts/call`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Connection: 'keep-alive'
-		},
-		body: JSON.stringify(body)
-	});
+			return true;
+		} catch (error) {
+			console.error('Error cancelling search:', error);
+			return false;
+		}
+	}
 };

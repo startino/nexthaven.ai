@@ -6,7 +6,7 @@
 	import { setSearchQuery, clearStore, setError, getErrorMessage, setProperties } from '$lib/stores/properties.svelte';
 	import { onMount } from 'svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
-	import { streamEvents } from '$lib/event';
+	import { streamEvents, stopStreamEvents } from '$lib/event';
 	import { subscribeToEvent, type PropertyEvaluationEventData, type PropertyEvaluationStep } from '$lib/event';
 	import type { UnifiedProperty } from '$lib/types/unified-property';
 	import { propertyService } from '$lib/services/api';
@@ -126,11 +126,21 @@
 	let propertyCount = $state(0);
 	let streamedProperties = $state<UnifiedProperty[]>([]);
 	let progressInterval: ReturnType<typeof setInterval> | undefined;
+	let abortController: AbortController | null = $state(null);
 	
 	// Add mobile detection state
 	let isMobile = $state(false);
 	let isSearchFormOpen = $state(false);
 	let isSheetOpen = $state(false);
+	
+	// Add a new state variable to track the current search session ID
+	let currentSearchSession = $state<string | null>(null);
+	
+	// Add a new state variable to track if the search was cancelled
+	let searchCancelled = $state(false);
+	
+	// Add a variable to track timeout IDs
+	let pendingTimeouts: number[] = [];
 	
 	// Create an effect to clear the error after a timeout
 	$effect(() => {
@@ -267,6 +277,12 @@
 	
 	// Handle property evaluation events from SSE
 	async function handlePropertyEvaluationEvent(data: PropertyEvaluationEventData) {
+		// If the search was cancelled, ignore all events
+		if (searchCancelled) {
+			console.log('Ignoring property evaluation event after cancellation');
+			return;
+		}
+		
 		console.log('Received property evaluation event:', data);
 		
 		// Update progress based on the event data
@@ -421,9 +437,10 @@
 				if (searchQuotaState.isAnonymous && searchQuotaState.hasReachedLimit) {
 					console.log('Search complete and user has reached limit - showing upgrade screen');
 					// Give a brief moment to see the results before showing the upgrade screen
-					setTimeout(() => {
+					const timeoutId = setTimeout(() => {
 						showSearchScreen = false;
-					}, 3000);
+					}, 3000) as unknown as number;
+					pendingTimeouts.push(timeoutId);
 				}
 			}, 1000);
 		}
@@ -453,9 +470,10 @@
 					if (searchQuotaState.isAnonymous && searchQuotaState.hasReachedLimit) {
 						console.log('Search complete and user has reached limit - showing upgrade screen');
 						// Give a brief moment to see the results before showing the upgrade screen
-						setTimeout(() => {
+						const timeoutId = setTimeout(() => {
 							showSearchScreen = false;
-						}, 3000);
+						}, 3000) as unknown as number;
+						pendingTimeouts.push(timeoutId);
 					}
 				}, 1000);
 			}
@@ -480,17 +498,21 @@
 		console.log("Sending tag preferences to backend:", tagsPreferences);
 		console.log("Original preferences:", preferences);
 		
+		// Create a new AbortController for this request
+		abortController = new AbortController();
+		
 		// Construct the request body
 		const requestBody = {
 			session_id: sessionId,
 			preferences: tagsPreferences || ''
 		};
 		
-		// Make the request
+		// Make the request with the signal
 		const response = fetch(apiUrl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(requestBody)
+			body: JSON.stringify(requestBody),
+			signal: abortController.signal
 		});
 		
 		// Set up subscription for property evaluation events
@@ -498,6 +520,9 @@
 		
 		// Start streaming events from the response
 		streamEvents(response);
+		
+		// Return the unsubscribe function for cleanup
+		return unsubscribe;
 	}
 	
 	
@@ -541,6 +566,7 @@
 		currentStepName = undefined; // Explicitly reset the current step name to ensure loading indicators start fresh
 		streamedProperties = []; // Reset properties from previous search
 		propertyCount = 0; // Reset property count
+		searchCancelled = false; // Reset the cancelled flag
 		
 		// Clear any existing progress interval
 		if (progressInterval) {
@@ -684,9 +710,10 @@
 					searchQuotaState.remainingSearches = 0;
 
 					// Show the limit reached screen after a short delay
-					setTimeout(() => {
+					const timeoutId = setTimeout(() => {
 						showSearchScreen = false;
-					}, 1500);
+					}, 1500) as unknown as number;
+					pendingTimeouts.push(timeoutId);
 					
 					return;
 				}
@@ -722,8 +749,14 @@
 			// Log the complete request
 			console.log('Full API request payload:', JSON.stringify(requestBody));
 			
-			const response = await propertyService.queryProperties(requestBody);
+			// Create a new AbortController for the initial API call
+			abortController = new AbortController();
 			
+			// Call the API with the abort signal
+			const response = await propertyService.queryProperties(requestBody, abortController.signal);
+			
+			// Store the session ID for potential cancellation
+			currentSearchSession = response.session_id;
 			
 			console.log('Search session started with ID:', response.session_id);
 			
@@ -773,9 +806,10 @@
 					searchQuotaState.remainingSearches = 0;
 					
 					// Show the upgrade screen
-					setTimeout(() => {
+					const timeoutId = setTimeout(() => {
 						showSearchScreen = false;
-					}, 1500);
+					}, 1500) as unknown as number;
+					pendingTimeouts.push(timeoutId);
 				} else {
 					// Regular error for anonymous users with searches remaining
 					setError('Failed to start search. Please try again or create an account for better results.');
@@ -785,6 +819,74 @@
 				setError('Failed to start search. Please try again.');
 			}
 		}
+	}
+	
+	// Function to cancel an ongoing search
+	function handleCancelSearch() {
+		console.log('Search cancelled by user');
+		
+		// Set cancelled flag to ignore any further updates
+		searchCancelled = true;
+		
+		// Clear all pending timeouts
+		pendingTimeouts.forEach(id => clearTimeout(id));
+		pendingTimeouts = [];
+		
+		// Stop the search UI
+		isSearching = false;
+		
+		// Clear any existing progress interval
+		if (progressInterval) {
+			clearInterval(progressInterval);
+			progressInterval = undefined;
+		}
+		
+		// Abort any ongoing fetch requests
+		if (abortController) {
+			console.log('Aborting fetch request');
+			abortController.abort();
+			abortController = null;
+		}
+		
+		// Stop the event stream if active
+		stopStreamEvents();
+		
+		// Reset search progress state
+		progress = 0;
+		targetProgress = 0;
+		currentStep = 0;
+		currentStepName = undefined;
+		
+		// Reset property results
+		streamedProperties = [];
+		
+		// Explicitly clear any streaming results from the store
+		setProperties([]);
+		
+		// Cancel the search on the server if we have a session ID
+		if (currentSearchSession) {
+			console.log('Sending cancellation request to server for session:', currentSearchSession);
+			
+			// Use the propertyService to cancel the search
+			propertyService.cancelSearch(currentSearchSession)
+				.then((success) => {
+					if (success) {
+						console.log('Search successfully cancelled on server');
+					} else {
+						console.warn('Failed to cancel search on server');
+					}
+				})
+				.catch((err) => {
+					console.error('Error cancelling search:', err);
+				})
+				.finally(() => {
+					// Clear the current session ID
+					currentSearchSession = null;
+				});
+		}
+		
+		// Set a cancellation error message
+		setError('Search cancelled by user');
 	}
 	
 	// Handle property selection from map
@@ -939,6 +1041,7 @@
 							isLoading={isSearching}
 							onSubmit={handleSearch}
 							onLocationSelect={(location: string) => destination = location}
+							onCancel={handleCancelSearch}
 						/>
 						
 						<!-- Search Progress Bar (when searching) -->
@@ -1006,6 +1109,7 @@
 								isSearchFormOpen = false;
 							}}
 							onLocationSelect={(location: string) => destination = location}
+							onCancel={handleCancelSearch}
 						/>
 				</ScrollArea>
 			</div>

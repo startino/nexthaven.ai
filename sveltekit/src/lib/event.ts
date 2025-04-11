@@ -39,6 +39,9 @@ export type EventCallback = (eventData: PropertyEvaluationEventData) => void;
 // Store for event subscribers
 const subscribers: Map<string, EventCallback[]> = new Map();
 
+// Track the current reader
+let currentReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+
 // Function to subscribe to specific event types
 export function subscribeToEvent(eventType: string, callback: EventCallback): () => void {
 	if (!subscribers.has(eventType)) {
@@ -95,32 +98,52 @@ export const parser = createParser({
 	}
 });
 
+// Function to stop any active event streams
+export function stopStreamEvents() {
+	console.log('stopStreamEvents: Canceling stream');
+	if (currentReader) {
+		currentReader.cancel();
+		currentReader = null;
+	}
+}
+
+// In the streamEvents function, store the reader
 export const streamEvents = async (res: Promise<Response>) => {
-	await res.then((response) => {
-		console.log('streamEvents: response');
-		const stream = response.body;
-		const reader = stream?.getReader();
+	await res
+		.then((response) => {
+			console.log('streamEvents: response');
+			const stream = response.body;
+			const reader = stream?.getReader();
 
-		// TODO: This could be improved with further research of the SSE API
-		const readChunk = () => {
-			reader
-				?.read()
-				.then(({ value, done }) => {
-					if (done) {
-						console.log('streamEvents: finished');
-						// shared.status = undefined;
-						return;
-					}
+			// Store the reader for cancellation
+			currentReader = reader || null;
 
-					const chunkData = new TextDecoder().decode(value);
-					parser.feed(chunkData);
-					readChunk();
-				})
-				.catch((error) => {
-					console.error(`streamEvents: failed to read chunk: ${JSON.stringify(error, null, 2)}`);
-					reader?.cancel();
-				});
-		};
-		readChunk();
-	});
+			// TODO: This could be improved with further research of the SSE API
+			const readChunk = () => {
+				reader
+					?.read()
+					.then(({ value, done }) => {
+						if (done) {
+							console.log('streamEvents: finished');
+							// shared.status = undefined;
+							currentReader = null;
+							return;
+						}
+
+						const chunkData = new TextDecoder().decode(value);
+						parser.feed(chunkData);
+						readChunk();
+					})
+					.catch((error) => {
+						console.error(`streamEvents: failed to read chunk: ${JSON.stringify(error, null, 2)}`);
+						reader?.cancel();
+						currentReader = null;
+					});
+			};
+			readChunk();
+		})
+		.catch((error) => {
+			console.error(`streamEvents: Error starting stream: ${JSON.stringify(error, null, 2)}`);
+			currentReader = null;
+		});
 };
