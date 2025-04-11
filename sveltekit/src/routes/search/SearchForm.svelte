@@ -443,22 +443,7 @@
       // If limit is reached, we'll disable search functionality
       console.log('Anonymous user has reached search limit, disabling search form');
       
-      // Disable all interactive form elements when limit is reached
-      setTimeout(() => {
-        // This runs after the component is updated
-        const form = document.querySelector('form') as HTMLFormElement;
-        if (form) {
-          // Find all interactive elements
-          const interactiveElements = form.querySelectorAll('button, input, select, textarea');
-          // Disable them
-          interactiveElements.forEach(el => {
-            if (el instanceof HTMLElement) {
-              el.setAttribute('disabled', 'true');
-              el.style.pointerEvents = 'none';
-            }
-          });
-        }
-      }, 0);
+      // No longer disable form elements - instead we'll show an overlay
     }
   });
   
@@ -799,7 +784,25 @@
   }
 </script>
 
-<form class="grid grid-cols-1 gap-4 " onsubmit={(e) => e.preventDefault()}>
+<form class="grid grid-cols-1 gap-4 relative" onsubmit={(e) => e.preventDefault()}>
+  <!-- Search limit overlay - displayed when user has no more searches -->
+  {#if searchQuotaState.hasReachedLimit}
+    <div 
+      class="absolute z-50 inset-0 bg-background/80 backdrop-blur-sm px-4 py-8 sm:p-6 rounded-lg border-2 border-primary/20 text-center"
+      transition:fade={{ duration: 300 }}
+    >
+      <div in:slide={{ delay: 100, duration: 300 }} class="flex flex-col items-center justify-center sticky top-0">
+        <AlertCircle class="h-10 w-10 sm:h-12 sm:w-12 text-red-500 mb-3 sm:mb-4" />
+        <h3 class="text-lg sm:text-xl font-semibold mb-2 text-center">Search Limit Reached</h3>
+        <p class="text-sm sm:text-base text-center mb-4 sm:mb-6 max-w-md">You've used your free search as an anonymous user.</p>
+        <Button href="/signup" class="h-10 sm:h-12">
+          <Sparkle class="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+          Sign Up for Unlimited Searches
+        </Button>
+        <p class="text-xs sm:text-sm text-muted-foreground mt-3 text-center">Create an account to get a full 14-day trial with unlimited searches</p>
+      </div>
+    </div>
+  {/if}
 
   <!-- When & Where Section - Now as individual boxes -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1215,7 +1218,7 @@
      </Button>
    {/if}
    {#if searchQuotaState.isAnonymous}
-     <div class="text-xs flex items-center gap-1.5" class:text-yellow-500={searchQuotaState.remainingSearches > 1} class:text-amber-600={searchQuotaState.remainingSearches === 1} class:text-red-500={searchQuotaState.hasReachedLimit}>
+     <div class="text-xs flex items-center justify-center gap-1.5" class:text-yellow-500={searchQuotaState.remainingSearches > 1} class:text-amber-600={searchQuotaState.remainingSearches === 1} class:text-red-500={searchQuotaState.hasReachedLimit}>
        <AlertCircle class="h-3.5 w-3.5" />
        {#if searchQuotaState.hasReachedLimit}
          <span>You've used your free search as an anonymous user. <a href="/signup" class="font-medium underline">Create an account</a> to get a full 14-day trial with unlimited searches.</span>
