@@ -161,10 +161,7 @@
       <Building2 class="h-4 w-4 md:h-5 md:w-5 text-primary" />
       <span>
         {#if properties.length > 0}
-          Properties Found: {properties.length} 
-          {#if propertyCount > 0 && propertyCount > properties.length}
-            <span class="text-muted-foreground text-sm">of {propertyCount}</span>
-          {/if}
+          Top {properties.length} Properties
         {:else if isSearching}
           {#if propertyCount > 0}
             Finding {propertyCount} Properties
