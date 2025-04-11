@@ -119,22 +119,17 @@
         </svg>
       </div>
       
-      <!-- White background for percentage -->
+      <!-- Center content with icon and label -->
       <div class="absolute inset-0 flex items-center justify-center">
-        <div class="w-32 h-32 bg-background rounded-full shadow-inner flex items-center justify-center">
-          <span class="text-4xl font-semibold text-foreground">{Math.round(progress)}%</span>
+        <div class="w-32 h-32 bg-background rounded-full shadow-inner flex flex-col items-center justify-center gap-2 p-4">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center bg-primary text-primary-foreground animate-pulse">
+            <svelte:component this={currentStepInfo().icon} class="w-4 h-4" />
+          </div>
+          <span class="text-sm font-medium text-foreground text-center">
+            {currentStepInfo().label}
+          </span>
         </div>
       </div>
-    </div>
-    
-    <!-- Current step label -->
-    <div class="mt-8 flex items-center gap-3 px-4">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center bg-primary text-primary-foreground animate-pulse">
-        <svelte:component this={currentStepInfo().icon} class="w-4 h-4" />
-      </div>
-      <span class="text-sm font-medium text-foreground">
-        {currentStepInfo().label}
-      </span>
     </div>
   </div>
 {/if}
