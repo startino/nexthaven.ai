@@ -214,6 +214,13 @@
 	
 	// Handle URL changes and parse the search query
 	onMount(() => {
+		// Ensure searchQuotaState is correctly initialized based on data
+		if (data.anonymousSearchInfo) {
+			searchQuotaState.isAnonymous = data.anonymousSearchInfo.isAnonymous;
+			searchQuotaState.hasReachedLimit = data.anonymousSearchInfo.hasReachedLimit;
+			searchQuotaState.remainingSearches = data.anonymousSearchInfo.remainingSearches;
+			searchQuotaState.searchCount = data.anonymousSearchInfo.searchCount;
+		}
 
 		if (data.anonymousSearchInfo.isAnonymous) {
 			posthog.identify(data.session?.user?.id, {

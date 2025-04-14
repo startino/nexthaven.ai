@@ -32,13 +32,24 @@ export const load: PageServerLoad = async (event): Promise<SearchPageData> => {
 
 	// Use anonymousSearchInfo from locals if available (set in hooks.server.ts)
 	let anonymousSearchInfo: AnonymousSearchInfo = locals.anonymousSearchInfo
-		? { isAnonymous, ...locals.anonymousSearchInfo }
+		? { ...locals.anonymousSearchInfo, isAnonymous }
 		: {
 				isAnonymous,
 				hasReachedLimit: false,
 				remainingSearches: ANONYMOUS_SEARCH_LIMIT,
 				searchCount: 0
 			};
+
+	// Ensure non-anonymous users never have search limitations
+	if (!isAnonymous) {
+		anonymousSearchInfo = {
+			isAnonymous: false,
+			hasReachedLimit: false,
+			remainingSearches: Infinity,
+			searchCount: 0
+		};
+	}
+
 	console.log('anonymousSearchInfo in +page.server.ts:', anonymousSearchInfo);
 
 	// For anonymous users, make sure we always have correct subscription status

@@ -64,10 +64,22 @@
 	
 	// Initial setup - keep this more minimal
 	onMount(() => {
+		// Properly initialize searchQuotaState based on data received from server
+		// This is critical to ensure authenticated users don't get search limitations
 		searchQuotaState.isAnonymous = data.isAnonymous;
-		searchQuotaState.hasReachedLimit = data.anonymousSearchInfo.hasReachedLimit;
-		searchQuotaState.remainingSearches = data.anonymousSearchInfo.remainingSearches;
-		searchQuotaState.searchCount = data.anonymousSearchInfo.searchCount;
+		
+		if (data.isAnonymous) {
+			// For anonymous users, apply the search limitations
+			searchQuotaState.hasReachedLimit = data.anonymousSearchInfo.hasReachedLimit;
+			searchQuotaState.remainingSearches = data.anonymousSearchInfo.remainingSearches;
+			searchQuotaState.searchCount = data.anonymousSearchInfo.searchCount;
+		} else {
+			// For authenticated users, ensure they have no search limitations
+			searchQuotaState.hasReachedLimit = false;
+			searchQuotaState.remainingSearches = Infinity;
+			searchQuotaState.searchCount = 0; 
+		}
+		
 		// Check if already shown in this browser session
 		const browserSessionKey = 'anon_setup_shown_this_session';
 		const wasShownThisSession = browser ? sessionStorage.getItem(browserSessionKey) === 'true' : false;
@@ -172,13 +184,17 @@
 			sessionStorage.setItem('setup_shown_timestamp', Date.now().toString());
 			sessionStorage.setItem(browserSessionKey, 'true');
 		}
+			
+		// Only set anonymous search state if user is actually anonymous
+		if (isAnonymous) {
 			searchQuotaState.isAnonymous = true;
 			searchQuotaState.remainingSearches = ANONYMOUS_SEARCH_LIMIT;
 			searchQuotaState.searchCount = 0;
+		}
 
-			setTimeout(() => {
-				isSettingUpAnonymousAccount = false;
-			}, 2500);
+		setTimeout(() => {
+			isSettingUpAnonymousAccount = false;
+		}, 2500);
 	}
 	
 	// Setup auth listener
